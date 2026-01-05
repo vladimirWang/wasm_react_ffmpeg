@@ -1,0 +1,44 @@
+.app-container {
+  width: 100%;
+  max-width: 800px;
+  padding: 20px;
+  margin: 0 auto;
+}
+
+.header {
+  text-align: center;
+  margin-bottom: 30px;
+}
+
+.header h1 {
+  color: #333;
+  margin-bottom: 15px;
+  font-size: 32px;
+}
+
+.status {
+  min-height: 30px;
+  margin-top: 10px;
+}
+
+.status-loading {
+  color: #666;
+  font-size: 14px;
+}
+
+.status-ready {
+  color: #4CAF50;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.status-error {
+  color: #f44336;
+  font-size: 14px;
+}
+
+.components-container {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}

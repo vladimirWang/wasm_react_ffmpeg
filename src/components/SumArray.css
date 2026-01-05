@@ -1,0 +1,84 @@
+.component-card {
+  background: white;
+  border-radius: 12px;
+  padding: 30px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  margin-bottom: 20px;
+}
+
+.component-card h2 {
+  color: #333;
+  margin-bottom: 10px;
+  font-size: 24px;
+}
+
+.description {
+  color: #666;
+  margin-bottom: 20px;
+  font-size: 14px;
+}
+
+.action-btn {
+  width: 100%;
+  padding: 14px 24px;
+  font-size: 16px;
+  font-weight: 500;
+  background-color: #4CAF50;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background-color 0.3s, transform 0.1s;
+  margin: 20px 0;
+}
+
+.action-btn:hover:not(:disabled) {
+  background-color: #45a049;
+  transform: translateY(-1px);
+}
+
+.action-btn:active:not(:disabled) {
+  transform: translateY(0);
+}
+
+.action-btn:disabled {
+  background-color: #cccccc;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.error-message {
+  margin-top: 15px;
+  padding: 12px;
+  background-color: #ffebee;
+  color: #f44336;
+  border-radius: 6px;
+  font-size: 14px;
+  text-align: center;
+}
+
+.result {
+  margin-top: 20px;
+  padding: 20px;
+  background-color: #f5f5f5;
+  border-radius: 6px;
+  text-align: center;
+}
+
+.result-label {
+  font-size: 14px;
+  color: #666;
+  margin-bottom: 10px;
+}
+
+.result-value {
+  font-size: 18px;
+  color: #333;
+  font-weight: 500;
+}
+
+.result-value strong {
+  color: #4CAF50;
+  font-size: 24px;
+}
+

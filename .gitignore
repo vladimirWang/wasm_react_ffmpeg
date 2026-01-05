@@ -1,0 +1,87 @@
+# 依赖
+node_modules/
+.pnp
+.pnp.js
+
+# 构建输出
+dist/
+dist-ssr/
+build/
+*.tsbuildinfo
+
+# 日志文件
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+# 环境变量
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+*.local
+
+# 编辑器目录和文件
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.json
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# 操作系统文件
+Thumbs.db
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Desktop.ini
+
+# 测试覆盖率
+coverage/
+*.lcov
+.nyc_output/
+
+# 临时文件
+*.tmp
+*.temp
+.cache/
+.parcel-cache/
+.vite/
+
+# WebAssembly 构建产物
+public/output.js
+public/output.wasm
+*.wasm.map
+
+# Emscripten 临时文件
+*.o
+*.bc
+*.a
+
+# TypeScript
+*.tsbuildinfo
+
+# 调试文件
+.vscode/launch.json
+.vscode/tasks.json
+
+# 包管理器锁文件（可选，根据团队约定）
+# pnpm-lock.yaml
+# package-lock.json
+# yarn.lock
+

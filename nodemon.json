@@ -1,0 +1,9 @@
+{
+  "watch": ["*.cpp", "*.c"],
+  "ext": "cpp,c",
+  "ignore": ["node_modules", "public", "src", "*.js", "*.jsx", "*.json"],
+  "exec": "./build_glue.sh",
+  "verbose": true,
+  "delay": 500
+}
+
