@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import SumArray from './components/SumArray'
 import FileSizeCalculator from './components/FileSizeCalculator'
+import VideoStreamDetector from './components/VideoStreamDetector'
 import type { EmscriptenModule } from './types/wasm'
 import './App.css'
 
@@ -80,6 +81,7 @@ function App() {
       <div className="components-container">
         <SumArray wasmReady={wasmReady} Module={window.Module} />
         <FileSizeCalculator wasmReady={wasmReady} Module={window.Module} />
+        <VideoStreamDetector wasmReady={wasmReady} Module={window.Module} />
       </div>
     </div>
   )

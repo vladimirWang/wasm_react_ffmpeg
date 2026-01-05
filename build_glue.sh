@@ -30,27 +30,87 @@ else
     exit 1
 fi
 
-# 第三步：确保 public 目录存在
+# 第三步：检查 FFmpeg 库（可选，如果已编译）
+FFMPEG_LIBS=""
+FFMPEG_INCLUDE=""
+FFMPEG_DEFINE=""
+
+# 尝试获取 Emscripten 路径（如果未设置环境变量）
+if [ -z "${EMSCRIPTEN:-}" ]; then
+    # 尝试从 emcc 命令获取路径
+    EMCC_PATH=$(command -v emcc)
+    if [ -n "$EMCC_PATH" ]; then
+        # emcc 通常在 emsdk/upstream/emscripten/emcc
+        EMSCRIPTEN=$(dirname "$(dirname "$EMCC_PATH")")
+    fi
+fi
+
+# 检查是否存在 FFmpeg 库路径（可以根据实际情况调整路径）
+FFMPEG_FOUND=false
+
+# 检查多个可能的路径
+if [ -n "${EMSCRIPTEN:-}" ] && [ -d "${EMSCRIPTEN}/cache/sysroot/lib" ]; then
+    if [ -f "${EMSCRIPTEN}/cache/sysroot/lib/libavformat.a" ]; then
+        FFMPEG_FOUND=true
+        FFMPEG_LIBS="-lavformat -lavcodec -lavutil"
+        FFMPEG_DEFINE="-DUSE_FFMPEG"
+        if [ -d "${EMSCRIPTEN}/cache/sysroot/include" ]; then
+            FFMPEG_INCLUDE="-I${EMSCRIPTEN}/cache/sysroot/include"
+        fi
+    fi
+fi
+
+# 检查系统路径
+if [ "$FFMPEG_FOUND" = false ]; then
+    if [ -f "/usr/local/lib/libavformat.a" ] || [ -f "/usr/lib/libavformat.a" ]; then
+        FFMPEG_FOUND=true
+        FFMPEG_LIBS="-lavformat -lavcodec -lavutil"
+        FFMPEG_DEFINE="-DUSE_FFMPEG"
+        
+        # 设置包含路径（根据实际情况调整）
+        if [ -d "/usr/local/include/libavformat" ]; then
+            FFMPEG_INCLUDE="-I/usr/local/include"
+        elif [ -d "/usr/include/libavformat" ]; then
+            FFMPEG_INCLUDE="-I/usr/include"
+        fi
+    fi
+fi
+
+# 输出提示信息
+if [ "$FFMPEG_FOUND" = true ]; then
+    echo -e "${GREEN}检测到 FFmpeg 库，将链接 FFmpeg${NC}"
+else
+    echo -e "${YELLOW}警告：未找到 FFmpeg 库，将使用回退实现（基于文件格式解析）${NC}"
+    echo -e "${YELLOW}提示：如果需要使用 FFmpeg，请先编译 FFmpeg 到 WebAssembly${NC}"
+fi
+
+# 第四步：确保 public 目录存在
 mkdir -p public
 
-# 第四步：编译生成胶水代码到 public 目录（output.js 和 output.wasm）
+# 第五步：编译生成胶水代码到 public 目录（output.js 和 output.wasm）
 echo -e "${GREEN}开始编译胶水代码：emcc ${SOURCE_FILE} -o public/output.js${NC}"
 echo -e "${YELLOW}编译选项：${NC}"
-echo -e "  - EXPORTED_FUNCTIONS: _sumArray, _calculateFileSize, _getIntSize, _malloc, _free"
+echo -e "  - EXPORTED_FUNCTIONS: _sumArray, _calculateFileSize, _getIntSize, _findAudioStreamIndex, _malloc, _free"
 echo -e "  - EXPORTED_RUNTIME_METHODS: ccall, cwrap, HEAP32, HEAP8, HEAP16, HEAPU8, HEAPU16, HEAPU32, HEAPF32, HEAPF64"
 echo -e "  - NO_EXIT_RUNTIME=1"
 echo -e "  - ALLOW_MEMORY_GROWTH=1 (允许内存动态增长，支持大文件)"
 echo -e "  - --no-entry"
+if [ -n "$FFMPEG_LIBS" ]; then
+    echo -e "  - FFmpeg 库: ${FFMPEG_LIBS}"
+fi
 echo ""
 
 emcc ${SOURCE_FILE} -o public/output.js \
-    -s EXPORTED_FUNCTIONS='["_sumArray","_calculateFileSize", "_getIntSize","_malloc","_free"]' \
+    ${FFMPEG_DEFINE} \
+    ${FFMPEG_INCLUDE} \
+    ${FFMPEG_LIBS} \
+    -s EXPORTED_FUNCTIONS='["_sumArray","_calculateFileSize", "_getIntSize","_findAudioStreamIndex","_malloc","_free"]' \
     -s EXPORTED_RUNTIME_METHODS='["ccall","cwrap","HEAP32","HEAP8","HEAP16","HEAPU8","HEAPU16","HEAPU32","HEAPF32","HEAPF64"]' \
     -s NO_EXIT_RUNTIME=1 \
     -s ALLOW_MEMORY_GROWTH=1 \
     --no-entry
 
-# 第五步：验证编译结果
+# 第六步：验证编译结果
 echo ""
 if [ -f "public/output.js" ]; then
     echo -e "${GREEN}✓ 编译成功！已生成 public/output.js 文件${NC}"
