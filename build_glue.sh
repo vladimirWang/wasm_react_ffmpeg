@@ -12,10 +12,39 @@ GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
 NC='\033[0m' # 恢复默认颜色
 
-# 第一步：检查emcc是否安装
+# 自动加载 Emscripten 环境（如果 emcc 不可用）
 if ! command -v emcc &> /dev/null; then
-    echo -e "${RED}错误：未找到emcc命令，请先安装Emscripten环境！${NC}"
-    exit 1
+    # 尝试从常见位置加载 emsdk_env.sh
+    EMSDK_PATHS=(
+        "$HOME/emsdk/emsdk_env.sh"
+        "/Users/wangfernando/emsdk/emsdk_env.sh"
+        "$HOME/ffmpeg_workspace/emsdk/emsdk_env.sh"
+    )
+    
+    EMSDK_LOADED=false
+    for emsdk_path in "${EMSDK_PATHS[@]}"; do
+        if [ -f "$emsdk_path" ]; then
+            # 设置 EMSDK_PYTHON 以确保使用正确的 Python 路径
+            EMSDK_DIR=$(dirname "$emsdk_path")
+            if [ -f "$EMSDK_DIR/python/3.13.3_64bit/bin/python3" ]; then
+                export EMSDK_PYTHON="$EMSDK_DIR/python/3.13.3_64bit/bin/python3"
+            elif [ -f "$EMSDK_DIR/python/3.9.2_64bit/bin/python3" ]; then
+                export EMSDK_PYTHON="$EMSDK_DIR/python/3.9.2_64bit/bin/python3"
+            fi
+            
+            # 加载 emsdk 环境
+            source "$emsdk_path" >/dev/null 2>&1
+            EMSDK_LOADED=true
+            break
+        fi
+    done
+    
+    # 如果仍然找不到 emcc，报错
+    if ! command -v emcc &> /dev/null; then
+        echo -e "${RED}错误：未找到emcc命令，请先安装Emscripten环境！${NC}"
+        echo -e "${YELLOW}提示：请确保已安装 Emscripten SDK 并配置环境变量${NC}"
+        exit 1
+    fi
 fi
 
 # 第二步：检查源文件是否存在（优先使用 .cpp，如果没有则使用 .c）
