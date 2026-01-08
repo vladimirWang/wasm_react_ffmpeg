@@ -56,3 +56,9 @@ export const generateRandomMaze = (n: number): CellWalls[][] => {
 
   return maze;
 };
+
+
+export const generateMazeBinary = (data: CellWalls[][]): number[][] => {
+  
+  return []
+}

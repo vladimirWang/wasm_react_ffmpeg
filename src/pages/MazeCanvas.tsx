@@ -2,6 +2,8 @@ import React, { useState, useMemo } from 'react';
 import type { ReactElement } from 'react';
 import { Stage, Layer, Rect, Line } from 'react-konva';
 import { generateRandomMaze, type CellWalls, type Pos } from '../mazeUtils/mazeGenerator';
+import { isConnected2 } from '../algo/unionFind2';
+import { start } from 'repl';
 
 // 计算cell的实际位置（考虑墙壁宽度）
 const getCellPosition = (index: number, cellSize: number, wallWidth: number) => {
@@ -129,6 +131,15 @@ const MazeCanvas = () => {
     return RenderAllWalls(mazeData, cellSize, wallWidth, mazeSize);
   }, [mazeData]);
 
+    //   计算连通性
+  const handleCalculateConnected = () => {
+    const start: Pos = { x: 0, y: 0 }
+    const end:Pos = { x: mazeSize - 1, y: mazeSize - 1 }
+    const result = isConnected2(mazeData, start, end)
+    console.log('result: ', result);
+  }
+
+
   return (
     <div>
       <div style={{ padding: '10px', backgroundColor: '#fff', borderBottom: '1px solid #e0e0e0' }}>
@@ -174,6 +185,27 @@ const MazeCanvas = () => {
           }}
         >
           提交结果
+        </button>
+        <button
+          onClick={handleCalculateConnected}
+          style={{
+            padding: '8px 16px',
+            fontSize: '14px',
+            backgroundColor: '#2196F3',
+            color: 'white',
+            border: 'none',
+            borderRadius: '4px',
+            cursor: 'pointer',
+            fontWeight: '500'
+          }}
+          onMouseOver={(e) => {
+            e.currentTarget.style.backgroundColor = '#1976D2';
+          }}
+          onMouseOut={(e) => {
+            e.currentTarget.style.backgroundColor = '#2196F3';
+          }}
+        >
+          计算连通性
         </button>
       </div>
       <Stage width={cavansSize} height={cavansSize} style={{ backgroundColor: '#ff9900' }}>
