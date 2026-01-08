@@ -6,6 +6,12 @@ export type CellWalls = {
   left: number;
 };
 
+// 定义位置类型
+export type Pos = { 
+  x: number, 
+  y: number 
+}
+
 // 生成 n×n 的随机方形迷宫
 export const generateRandomMaze = (n: number): CellWalls[][] => {
   if (n <= 0) {

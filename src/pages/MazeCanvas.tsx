@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import type { ReactElement } from 'react';
 import { Stage, Layer, Rect, Line } from 'react-konva';
-import { generateRandomMaze, type CellWalls } from '../mazeUtils/mazeGenerator';
+import { generateRandomMaze, type CellWalls, type Pos } from '../mazeUtils/mazeGenerator';
+import Konva from 'konva';
 
 // 渲染单个单元格的墙壁
 // 每个单元格只渲染右边框和下边框，避免相邻单元格共享边的重复渲染
@@ -17,7 +18,7 @@ const RenderCellWalls = (
 ) => {
   const walls: ReactElement[] = [];
   const wallColor = 'black';
-  const wallWidth = 2;
+  const wallWidth = 1;
 
   // // 上墙 (top) - 只渲染第一行的上边框
   // if (rowIndex === 0 && cell.top === 1) {
@@ -38,7 +39,7 @@ const RenderCellWalls = (
         key={`${rowIndex}-${colIndex}-right`}
         points={[x + cellSize, y, x + cellSize, y + cellSize]}
         stroke={wallColor}
-        strokeWidth={wallWidth}
+        strokeWidth={1}
       />
     );
   }
@@ -50,7 +51,7 @@ const RenderCellWalls = (
         key={`${rowIndex}-${colIndex}-bottom`}
         points={[x, y + cellSize, x + cellSize, y + cellSize]}
         stroke={wallColor}
-        strokeWidth={wallWidth}
+        strokeWidth={1}
       />
     );
   }
@@ -73,12 +74,15 @@ const cellSize = 50;
 const defaultMazeSize = 10; // 默认迷宫大小
 
 const MazeCanvas = () => {
+  const [color, setColor] = useState('white');
   const [mazeSize, setMazeSize] = useState(defaultMazeSize);
   const [mazeData, setMazeData] = useState<CellWalls[][]>(() => generateRandomMaze(defaultMazeSize));
+  const [solutionPath, setSolutionPath] = useState<Pos[]>([]);
 
   // 刷新迷宫
   const handleRefreshMaze = () => {
     setMazeData(generateRandomMaze(defaultMazeSize));
+    setSolutionPath([]);
   };
 
   return (
@@ -111,6 +115,7 @@ const MazeCanvas = () => {
           {mazeData.map((renderRow, rowIndex) => {
             const cells = renderRow.map((renderCell, colIndex) => {
               const walls = RenderCellWalls(renderCell, colIndex * cellSize, rowIndex * cellSize, cellSize, rowIndex, colIndex, mazeSize);
+              const isSolutionPath = solutionPath.some(pos => pos.x === colIndex && pos.y === rowIndex);
               return (
                 <React.Fragment key={`cell-${rowIndex}-${colIndex}`}>
                   <Rect
@@ -118,9 +123,12 @@ const MazeCanvas = () => {
                     y={rowIndex * cellSize}
                     width={cellSize}
                     height={cellSize}
-                    fill="white"
+                    fill={isSolutionPath ? 'red' : 'white'}
                     stroke="#e0e0e0"
                     strokeWidth={1}
+                    onClick={() => {
+                      setSolutionPath([...solutionPath, { x: colIndex, y: rowIndex }]);
+                    }}
                   />
                   {walls}
                 </React.Fragment>
@@ -131,6 +139,7 @@ const MazeCanvas = () => {
           })}
         </Layer>
       </Stage>
+      {JSON.stringify(solutionPath)}
     </div>
   );
 };
