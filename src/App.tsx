@@ -1,8 +1,11 @@
 import { useState, useEffect } from 'react'
 import SumArray from './components/SumArray'
+import MazeCanvas from './pages/MazeCanvas'
 import FileSizeCalculator from './components/FileSizeCalculator'
 import VideoStreamDetector from './components/VideoStreamDetector'
 import type { EmscriptenModule } from './types/wasm'
+import { BrowserRouter, Routes, Route, Link, Navigate } from 'react-router-dom';
+import Home from './Home'
 import './App.css'
 
 function App() {
@@ -77,12 +80,19 @@ function App() {
           )}
         </div>
       </div>
-
-      <div className="components-container">
-        <SumArray wasmReady={wasmReady} Module={window.Module} />
+      {/* <div className="components-container">
+        
         <FileSizeCalculator wasmReady={wasmReady} Module={window.Module} />
         <VideoStreamDetector wasmReady={wasmReady} Module={window.Module} />
-      </div>
+      </div> */}
+          <BrowserRouter>
+            <Routes>
+              <Route path="/" element={<Home />}/>
+              <Route path='/sumArray' element={<SumArray wasmReady={wasmReady} Module={window.Module} />}/>
+              <Route path='/mazeCanvas' element={<MazeCanvas />}/>
+              <Route path="*" element={<Navigate to="/" replace={true} />} />
+            </Routes>
+          </BrowserRouter>
     </div>
   )
 }
