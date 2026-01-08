@@ -1,12 +1,18 @@
-import type { CellWalls, Pos } from '../mazeUtils/mazeGenerator';
+import type { CellWalls, Pos } from "../mazeUtils/mazeGenerator";
 
 // 并查集实现
 class UnionFind2 {
   public parent: number[];
   private rank: number[];
-  private confirmConnected: (x: number, y: number)=> boolean;
+  private confirmConnected: (x: number, y: number) => boolean;
 
-  constructor(size: number, confirmConnected: (x: number, y: number)=> boolean = (_x: number, _y: number) => true ) {
+  constructor(
+    size: number,
+    confirmConnected: (x: number, y: number) => boolean = (
+      _x: number,
+      _y: number
+    ) => true
+  ) {
     this.parent = Array.from({ length: size }, (_, i) => i);
     this.rank = new Array(size).fill(0);
     this.confirmConnected = confirmConnected;
@@ -27,7 +33,8 @@ class UnionFind2 {
 
     if (rootX === rootY) return;
 
-    const cellIsConnected = this.confirmConnected(rootX, rootY);
+    // 是否可联通入参修复，应该传入原始的x,y而不是rootX,rootY
+    const cellIsConnected = this.confirmConnected(x, y);
     if (!cellIsConnected) {
       return;
     }
@@ -56,17 +63,20 @@ function getIndex(row: number, col: number, cols: number): number {
 }
 
 // 根据打平后的索引号查找元素信息
-function getMazeCellByFlatternIndex(mazeData: CellWalls[][], index: number): Pos | null {
+function getMazeCellByFlatternIndex(
+  mazeData: CellWalls[][],
+  index: number
+): Pos | null {
   if (mazeData.length === 0) {
     return null;
   }
-  const mazeSize = mazeData[0].length
-  const rowIdx = Math.floor(index / mazeSize)
+  const mazeSize = mazeData[0].length;
+  const rowIdx = Math.floor(index / mazeSize);
   const colIdx = index % mazeSize;
   return {
     x: colIdx,
-    y: rowIdx
-  }
+    y: rowIdx,
+  };
 }
 
 /**
@@ -76,7 +86,11 @@ function getMazeCellByFlatternIndex(mazeData: CellWalls[][], index: number): Pos
  * @param end 结束位置，Pos 类型 { x: number, y: number }，x 是列，y 是行
  * @returns 如果连通返回 true，否则返回 false
  */
-export function isConnected2(maze: CellWalls[][], start: Pos, end: Pos): boolean {
+export function isConnected2(
+  maze: CellWalls[][],
+  start: Pos,
+  end: Pos
+): boolean {
   if (!maze || maze.length === 0 || !maze[0] || maze[0].length === 0) {
     return false;
   }
@@ -86,26 +100,31 @@ export function isConnected2(maze: CellWalls[][], start: Pos, end: Pos): boolean
 
   // 验证 start 和 end 是否在有效范围内
   if (
-    start.y < 0 || start.y >= rows || start.x < 0 || start.x >= cols ||
-    end.y < 0 || end.y >= rows || end.x < 0 || end.x >= cols
+    start.y < 0 ||
+    start.y >= rows ||
+    start.x < 0 ||
+    start.x >= cols ||
+    end.y < 0 ||
+    end.y >= rows ||
+    end.x < 0 ||
+    end.x >= cols
   ) {
     return false;
   }
-
   // 创建并查集，大小为 rows * cols
   // n1,n2的顺序是二维数组中的由左至右，由上至下
   const uf = new UnionFind2(rows * cols, (n1: number, n2: number) => {
     const data1 = getMazeCellByFlatternIndex(maze, n1);
     if (!data1) return false;
-    const {x: x1, y: y1} = data1;
+    const { x: x1, y: y1 } = data1;
     const data2 = getMazeCellByFlatternIndex(maze, n2);
     if (!data2) return false;
-    const {x: x2, y: y2} = data2;
-    const cell1 = maze[y1][x1]
+    const { x: x2, y: y2 } = data2;
+    const cell1 = maze[y1][x1];
     const cell2 = maze[y2][x2];
     // 如果两个元素处于一行，则进行连通性判断，否则如果mazeSize长度不等于1，直接判false
     if (y1 === y2) {
-      return cell1.right===0 && cell2.left===0
+      return cell1.right === 0 && cell2.left === 0;
     }
     if (x1 === x2) {
       return cell1.bottom === 0 && cell2.top === 0;
@@ -124,20 +143,16 @@ export function isConnected2(maze: CellWalls[][], start: Pos, end: Pos): boolean
       if (col < cols - 1) {
         const rightCell = maze[row][col + 1];
         // 如果当前单元格的右边没有墙，且右侧单元格的左边也没有墙，则连通
-        if (currentCell.right === 0 && rightCell.left === 0) {
-          const rightIndex = getIndex(row, col + 1, cols);
-          uf.union(currentIndex, rightIndex);
-        }
+        const rightIndex = getIndex(row, col + 1, cols);
+        uf.union(currentIndex, rightIndex);
       }
 
       // 检查下方邻居
       if (row < rows - 1) {
         const bottomCell = maze[row + 1][col];
         // 如果当前单元格的下边没有墙，且下方单元格的上边也没有墙，则连通
-        if (currentCell.bottom === 0 && bottomCell.top === 0) {
-          const bottomIndex = getIndex(row + 1, col, cols);
-          uf.union(currentIndex, bottomIndex);
-        }
+        const bottomIndex = getIndex(row + 1, col, cols);
+        uf.union(currentIndex, bottomIndex);
       }
     }
   }
@@ -145,6 +160,5 @@ export function isConnected2(maze: CellWalls[][], start: Pos, end: Pos): boolean
   // 检查起点和终点是否在同一个连通分量中
   const startIndex = getIndex(start.y, start.x, cols);
   const endIndex = getIndex(end.y, end.x, cols);
-  console.log(uf.parent, '---parent data')
   return uf.connected(startIndex, endIndex);
 }
