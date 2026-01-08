@@ -81,11 +81,30 @@ const RenderAllWalls = (
 };
 const cellSize = 50;
 const wallWidth = 1;
-const defaultMazeSize = 10; // 默认迷宫大小
+const defaultMazeSize = 4; // 默认迷宫大小
+
+// 构建一个mock数据
+const generateMockMaze = (size: number) => {
+    const result: CellWalls[][] = Array.from({length: size}, () => {
+        return Array.from({length: size}, () => ({top: 1, right: 1, bottom: 1, left: 1}))
+    })
+    
+    // 测试用: 构建一个第0行，第size-1列连通的迷宫
+    for (let i =0;i<size-1;i++) {
+        result[0][i] = {top: 1, bottom: 1, right: 0, left: 0};
+    }
+    result[0][size -1].bottom= 0;
+    for (let i=1;i<size;i++) {
+        result[i][size-1] = {top: 0, bottom: 0, right: 1, left: 1};
+    }
+    console.log('test maze data: ', result)
+    return result;
+}
 
 const MazeCanvas = () => {
   const [mazeSize] = useState(defaultMazeSize);
-  const [mazeData, setMazeData] = useState<CellWalls[][]>(() => generateRandomMaze(defaultMazeSize));
+//   const [mazeData, setMazeData] = useState<CellWalls[][]>(() => generateRandomMaze(defaultMazeSize));
+  const [mazeData, setMazeData] = useState<CellWalls[][]>(() => generateMockMaze(mazeSize));
   const [solutionPath, setSolutionPath] = useState<Pos[]>([]);
 
   // 刷新迷宫
