@@ -165,6 +165,14 @@ const MazeCanvas = () => {
         return rowData.size === expectedColCount;
       };
 
+      // 已处理的单元格对集合，避免重复加载
+      const processedPairs = new Set<string>();
+      
+      // 辅助函数：生成单元格对的唯一标识
+      const getPairKey = (x: number, y: number): string => {
+        return x <= y ? `${x},${y}` : `${y},${x}`;
+      };
+
       // 辅助函数：加载单元格对 (x, y) 和镜像 (y, x)
       const loadCellPair = async (
         x: number,
@@ -173,6 +181,13 @@ const MazeCanvas = () => {
         checkComplete: (rowIndex: number, data: Map<number, Map<number, CellWalls>>) => boolean,
         markRendered: (rowIndex: number) => void
       ) => {
+        // 检查是否已处理过这个单元格对（考虑镜像）
+        const pairKey = getPairKey(x, y);
+        if (processedPairs.has(pairKey)) {
+          return; // 已处理过，跳过
+        }
+        processedPairs.add(pairKey);
+
         // 加载 (x, y) 的数据
         const cellXY = mazeData[x]?.[y];
         if (cellXY) {
@@ -209,8 +224,8 @@ const MazeCanvas = () => {
         }
       };
 
-      // 优化：双向遍历，从两端向中间靠拢，只遍历一半
-      // 利用镜像特性：加载 (x, y) 时自动加载 (y, x)，所以只需遍历上三角或下三角
+      // 优化：双向遍历，从两端向中间靠拢
+      // 使用 processedPairs 集合避免重复加载镜像单元格对
       const totalRows = mazeData.length;
       const midRow = Math.floor(totalRows / 2);
 
@@ -221,7 +236,7 @@ const MazeCanvas = () => {
         
         // 处理每一行的所有列（双向遍历列）
         const rowsToProcess = backwardX !== forwardX ? [forwardX, backwardX] : [forwardX];
-        // debugger;
+        
         for (const x of rowsToProcess) {
           const row = mazeData[x];
           if (!row) continue;
