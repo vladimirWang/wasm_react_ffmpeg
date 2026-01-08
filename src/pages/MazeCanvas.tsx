@@ -1,73 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import type { ReactElement } from 'react';
 import { Stage, Layer, Rect, Line } from 'react-konva';
-
-// const mazeData = [
-//   [0, 1, 0, 0, 0, 1, 0],
-//   [0, 1, 1, 1, 0, 1, 0],
-//   [0, 0, 0, 1, 0, 0, 0],
-//   [1, 1, 0, 1, 1, 1, 0],
-//   [0, 0, 0, 0, 0, 1, 1],
-//   [0, 0, 0, 0, 0, 0, 0],
-// ]
-const mazeData = [
-  [{
-    top: 0,
-    right: 1,
-    bottom: 0,
-    left: 0
-  }, {
-    top: 0,
-    right: 0,
-    bottom: 0,
-    left: 0
-  }, {
-    top: 0,
-    right: 0,
-    bottom: 0,
-    left: 0
-  }],
-  [{
-    top: 0,
-    right: 1,
-    bottom: 0,
-    left: 0
-  }, {
-    top: 0,
-    right: 0,
-    bottom: 0,
-    left: 0
-  }, {
-    top: 0,
-    right: 0,
-    bottom: 0,
-    left: 0
-  }], [{
-    top: 0,
-    right: 1,
-    bottom: 0,
-    left: 0
-  }, {
-    top: 0,
-    right: 0,
-    bottom: 0,
-    left: 0
-  }, {
-    top: 0,
-    right: 0,
-    bottom: 0,
-    left: 0
-  }]
-]
-
-
-// 定义单元格类型
-type CellWalls = {
-  top: number;
-  right: number;
-  bottom: number;
-  left: number;
-};
+import { generateRandomMaze, type CellWalls } from '../mazeUtils/mazeGenerator';
 
 // 渲染单个单元格的墙壁
 // 每个单元格只渲染右边框和下边框，避免相邻单元格共享边的重复渲染
@@ -78,7 +12,8 @@ const RenderCellWalls = (
   y: number,
   cellSize: number,
   rowIndex: number,
-  colIndex: number
+  colIndex: number,
+  mazeSize: number
 ) => {
   const walls: ReactElement[] = [];
   const wallColor = 'black';
@@ -97,7 +32,7 @@ const RenderCellWalls = (
   // }
 
   // 右墙 (right) - 渲染右边框
-  if (cell.right === 1 && colIndex < cellSize - 1) {
+  if (cell.right === 1 && colIndex < mazeSize - 1) {
     walls.push(
       <Line
         key={`${rowIndex}-${colIndex}-right`}
@@ -109,7 +44,7 @@ const RenderCellWalls = (
   }
 
   // 下墙 (bottom) - 渲染下边框
-  if (cell.bottom === 1 && rowIndex < cellSize - 1) {
+  if (cell.bottom === 1 && rowIndex < mazeSize - 1) {
     walls.push(
       <Line
         key={`${rowIndex}-${colIndex}-bottom`}
@@ -135,28 +70,61 @@ const RenderCellWalls = (
   return walls;
 };
 const cellSize = 50;
+const defaultMazeSize = 10; // 默认迷宫大小
 
 const MazeCanvas = () => {
+  const [mazeSize, setMazeSize] = useState(defaultMazeSize);
+  const [mazeData, setMazeData] = useState<CellWalls[][]>(() => generateRandomMaze(defaultMazeSize));
+
+  // 刷新迷宫
+  const handleRefreshMaze = () => {
+    setMazeData(generateRandomMaze(defaultMazeSize));
+  };
+
   return (
     <div>
-      <Stage width={window.innerWidth} height={window.innerHeight} style={{ backgroundColor: '#f0f0f0' }}>
+      <div style={{ padding: '10px', backgroundColor: '#fff', borderBottom: '1px solid #e0e0e0' }}>
+        <button
+          onClick={handleRefreshMaze}
+          style={{
+            padding: '8px 16px',
+            fontSize: '14px',
+            backgroundColor: '#2196F3',
+            color: 'white',
+            border: 'none',
+            borderRadius: '4px',
+            cursor: 'pointer',
+            fontWeight: '500'
+          }}
+          onMouseOver={(e) => {
+            e.currentTarget.style.backgroundColor = '#1976D2';
+          }}
+          onMouseOut={(e) => {
+            e.currentTarget.style.backgroundColor = '#2196F3';
+          }}
+        >
+          刷新迷宫
+        </button>
+      </div>
+      <Stage width={window.innerWidth} height={window.innerHeight - 50} style={{ backgroundColor: '#f0f0f0' }}>
         <Layer>
           {mazeData.map((renderRow, rowIndex) => {
             const cells = renderRow.map((renderCell, colIndex) => {
-              const walls = RenderCellWalls(renderCell, colIndex * cellSize, rowIndex * cellSize, cellSize, rowIndex, colIndex);
-              return <>
-                <Rect
-                  key={`cell-${rowIndex}-${colIndex}`}
-                  x={colIndex * cellSize}
-                  y={rowIndex * cellSize}
-                  width={cellSize}
-                  height={cellSize}
-                  fill="white"
-                  stroke="#e0e0e0"
-                  strokeWidth={1}
-                />
-                {walls}
-              </>
+              const walls = RenderCellWalls(renderCell, colIndex * cellSize, rowIndex * cellSize, cellSize, rowIndex, colIndex, mazeSize);
+              return (
+                <React.Fragment key={`cell-${rowIndex}-${colIndex}`}>
+                  <Rect
+                    x={colIndex * cellSize}
+                    y={rowIndex * cellSize}
+                    width={cellSize}
+                    height={cellSize}
+                    fill="white"
+                    stroke="#e0e0e0"
+                    strokeWidth={1}
+                  />
+                  {walls}
+                </React.Fragment>
+              );
             });
 
             return cells;
