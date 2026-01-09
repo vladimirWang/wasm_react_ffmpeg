@@ -1,9 +1,18 @@
 @import "tailwindcss";
 
-* {
+@theme {
+  --color-primary: #2196F3;
+  --color-primary-hover: #4096ff;
+  --color-primary-active: #0958d9;
+}
+
+/* * {
   margin: 0;
-  padding: 0;
   box-sizing: border-box;
+}
+
+body, h1, h2, h3, h4, h5, h6, p, ul, ol, li {
+  padding: 0;
 }
 
 body {
@@ -21,4 +30,4 @@ body {
   align-items: center;
   justify-content: center;
 }
-
+ */

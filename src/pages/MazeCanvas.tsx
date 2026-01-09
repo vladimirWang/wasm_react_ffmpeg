@@ -8,6 +8,8 @@ import {
 } from "../mazeUtils/mazeGenerator";
 import { isConnected2 } from "../algo/unionFind2";
 import { start } from "repl";
+import FButton from "../components/FButton";
+import { generatePerfectMaze } from "../mazeUtils/perfect";
 
 // 计算cell的实际位置（考虑墙壁宽度）
 const getCellPosition = (
@@ -190,70 +192,25 @@ const MazeCanvas = () => {
           borderBottom: "1px solid #e0e0e0",
         }}
       >
-        <button
-          onClick={handleRefreshMaze}
-          style={{
-            padding: "8px 16px",
-            fontSize: "14px",
-            backgroundColor: "#2196F3",
-            color: "white",
-            border: "none",
-            borderRadius: "4px",
-            cursor: "pointer",
-            fontWeight: "500",
-            marginRight: "8px",
-          }}
-          onMouseOver={(e) => {
-            e.currentTarget.style.backgroundColor = "#1976D2";
-          }}
-          onMouseOut={(e) => {
-            e.currentTarget.style.backgroundColor = "#2196F3";
-          }}
-        >
+        <FButton onClick={handleRefreshMaze}>
           刷新迷宫
-        </button>
-        <button
+        </FButton>
+        <FButton
           onClick={handleRefreshMaze}
-          style={{
-            padding: "8px 16px",
-            fontSize: "14px",
-            backgroundColor: "#2196F3",
-            color: "white",
-            border: "none",
-            borderRadius: "4px",
-            cursor: "pointer",
-            fontWeight: "500",
-          }}
-          onMouseOver={(e) => {
-            e.currentTarget.style.backgroundColor = "#1976D2";
-          }}
-          onMouseOut={(e) => {
-            e.currentTarget.style.backgroundColor = "#2196F3";
-          }}
         >
           提交结果
-        </button>
-        <button
+        </FButton>
+        <FButton
           onClick={handleCalculateConnected}
-          style={{
-            padding: "8px 16px",
-            fontSize: "14px",
-            backgroundColor: "#2196F3",
-            color: "white",
-            border: "none",
-            borderRadius: "4px",
-            cursor: "pointer",
-            fontWeight: "500",
-          }}
-          onMouseOver={(e) => {
-            e.currentTarget.style.backgroundColor = "#1976D2";
-          }}
-          onMouseOut={(e) => {
-            e.currentTarget.style.backgroundColor = "#2196F3";
-          }}
         >
           计算连通性
-        </button>
+        </FButton>
+        <FButton onClick={() => {
+          const mazeData = generatePerfectMaze(4)
+          setMazeData(mazeData)
+          const result = isConnected2(mazeData, { x: 0, y: 0 }, { x: 3, y: 3 })
+          console.log("result: ", result)
+        }}>自动生成并计算连通性</FButton>
       </div>
       <Stage
         width={cavansSize}
