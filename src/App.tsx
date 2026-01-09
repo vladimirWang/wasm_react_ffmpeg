@@ -64,7 +64,7 @@ function App() {
       // 不删除脚本，因为可能被其他组件使用
     };
   }, []);
-
+  
   return (
     <div className="flex flex-col items-center">
       <div>
@@ -76,12 +76,6 @@ function App() {
           {wasmReady && <div className="status-ready">✓ WASM 模块已就绪</div>}
           {error && <div className="status-error">✗ {error}</div>}
         </div> */}
-      </div>
-      <div className="grid grid-cols-2 gap-4">
-        <div className="bg-primary text-white w-10 h-10">01</div>
-        <div className="bg-red-500 text-white w-10 h-10">02</div>
-        <div className="bg-green-500 text-white w-10 h-10">03</div>
-        <div className="bg-yellow-500 text-white w-10 h-10">04</div>
       </div>
       {/* <div className="components-container">
         
