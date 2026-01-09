@@ -8,9 +8,9 @@ import {
   type Pos,
 } from "../mazeUtils/mazeGenerator";
 import { isConnected2 } from "../algo/unionFind2";
-import { start } from "repl";
 import FButton from "../components/FButton";
 import { generatePerfectMaze } from "../mazeUtils/perfect";
+import { animatePath } from "../mazeUtils/pathAnimator";
 
 // 计算cell的实际位置（考虑墙壁宽度）
 const getCellPosition = (
@@ -120,14 +120,20 @@ const generateMockMaze = (size: number) => {
 
 const MazeCanvas = () => {
   const [mazeSize] = useState(defaultMazeSize);
-  const [mazeData, setMazeData] = useState<CellWalls[][]>(() => generateRandomMaze(defaultMazeSize));
-  // const [mazeData, setMazeData] = useState<CellWalls[][]>(() =>
-  //   generateMockMaze(mazeSize)
-  // );
+  // const [mazeData, setMazeData] = useState<CellWalls[][]>(() => generateRandomMaze(defaultMazeSize));
+  const [mazeData, setMazeData] = useState<CellWalls[][]>(() =>
+    generateMockMaze(mazeSize)
+  );
   const [solutionPath, setSolutionPath] = useState<Pos[]>([]);
+  const animationCleanupRef = useRef<(() => void) | null>(null);
 
   // 刷新迷宫
   const handleRefreshMaze = () => {
+    // 清理正在进行的动画
+    if (animationCleanupRef.current) {
+      animationCleanupRef.current();
+      animationCleanupRef.current = null;
+    }
     setMazeData(generateRandomMaze(defaultMazeSize));
     setSolutionPath([]);
   };
@@ -191,13 +197,21 @@ const MazeCanvas = () => {
           const value = /* set from `myEditor.getModel()`: */ `function hello() {
               alert('Hello world!');
           }`;
-          const editor = monaco.editor.create(editorRef.current, {
+          monaco.editor.create(editorRef.current, {
               // value: 'console.log("Hello, world!");',
               value,
               language: "javascript",
               automaticLayout: true,
           });
       }
+      
+      // 组件卸载时清理动画
+      return () => {
+          if (animationCleanupRef.current) {
+              animationCleanupRef.current();
+              animationCleanupRef.current = null;
+          }
+      };
   }, []);
 
   return (
@@ -224,6 +238,33 @@ const MazeCanvas = () => {
           const result = isConnected2(mazeData, { x: 0, y: 0 }, { x: 3, y: 3 })
           console.log("result: ", result)
         }}>自动生成并计算连通性</FButton>
+        <FButton onClick={() => {
+          // 清理之前的动画
+          if (animationCleanupRef.current) {
+            animationCleanupRef.current();
+            animationCleanupRef.current = null;
+          }
+          
+          // 重置路径
+          setSolutionPath([]);
+          
+          const paths: Pos[] = [
+            { x: 0, y: 0 },
+            { x: 1, y: 0 },
+            { x: 2, y: 0 },
+            { x: 3, y: 0 },
+            { x: 3, y: 1 },
+            { x: 3, y: 2 },
+            { x: 3, y: 3 }
+          ];
+          
+          // 开始动画绘制路径
+          const cleanup = animatePath(paths, (currentPath) => {
+            setSolutionPath(currentPath);
+          }, 500);
+          
+          animationCleanupRef.current = cleanup;
+        }}>画出路径</FButton>
       </div>
       <div className="flex flex-row gap-2">
         <Stage
