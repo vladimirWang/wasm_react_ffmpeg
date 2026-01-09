@@ -67,7 +67,7 @@ function App() {
 
   return (
     <div className="flex flex-col items-center">
-      <div className="container">
+      <div>
         <h1 className="text-2xl font-bold text-center w-full">maze challenge</h1>
         {/* <div className="status">
           {!wasmReady && !error && (

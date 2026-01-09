@@ -1,4 +1,5 @@
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect, useRef } from "react";
+import * as monaco from 'monaco-editor';
 import type { ReactElement } from "react";
 import { Stage, Layer, Rect, Line } from "react-konva";
 import {
@@ -183,14 +184,26 @@ const MazeCanvas = () => {
     console.log("result: ", result);
   };
 
+  const editorRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+      if (editorRef.current) {
+          const value = /* set from `myEditor.getModel()`: */ `function hello() {
+              alert('Hello world!');
+          }`;
+          const editor = monaco.editor.create(editorRef.current, {
+              // value: 'console.log("Hello, world!");',
+              value,
+              language: "javascript",
+              automaticLayout: true,
+          });
+      }
+  }, []);
+
   return (
     <div>
       <div
-        style={{
-          padding: "10px",
-          backgroundColor: "#fff",
-          borderBottom: "1px solid #e0e0e0",
-        }}
+        className="flex flex-row gap-2 mb-4"
       >
         <FButton onClick={handleRefreshMaze}>
           刷新迷宫
@@ -212,18 +225,22 @@ const MazeCanvas = () => {
           console.log("result: ", result)
         }}>自动生成并计算连通性</FButton>
       </div>
-      <Stage
-        width={cavansSize}
-        height={cavansSize}
-        style={{ backgroundColor: "#ff9900" }}
-      >
-        <Layer>
-          {/* 先渲染所有cells */}
-          {allCells}
-          {/* 然后渲染所有walls */}
-          {allWalls}
-        </Layer>
-      </Stage>
+      <div className="flex flex-row gap-2">
+        <Stage
+          width={cavansSize}
+          height={cavansSize}
+          style={{ backgroundColor: "#ff9900" }}
+        >
+          <Layer>
+            {/* 先渲染所有cells */}
+            {allCells}
+            {/* 然后渲染所有walls */}
+            {allWalls}
+          </Layer>
+        </Stage>
+
+        <div ref={editorRef} style={{ width: 500, height: 600, backgroundColor: 'red' }}></div>
+      </div>
     </div>
   );
 };
