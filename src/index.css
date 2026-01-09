@@ -39,8 +39,8 @@
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     /* 继承 Tailwind 主题色（避免硬编码） */
-    color: theme('colors.gray.800');
-    background-color: theme('colors.gray.50');
+    color: var(--color-gray-800);
+    background-color: var(--color-gray-50);
     /* 移动端点击高亮去除 */
     -webkit-tap-highlight-color: transparent;
   }
@@ -91,7 +91,7 @@
 
   /* 7. 无障碍适配：键盘聚焦样式（避免 Tailwind 移除后不可访问） */
   :focus-visible {
-    outline: 2px solid theme('colors.blue.500');
+    outline: 2px solid var(--color-blue-500);
     outline-offset: 2px;
   }
 }
@@ -100,7 +100,26 @@
 @layer components {
   /* 通用容器：适配不同屏幕的居中+内边距 */
   .container {
-    @apply mx-auto px-4 sm:px-6 lg:px-8 max-w-7xl;
+    margin-left: auto;
+    margin-right: auto;
+    padding-left: 1rem; /* px-4 = 1rem = 16px */
+    padding-right: 1rem;
+    max-width: 80rem; /* max-w-7xl = 80rem = 1280px */
+  }
+  
+  /* 响应式内边距 */
+  @media (min-width: 640px) {
+    .container {
+      padding-left: 1.5rem; /* sm:px-6 = 1.5rem = 24px */
+      padding-right: 1.5rem;
+    }
+  }
+  
+  @media (min-width: 1024px) {
+    .container {
+      padding-left: 2rem; /* lg:px-8 = 2rem = 32px */
+      padding-right: 2rem;
+    }
   }
 }
 
@@ -108,6 +127,20 @@
   --color-primary: #2196F3;
   --color-primary-hover: #4096ff;
   --color-primary-active: #0958d9;
+  
+  /* 定义 gray 颜色系列 */
+  --color-gray-50: #f9fafb;
+  --color-gray-100: #f3f4f6;
+  --color-gray-200: #e5e7eb;
+  --color-gray-300: #d1d5db;
+  --color-gray-400: #9ca3af;
+  --color-gray-500: #6b7280;
+  --color-gray-600: #4b5563;
+  --color-gray-700: #374151;
+  --color-gray-800: #1f2937;
+  --color-gray-900: #111827;
+  
+  --color-blue-500: #3b82f6;
 }
 
 /* * {
