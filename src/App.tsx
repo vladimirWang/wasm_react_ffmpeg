@@ -66,16 +66,16 @@ function App() {
   }, []);
 
   return (
-    <div className="app-container">
-      <div className="header">
-        <h1>WASM React 示例</h1>
-        <div className="status">
+    <div className="flex flex-col items-center">
+      <div className="container">
+        <h1 className="text-2xl font-bold text-center w-full">maze challenge</h1>
+        {/* <div className="status">
           {!wasmReady && !error && (
             <div className="status-loading">正在加载 WASM 模块...</div>
           )}
           {wasmReady && <div className="status-ready">✓ WASM 模块已就绪</div>}
           {error && <div className="status-error">✗ {error}</div>}
-        </div>
+        </div> */}
       </div>
       {/* <div className="components-container">
         

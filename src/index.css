@@ -1,4 +1,108 @@
-@import "tailwindcss";
+@import "tailwindcss/preflight";
+@tailwind utilities;
+
+@layer base {
+  /* 1. 全局盒模型重置：消除浏览器默认的盒模型差异 */
+  *,
+  *::before,
+  *::after {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+    /* 可选：禁用文本选中（根据项目需求） */
+    /* user-select: none; */
+  }
+
+  /* 2. HTML 基础配置：适配视口和滚动 */
+  html {
+    /* 防止移动端横向滚动 */
+    overflow-x: hidden;
+    /* 平滑滚动（锚点跳转更友好） */
+    scroll-behavior: smooth;
+    /* 1rem = 10px 简化尺寸计算（可选，设计稿常用） */
+    font-size: 62.5%;
+    /* 适配暗黑模式（可选） */
+    color-scheme: light dark;
+  }
+
+  /* 3. Body 全局样式：页面基础布局和字体 */
+  body {
+    /* 基础字体大小（基于上面的 62.5%，1.6rem = 16px） */
+    font-size: 1.6rem;
+    /* 全局字体族（适配不同系统，可替换为项目字体） */
+    font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    /* 基础行高：提升文本可读性 */
+    line-height: 1.5;
+    /* 页面最小高度占满视口 */
+    min-height: 100vh;
+    /* 高清屏文字抗锯齿（移动端/桌面端优化） */
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    /* 继承 Tailwind 主题色（避免硬编码） */
+    color: theme('colors.gray.800');
+    background-color: theme('colors.gray.50');
+    /* 移动端点击高亮去除 */
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  /* 4. 重置交互元素默认样式 */
+  a {
+    /* 移除默认下划线（按需调整，可通过 Tailwind 类恢复） */
+    text-decoration: none;
+    /* 继承文本颜色 */
+    color: inherit;
+  }
+
+  button {
+    /* 移除默认边框/背景 */
+    border: none;
+    background: none;
+    /* 继承字体样式，避免按钮字体不一致 */
+    font-family: inherit;
+    font-size: inherit;
+    /* 光标样式 */
+    cursor: pointer;
+  }
+
+  /* 5. 列表/表单元素重置 */
+  ul, ol {
+    /* 移除默认列表标记 */
+    list-style: none;
+  }
+
+  input, textarea, select {
+    /* 移除表单元素默认边框/轮廓 */
+    outline: none;
+    border: none;
+    /* 继承字体，避免表单字体异常 */
+    font-family: inherit;
+    font-size: inherit;
+  }
+
+  /* 6. 图片自适应：防止溢出+移除底部间隙 */
+  img {
+    max-width: 100%;
+    height: auto;
+    /* 防止图片拉伸变形 */
+    object-fit: cover;
+    /* 移除 inline-block 导致的底部间隙 */
+    display: block;
+  }
+
+  /* 7. 无障碍适配：键盘聚焦样式（避免 Tailwind 移除后不可访问） */
+  :focus-visible {
+    outline: 2px solid theme('colors.blue.500');
+    outline-offset: 2px;
+  }
+}
+
+/* 可选：自定义通用组件样式（比如全局容器） */
+@layer components {
+  /* 通用容器：适配不同屏幕的居中+内边距 */
+  .container {
+    @apply mx-auto px-4 sm:px-6 lg:px-8 max-w-7xl;
+  }
+}
 
 @theme {
   --color-primary: #2196F3;
