@@ -280,7 +280,7 @@ const MazeCanvas = () => {
           </Layer>
         </Stage>
 
-        <div ref={editorRef} style={{ width: 500, height: 600, backgroundColor: 'red' }}></div>
+        <div ref={editorRef} style={{ width: 500, height: 600 }}></div>
       </div>
     </div>
   );

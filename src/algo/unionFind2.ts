@@ -137,11 +137,9 @@ export function isConnected2(
   for (let row = 0; row < rows; row++) {
     for (let col = 0; col < cols; col++) {
       const currentIndex = getIndex(row, col, cols);
-      const currentCell = maze[row][col];
 
       // 检查右侧邻居
       if (col < cols - 1) {
-        const rightCell = maze[row][col + 1];
         // 如果当前单元格的右边没有墙，且右侧单元格的左边也没有墙，则连通
         const rightIndex = getIndex(row, col + 1, cols);
         uf.union(currentIndex, rightIndex);
@@ -149,7 +147,6 @@ export function isConnected2(
 
       // 检查下方邻居
       if (row < rows - 1) {
-        const bottomCell = maze[row + 1][col];
         // 如果当前单元格的下边没有墙，且下方单元格的上边也没有墙，则连通
         const bottomIndex = getIndex(row + 1, col, cols);
         uf.union(currentIndex, bottomIndex);

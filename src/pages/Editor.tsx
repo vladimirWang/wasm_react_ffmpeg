@@ -1,6 +1,6 @@
 import React, { useEffect, useRef } from 'react'
 import * as monaco from 'monaco-editor';
-console.log("MonacoEditor", monaco.editor);
+
 export default function Editor() {
     const editorRef = useRef<HTMLDivElement>(null);
 
@@ -19,7 +19,7 @@ export default function Editor() {
     }, []);
   return (
     <div>Editor
-        <div ref={editorRef} style={{ width: 500, height: 600, backgroundColor: 'red' }}></div>
+        <div ref={editorRef} style={{ width: 500, height: 600 }}></div>
     </div>
   )
 }
