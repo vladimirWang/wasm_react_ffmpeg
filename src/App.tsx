@@ -77,6 +77,12 @@ function App() {
           {error && <div className="status-error">✗ {error}</div>}
         </div> */}
       </div>
+      <div className="grid grid-cols-2 gap-4">
+        <div className="bg-primary text-white w-10 h-10">01</div>
+        <div className="bg-red-500 text-white w-10 h-10">02</div>
+        <div className="bg-green-500 text-white w-10 h-10">03</div>
+        <div className="bg-yellow-500 text-white w-10 h-10">04</div>
+      </div>
       {/* <div className="components-container">
         
         <FileSizeCalculator wasmReady={wasmReady} Module={window.Module} />
