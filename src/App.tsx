@@ -4,6 +4,7 @@ import MazeCanvas from './pages/MazeCanvas'
 import FileSizeCalculator from './components/FileSizeCalculator'
 import VideoStreamDetector from './components/VideoStreamDetector'
 import type { EmscriptenModule } from './types/wasm'
+import Editor from './pages/Editor'
 import { BrowserRouter, Routes, Route, Link, Navigate } from 'react-router-dom';
 import Home from './Home'
 import './App.css'
@@ -86,6 +87,7 @@ function App() {
               <Route path="/" element={<Home />}/>
               <Route path='/sumArray' element={<SumArray wasmReady={wasmReady} Module={window.Module} />}/>
               <Route path='/mazeCanvas' element={<MazeCanvas />}/>
+              <Route path='/editor' element={<Editor />}/>
               <Route path="*" element={<Navigate to="/" replace={true} />} />
             </Routes>
           </BrowserRouter>

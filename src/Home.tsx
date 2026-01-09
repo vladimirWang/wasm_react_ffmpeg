@@ -6,6 +6,7 @@ export default function Home() {
     <div>Home
         <Link to="/sumArray">sumarray</Link> | 
         <Link to="/mazeCanvas">mazeCanvas</Link> |
+        <Link to="/editor">editor</Link> |
     </div>
   )
 }
