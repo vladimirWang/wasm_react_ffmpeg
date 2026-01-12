@@ -21,12 +21,22 @@ const getCellPosition = (
   return index * (cellSize + wallWidth);
 };
 
+export interface ILayout {
+  col: number;
+  row: number;
+}
+
+export interface ISize {
+  width: number;
+  height: number;
+}
+
 // 渲染所有墙壁（与cell分开渲染）
 const RenderAllWalls = (
   mazeData: CellWalls[][],
   cellSize: number,
   wallWidth: number,
-  mazeSize: number
+  mazeSize: ILayout
 ): ReactElement[] => {
   const walls: ReactElement[] = [];
   const wallColor = "black";
@@ -49,7 +59,7 @@ const RenderAllWalls = (
       // }
 
       // 右墙 (right) - 渲染右边框（最后一列不渲染，因为它是边界）
-      if (cell.right === 1 && colIndex < mazeSize - 1) {
+      if (cell.right === 1 && colIndex < mazeSize.col - 1) {
         const rightWallX = cellX + cellSize;
         walls.push(
           <Line
@@ -62,7 +72,7 @@ const RenderAllWalls = (
       }
 
       // 下墙 (bottom) - 渲染下边框（最后一行不渲染，因为它是边界）
-      if (cell.bottom === 1 && rowIndex < mazeSize - 1) {
+      if (cell.bottom === 1 && rowIndex < mazeSize.row - 1) {
         const bottomWallY = cellY + cellSize;
         walls.push(
           <Line
@@ -92,12 +102,12 @@ const RenderAllWalls = (
 };
 const cellSize = 50;
 const wallWidth = 1;
-const defaultMazeSize = 4; // 默认迷宫大小
+const defaultMazeSize: ILayout = { col: 8, row: 10 }; // 默认迷宫大小
 
 // 构建一个mock数据
-const generateMockMaze = (size: number) => {
-  const result: CellWalls[][] = Array.from({ length: size }, () => {
-    return Array.from({ length: size }, () => ({
+const generateMockMaze = (size: ILayout) => {
+  const result: CellWalls[][] = Array.from({ length: size.row }, () => {
+    return Array.from({ length: size.col }, () => ({
       top: 1,
       right: 1,
       bottom: 1,
@@ -105,25 +115,25 @@ const generateMockMaze = (size: number) => {
     }));
   });
 
-  // 测试用: 构建一个第0行，第size-1列连通的迷宫
-  for (let i = 0; i < size - 1; i++) {
-    result[0][i] = { top: 1, bottom: 1, right: 0, left: 0 };
-  }
-  result[0][size - 1].bottom = 0;
-  result[0][size - 1].left = 0;
-  for (let i = 1; i < size; i++) {
-    result[i][size - 1] = { top: 0, bottom: 0, right: 1, left: 1 };
-  }
+  // // 测试用: 构建一个第0行，第size-1列连通的迷宫
+  // for (let i = 0; i < size.col - 1; i++) {
+  //   result[0][i] = { top: 1, bottom: 1, right: 0, left: 0 };
+  // }
+  // result[0][size.row - 1].bottom = 0;
+  // result[0][size.row - 1].left = 0;
+  // for (let i = 1; i < size.row; i++) {
+  //   result[i][size - 1] = { top: 0, bottom: 0, right: 1, left: 1 };
+  // }
   // console.log("test maze data: ", result);
   return result;
 };
 
 const MazeCanvas = () => {
-  const [mazeSize] = useState(defaultMazeSize);
-  // const [mazeData, setMazeData] = useState<CellWalls[][]>(() => generateRandomMaze(defaultMazeSize));
-  const [mazeData, setMazeData] = useState<CellWalls[][]>(() =>
-    generateMockMaze(mazeSize)
-  );
+  const [mazeSize, setMazeSize] = useState<ILayout>(defaultMazeSize);
+  const [mazeData, setMazeData] = useState<CellWalls[][]>(() => generateRandomMaze(defaultMazeSize));
+  // const [mazeData, setMazeData] = useState<CellWalls[][]>(() =>
+  //   generateMockMaze(mazeSize)
+  // );
   const [solutionPath, setSolutionPath] = useState<Pos[]>([]);
   const animationCleanupRef = useRef<(() => void) | null>(null);
 
@@ -139,8 +149,10 @@ const MazeCanvas = () => {
   };
 
   // 计算canvas大小：n个cell + (n-1)个墙壁
-  const cavansSize = useMemo(() => {
-    return mazeSize * cellSize + (mazeSize - 1) * wallWidth;
+  const cavansSize = useMemo<ISize>(() => {
+    const width = mazeSize.col * cellSize + (mazeSize.col - 1) * wallWidth;
+    const height = mazeSize.row * cellSize + (mazeSize.row - 1) * wallWidth;
+    return { width, height };
   }, [mazeSize]);
 
   // 渲染所有cells
@@ -185,7 +197,7 @@ const MazeCanvas = () => {
   //   计算连通性
   const handleCalculateConnected = () => {
     const start: Pos = { x: 0, y: 0 };
-    const end: Pos = { x: mazeSize - 1, y: mazeSize - 1 };
+    const end: Pos = { x: mazeSize.col - 1, y: mazeSize.row - 1 };
     const result = isConnected2(mazeData, start, end);
     console.log("result: ", result);
   };
@@ -268,8 +280,8 @@ const MazeCanvas = () => {
       </div>
       <div className="flex flex-row gap-2">
         <Stage
-          width={cavansSize}
-          height={cavansSize}
+          width={cavansSize.width}
+          height={cavansSize.height}
           style={{ backgroundColor: "#ff9900" }}
         >
           <Layer>
