@@ -1,8 +1,8 @@
 import useSWR from "swr";
-import axios from "axios";
+import axios, { type AxiosInstance, type AxiosResponse } from "axios";
 
 // 1. 先封装全局 axios 实例（带拦截器、超时等配置）
-const request = axios.create({
+const request: AxiosInstance = axios.create({
   baseURL: import.meta.env.VITE_API_BASE_URL,
   timeout: 10000,
   headers: { "Content-Type": "application/json" },
@@ -15,8 +15,9 @@ request.interceptors.request.use((config) => {
   return config;
 });
 
-request.interceptors.response.use((response) => {
-  return response.data;
+// 响应拦截器：返回 response.data，但保持类型安全
+request.interceptors.response.use(<T = any>(response: AxiosResponse<T>) => {
+  return response.data as T;
 });
 
 export default request;
