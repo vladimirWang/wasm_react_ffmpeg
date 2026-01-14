@@ -12,14 +12,18 @@
     "dev:watch": "concurrently \"npm run watch:wasm\" \"npm run dev\""
   },
   "dependencies": {
+    "@ant-design/icons": "^6.1.0",
     "@react-spring/konva": "^10.0.3",
     "@tailwindcss/vite": "^4.1.18",
+    "antd": "^6.2.0",
+    "axios": "^1.13.2",
     "konva": "^10.0.12",
     "monaco-editor": "^0.55.1",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
     "react-konva": "^19.2.1",
     "react-router-dom": "^7.12.0",
+    "swr": "^2.3.8",
     "tailwindcss": "^4.1.18"
   },
   "devDependencies": {
