@@ -1,13 +1,15 @@
-import { useState, useEffect } from 'react'
-import SumArray from './components/SumArray'
-import MazeCanvas from './pages/MazeCanvas'
-import FileSizeCalculator from './components/FileSizeCalculator'
-import VideoStreamDetector from './components/VideoStreamDetector'
-import type { EmscriptenModule } from './types/wasm'
-import Editor from './pages/Editor'
-import { BrowserRouter, Routes, Route, Link, Navigate } from 'react-router-dom';
-import Home from './Home'
-import './App.css'
+import { useState, useEffect } from "react";
+import SumArray from "./components/SumArray";
+import MazeCanvas from "./pages/MazeCanvas";
+import FileSizeCalculator from "./components/FileSizeCalculator";
+import VideoStreamDetector from "./components/VideoStreamDetector";
+import type { EmscriptenModule } from "./types/wasm";
+import Editor from "./pages/Editor";
+// import { BrowserRouter, Routes, Route, Link, Navigate } from 'react-router-dom';
+import { router } from "./routes";
+import Home from "./pages/Home";
+import "./App.css";
+import { RouterProvider } from "react-router-dom";
 
 function App() {
   const [wasmReady, setWasmReady] = useState(false);
@@ -64,11 +66,10 @@ function App() {
       // 不删除脚本，因为可能被其他组件使用
     };
   }, []);
-  
+
   return (
     <div className="flex flex-col items-center">
       <div>
-        <h1 className="text-2xl font-bold text-center w-full">maze challenge</h1>
         {/* <div className="status">
           {!wasmReady && !error && (
             <div className="status-loading">正在加载 WASM 模块...</div>
@@ -82,15 +83,19 @@ function App() {
         <FileSizeCalculator wasmReady={wasmReady} Module={window.Module} />
         <VideoStreamDetector wasmReady={wasmReady} Module={window.Module} />
       </div> */}
-          <BrowserRouter>
-            <Routes>
-              <Route path="/" element={<Home />}/>
-              <Route path='/sumArray' element={<SumArray wasmReady={wasmReady} Module={window.Module} />}/>
-              <Route path='/mazeCanvas' element={<MazeCanvas />}/>
-              <Route path='/editor' element={<Editor />}/>
-              <Route path="*" element={<Navigate to="/" replace={true} />} />
-            </Routes>
-          </BrowserRouter>
+      {/* <BrowserRouter>
+        <Routes>
+          <Route path="/" element={<Home />} />
+          <Route
+            path="/sumArray"
+            element={<SumArray wasmReady={wasmReady} Module={window.Module} />}
+          />
+          <Route path="/mazeCanvas" element={<MazeCanvas />} />
+          <Route path="/editor" element={<Editor />} />
+          <Route path="*" element={<Navigate to="/" replace={true} />} />
+        </Routes>
+      </BrowserRouter> */}
+      <RouterProvider router={router} />
     </div>
   );
 }
