@@ -6,6 +6,7 @@ import Login from "../pages/Login";
 import Register from "../pages/Register";
 import Products from "../pages/Products";
 import ProductDetail from "../pages/ProductDetail";
+import Landing from "../pages/Landing";
 
 function Root() {
   return (
@@ -31,12 +32,18 @@ export const router = createBrowserRouter([
     ],
   },
   {
-    path: "login",
-    Component: Login,
-  },
-  {
-    path: "register",
-    Component: Register,
+    path: "/landing",
+    Component: Landing,
+    children: [
+      {
+        path: "login",
+        Component: Login,
+      },
+      {
+        path: "register",
+        Component: Register,
+      },
+    ],
   },
   {
     path: "*",

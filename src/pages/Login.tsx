@@ -1,8 +1,8 @@
 import React from "react";
 import { LockOutlined, UserOutlined, MailOutlined } from "@ant-design/icons";
 import { Button, Checkbox, Flex, Form, Input } from "antd";
-import { userLogin } from "../api/user";
-import { Link } from "react-router-dom";
+import { userLogin, type LoginParams, type LoginResponse } from "../api/user";
+import { Link, useNavigate } from "react-router-dom";
 
 const loginFormInitialValues = {
   email: "123456@qq.com",
@@ -12,12 +12,19 @@ const loginFormInitialValues = {
 
 const Login: React.FC = () => {
   const [form] = Form.useForm();
-  const { validateFields } = form;
-  const onFinish = async (values: any) => {
-    console.log("Received values of form: ", values);
+  const navigate = useNavigate();
+  const onFinish = async (values: LoginParams) => {
     try {
-      const res = await userLogin(values);
+      const res: LoginResponse = await userLogin(values);
       console.log("res: ", res);
+      // 现在 res 有正确的类型提示
+      if (res.code === 200) {
+        console.log("res: ", res.data);
+        localStorage.setItem("access_token", res.data);
+        navigate("/");
+      } else {
+        alert(res.message);
+      }
     } catch (error: unknown) {
       if (error instanceof Error) {
         console.error(error.message);
@@ -63,7 +70,7 @@ const Login: React.FC = () => {
         <Button block type="primary" htmlType="submit">
           Log in
         </Button>
-        or <Link to="/register">Register now!</Link>
+        or <Link to="/landing/register">Register now!</Link>
       </Form.Item>
     </Form>
   );

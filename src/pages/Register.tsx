@@ -13,48 +13,12 @@ import {
   Select,
   Space,
 } from "antd";
-import { userRegister } from "../api/user";
-
-interface FormCascaderOption {
-  value: string;
-  label: string;
-  children?: FormCascaderOption[];
-}
-
-const residences: CascaderProps<FormCascaderOption>["options"] = [
-  {
-    value: "zhejiang",
-    label: "Zhejiang",
-    children: [
-      {
-        value: "hangzhou",
-        label: "Hangzhou",
-        children: [
-          {
-            value: "xihu",
-            label: "West Lake",
-          },
-        ],
-      },
-    ],
-  },
-  {
-    value: "jiangsu",
-    label: "Jiangsu",
-    children: [
-      {
-        value: "nanjing",
-        label: "Nanjing",
-        children: [
-          {
-            value: "zhonghuamen",
-            label: "Zhong Hua Men",
-          },
-        ],
-      },
-    ],
-  },
-];
+import {
+  userRegister,
+  type RegisterParams,
+  type RegisterResponse,
+} from "../api/user";
+import { Link, useNavigate } from "react-router-dom";
 
 const formItemLayout: FormProps = {
   labelCol: {
@@ -80,14 +44,30 @@ const tailFormItemLayout: FormItemProps = {
   },
 };
 
+const registerFormInitialValues = {
+  email: "",
+  password: "123456",
+  confirm: "123456",
+  agreement: true,
+};
+
 const Register: React.FC = () => {
   const [form] = Form.useForm();
-
-  const onFinish = async (values: any) => {
+  const navigate = useNavigate();
+  const onFinish = async (values: RegisterParams) => {
     console.log("Received values of form: ", values);
     try {
-      const res = await userRegister(values);
+      const { email, password } = values;
+      const res: RegisterResponse = await userRegister({ email, password });
       console.log("res: ", res);
+      if (res.code === 200) {
+        navigate("/login");
+      } else {
+      }
+      // 现在 res 有正确的类型提示
+      if (res.message) {
+        console.log("注册成功:", res.message);
+      }
     } catch (error: unknown) {
       if (error instanceof Error) {
         console.error(error.message);
@@ -98,15 +78,14 @@ const Register: React.FC = () => {
   };
 
   return (
-    <div className="flex justify-center items-center h-screen w-full">
+    <div>
       <Form
         {...formItemLayout}
         form={form}
         name="register"
         onFinish={onFinish}
         initialValues={{
-          residence: ["zhejiang", "hangzhou", "xihu"],
-          prefix: "86",
+          ...registerFormInitialValues,
         }}
         style={{ width: 500 }}
         scrollToFirstError
@@ -188,6 +167,7 @@ const Register: React.FC = () => {
           <Button type="primary" htmlType="submit">
             注册
           </Button>
+          or <Link to="/landing/login">Login now!</Link>
         </Form.Item>
       </Form>
     </div>
