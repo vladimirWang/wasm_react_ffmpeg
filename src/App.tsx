@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { Button } from "antd";
 import SumArray from "./components/SumArray";
 import MazeCanvas from "./pages/MazeCanvas";
 import FileSizeCalculator from "./components/FileSizeCalculator";
@@ -68,7 +69,7 @@ function App() {
   }, []);
 
   return (
-    <div className="flex flex-col items-center">
+    <div>
       <div>
         {/* <div className="status">
           {!wasmReady && !error && (
