@@ -5,6 +5,7 @@ import NotFound from "../pages/NotFound";
 import Login from "../pages/Login";
 import Register from "../pages/Register";
 import Products from "../pages/Products";
+import Vendors from "../pages/Vendors";
 import ProductDetail from "../pages/ProductDetail";
 import Landing from "../pages/Landing";
 import { LayoutComponent } from "../layout";
@@ -20,7 +21,7 @@ export const router = createBrowserRouter([
       },
       { path: "product", Component: Products },
       { path: "product/:id", Component: ProductDetail },
-      { path: "about", Component: About },
+      { path: "vendor", Component: Vendors },
     ],
   },
   {
@@ -36,6 +37,10 @@ export const router = createBrowserRouter([
         Component: Register,
       },
     ],
+  },
+  {
+    path: "/about",
+    Component: About
   },
   {
     path: "*",
