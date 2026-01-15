@@ -44,7 +44,9 @@ function sleep(ms: number) {
 }
 
 // 获取供应商列表
-export const getVendors = async (data: IVendorQueryParams): Promise<IVendorsQueryResponse> => {
+export const getVendors = async (
+  data: IVendorQueryParams
+): Promise<IVendorsQueryResponse> => {
   return request.get<IVendorsQueryResponse>("/api/vendor", { params: data });
 };
 
@@ -52,5 +54,17 @@ export const getVendors = async (data: IVendorQueryParams): Promise<IVendorsQuer
 export const getVendorDetailById = (
   id: number
 ): Promise<VendorDetailResponse> => {
-  return request.get<VendorDetailResponse>("/api/vendor/"+ id);
+  return request.get<VendorDetailResponse>("/api/vendor/" + id);
+};
+
+// 供应商更新参数类型
+export type IVendorUpdateParams = Partial<
+  Omit<IVendor, "id" | "createdAt" | "updatedAt" | "isDel">
+>;
+// 更新供应商详情
+export const updateVendorDetailById = (
+  id: number,
+  data: IVendorUpdateParams
+): Promise<VendorDetailResponse> => {
+  return request.put<VendorDetailResponse>("/api/vendor/" + id, data);
 };

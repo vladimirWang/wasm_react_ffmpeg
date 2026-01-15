@@ -48,12 +48,27 @@ function sleep(ms: number) {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 // 获取产品列表
-export const getProducts = async (data: IProductQueryParams): Promise<IProductsQueryResponse> => {
+export const getProducts = async (
+  data: IProductQueryParams
+): Promise<IProductsQueryResponse> => {
   return request.get<IProductsQueryResponse>("/api/product", { params: data });
 };
 
-export const userRegister = (
-  data: RegisterParams
-): Promise<RegisterResponse> => {
-  return request.post<RegisterResponse>("/api/user/register", data);
+// 根据ID获取产品详情
+export const getProductDetailById = (
+  id: number
+): Promise<IResponse<IProduct>> => {
+  return request.get<IResponse<IProduct>>("/api/product/" + id);
+};
+
+export type IProductUpdateParams = Partial<
+  Omit<IVendor, "id" | "createdAt" | "updatedAt" | "isDel">
+>;
+
+// 更新产品详情
+export const updateVendorDetailById = (
+  id: number,
+  data: IProductUpdateParams
+): Promise<IResponse<IProduct>> => {
+  return request.get<IResponse<IProduct>>("/api/product/" + id, data);
 };
