@@ -7,25 +7,18 @@ import Register from "../pages/Register";
 import Products from "../pages/Products";
 import ProductDetail from "../pages/ProductDetail";
 import Landing from "../pages/Landing";
-
-function Root() {
-  return (
-    <div>
-      <Outlet />
-    </div>
-  );
-}
+import { LayoutComponent } from "../layout";
 
 export const router = createBrowserRouter([
   {
     path: "/",
-    Component: Root,
+    Component: LayoutComponent,
     children: [
       {
         index: true,
         Component: Home,
       },
-      { path: "products", Component: Products },
+      { path: "product", Component: Products },
       { path: "product/:id", Component: ProductDetail },
       { path: "about", Component: About },
     ],
