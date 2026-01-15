@@ -12,6 +12,7 @@
     "dev:watch": "concurrently \"npm run watch:wasm\" \"npm run dev\""
   },
   "dependencies": {
+    "@ant-design/charts": "^2.6.7",
     "@ant-design/icons": "^6.1.0",
     "@react-spring/konva": "^10.0.3",
     "@tailwindcss/vite": "^4.1.18",

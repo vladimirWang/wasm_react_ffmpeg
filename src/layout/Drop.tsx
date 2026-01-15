@@ -48,7 +48,10 @@ export default function Drop() {
         e.preventDefault()
       }}>
         <Space>
-          <Avatar size="small" icon={<UserOutlined />} />
+          <section>
+            <Avatar icon={<UserOutlined />} />
+            <span className="mx-2">Fernando</span>
+          </section>
           <DownOutlined className={rotate ? "rotate-180" : ""} />
         </Space>
       </a>
