@@ -8,6 +8,7 @@ import Register from "../pages/Register";
 import Products from "../pages/Products";
 import Vendors from "../pages/Vendors";
 import ProductDetail from "../pages/ProductDetail";
+import VendorDetail from "../pages/VendorDetail";
 import Landing from "../pages/Landing";
 import { LayoutComponent } from "../layout";
 import {
@@ -40,7 +41,7 @@ export const routeConfig: ExtendedRouteObject[] = [
         index: true,
         Component: Home,
         meta: {
-          title: "首页",
+          title: "仪表盘",
           icon: <PieChartOutlined />,
           order: 1,
         },
@@ -68,6 +69,13 @@ export const routeConfig: ExtendedRouteObject[] = [
           title: "供应商",
           icon: <TeamOutlined />,
           order: 3,
+        },
+      },
+      {
+        path: "vendor/:id",
+        Component: VendorDetail,
+        meta: {
+          hidden: true, // 详情页不在菜单中显示
         },
       },
     ],
@@ -99,6 +107,7 @@ export const routeConfig: ExtendedRouteObject[] = [
       title: "关于",
       icon: <FileOutlined />,
       order: 4,
+      hidden: true,
     },
   },
   {

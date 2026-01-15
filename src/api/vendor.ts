@@ -15,17 +15,16 @@ export interface IVendor {
 // 定义登录响应类型
 export type IVendorsQueryResponse = IResponse<IPagination<IProduct>>;
 
-// 定义注册响应类型
-export interface RegisterResponse {
-  message?: string;
-  user?: {
-    id: string;
-    email: string;
-    username?: string;
-    createdAt: string;
-  };
-  code: number;
+export interface IVendor {
+  readonly id: number;
+  name: string;
+  isDel: number;
+  remark?: string;
+  createdAt: Date;
+  updatedAt: Date;
 }
+// 定义注册响应类型
+export type VendorDetailResponse = IResponse<IVendor>;
 
 // 定义登录请求参数类型
 export interface IVendorQueryParams {
@@ -49,8 +48,9 @@ export const getVendors = async (data: IVendorQueryParams): Promise<IVendorsQuer
   return request.get<IVendorsQueryResponse>("/api/vendor", { params: data });
 };
 
-// export const userRegister = (
-//   data: RegisterParams
-// ): Promise<RegisterResponse> => {
-//   return request.post<RegisterResponse>("/api/user/register", data);
-// };
+// 根据ID获取供应商详情
+export const getVendorDetailById = (
+  id: number
+): Promise<VendorDetailResponse> => {
+  return request.get<VendorDetailResponse>("/api/vendor/"+ id);
+};
