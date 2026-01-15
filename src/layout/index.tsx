@@ -11,6 +11,7 @@ import type { MenuProps } from "antd";
 import { Breadcrumb, Layout, Menu, theme } from "antd";
 import { Outlet } from "react-router-dom";
 import Drop from "./Drop";
+import SideBar from "./Sidebar";
 
 const { Header, Content, Footer, Sider } = Layout;
 
@@ -46,26 +47,13 @@ const items: MenuItem[] = [
 ];
 
 const LayoutComponent: React.FC = () => {
-  const [collapsed, setCollapsed] = useState(false);
   const {
     token: { colorBgContainer, borderRadiusLG },
   } = theme.useToken();
 
   return (
     <Layout style={{ minHeight: "100vh" }}>
-      <Sider
-        collapsible
-        collapsed={collapsed}
-        onCollapse={(value) => setCollapsed(value)}
-      >
-        <div className="demo-logo-vertical" />
-        <Menu
-          theme="dark"
-          defaultSelectedKeys={["1"]}
-          mode="inline"
-          items={items}
-        />
-      </Sider>
+      <SideBar />
       <Layout>
         <Header style={{ background: colorBgContainer }} className="flex justify-end gap-3" >
           <CalendarTwoTone twoToneColor="#ec6765" className="text-2xl" onClick={() => {}}/>
