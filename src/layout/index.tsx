@@ -5,6 +5,7 @@ import {
   PieChartOutlined,
   TeamOutlined,
   UserOutlined,
+  CalendarTwoTone
 } from "@ant-design/icons";
 import type { MenuProps } from "antd";
 import { Breadcrumb, Layout, Menu, theme } from "antd";
@@ -66,7 +67,8 @@ const LayoutComponent: React.FC = () => {
         />
       </Sider>
       <Layout>
-        <Header style={{ background: colorBgContainer }} className="flex justify-end" >
+        <Header style={{ background: colorBgContainer }} className="flex justify-end gap-3" >
+          <CalendarTwoTone twoToneColor="#ec6765" className="text-2xl" onClick={() => {}}/>
           <Drop />
         </Header>
         <Content style={{ margin: "0 16px" }}>
