@@ -7,7 +7,7 @@ import Login from "../pages/Login";
 import Register from "../pages/Register";
 import Products from "../pages/Products";
 import Vendors from "../pages/Vendors";
-import ProductDetail from "../pages/ProductDetail";
+import ProductDetail from "../pages/Product/ProductDetail";
 import VendorDetail from "../pages/VendorDetail";
 import Landing from "../pages/Landing";
 import { LayoutComponent } from "../layout";
@@ -17,6 +17,8 @@ import {
   TeamOutlined,
   FileOutlined,
 } from "@ant-design/icons";
+import ProductCreate from "../pages/Product/ProductCreate";
+import ProductUpdate from "../pages/Product/ProductUpdate";
 
 // 扩展路由类型，添加 meta 信息
 export interface RouteMeta {
@@ -57,7 +59,14 @@ export const routeConfig: ExtendedRouteObject[] = [
       },
       {
         path: "product/:id",
-        Component: ProductDetail,
+        Component: ProductUpdate,
+        meta: {
+          hidden: true, // 详情页不在菜单中显示
+        },
+      },
+      {
+        path: "product/create",
+        Component: ProductCreate,
         meta: {
           hidden: true, // 详情页不在菜单中显示
         },

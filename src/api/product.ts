@@ -70,5 +70,5 @@ export const updateVendorDetailById = (
   id: number,
   data: IProductUpdateParams
 ): Promise<IResponse<IProduct>> => {
-  return request.get<IResponse<IProduct>>("/api/product/" + id, data);
+  return request.put<IResponse<IProduct>>("/api/product/" + id, data);
 };

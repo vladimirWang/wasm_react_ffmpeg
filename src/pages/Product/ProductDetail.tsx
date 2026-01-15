@@ -5,11 +5,13 @@ import {
   getProductDetailById,
   IProductUpdateParams,
   updateVendorDetailById,
-} from "../api/product";
-import { Button, Form, Input, Spin } from "antd";
+} from "../../api/product";
+import { Button, Form, Input, InputNumber, Spin, Upload } from "antd";
+import { RcFile } from "antd/es/upload";
+import { LoadingOutlined, PlusOutlined } from "@ant-design/icons";
+import ProductForm from "./ProductForm";
 
 export default function ProductDetail() {
-  const [form] = Form.useForm();
   const { id } = useParams();
 
   const [initialValues, setInitialValues] = useState<IProductUpdateParams>({
@@ -50,53 +52,24 @@ export default function ProductDetail() {
   };
 
   useEffect(() => {
+    console.log("---data---: ", data);
     if (data) {
       // 当数据加载完成后，设置表单值
       // form.setFieldsValue(data);
       setInitialValues(data);
       setCompleted(true);
     }
-  }, [data, form]);
+  }, [data]);
+
   return (
     <div>
       {error && <div>Error loading vendor details.</div>}
       <Spin spinning={isLoading}>
         {completed && (
-          <Form
-            form={form}
-            name="basic"
+          <ProductForm
             initialValues={initialValues}
-            labelCol={{ span: 8 }}
-            wrapperCol={{ span: 16 }}
-            style={{ maxWidth: 600 }}
-            onFinish={onFinish}
-            autoComplete="off"
-          >
-            <Form.Item<IProductUpdateParams>
-              label="名称"
-              name="name"
-              rules={[
-                { required: true, message: "Please input your username!" },
-              ]}
-            >
-              <Input />
-            </Form.Item>
-
-            <Form.Item<IProductUpdateParams>
-              label="备注"
-              name="remark"
-              rules={[
-                { required: true, message: "Please input your password!" },
-              ]}
-            >
-              <Input.TextArea />
-            </Form.Item>
-            <Form.Item label={null}>
-              <Button type="primary" htmlType="submit">
-                提交
-              </Button>
-            </Form.Item>
-          </Form>
+            onFinishCallback={onFinish}
+          />
         )}
       </Spin>
     </div>
