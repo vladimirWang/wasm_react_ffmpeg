@@ -1,10 +1,10 @@
 import React, { use, useEffect, useState } from "react";
 import { Button, Flex, Input, Pagination, Space, Table, Tag } from "antd";
-import { SearchOutlined } from "@ant-design/icons";
+import { PlusCircleFilled, PlusCircleOutlined, SearchOutlined } from "@ant-design/icons";
 import type { TableProps } from "antd";
 import { IProduct, IProductQueryParams, getProducts } from "../api/product";
 import useSWR from "swr";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { getVendors, IVendor, IVendorQueryParams } from "../api/vendor";
 
 const columns: TableProps<IVendor>["columns"] = [
@@ -42,6 +42,7 @@ const columns: TableProps<IVendor>["columns"] = [
 ];
 
 const Vendors: React.FC = () => {
+	const navigate = useNavigate();
   const [queryParams, setQueryParams] = useState<IVendorQueryParams>({
     page: 1,
     limit: 20,
@@ -103,6 +104,9 @@ const Vendors: React.FC = () => {
             });
           }}
         ></Button>
+				<Button onClick={() => {
+					navigate('/vendor/create')
+				}} icon={<PlusCircleOutlined />}></Button>
       </section>
       {error && <div>Error loading products.</div>}
       <Table<IVendor>

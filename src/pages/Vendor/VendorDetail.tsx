@@ -6,8 +6,9 @@ import {
   IVendor,
   IVendorUpdateParams,
   updateVendorDetailById,
-} from "../api/vendor";
+} from "../../api/vendor";
 import { Button, Form, Input, Spin } from "antd";
+import VendorForm from "./VendorForm";
 
 export default function VendorDetail() {
   const [form] = Form.useForm();
@@ -63,41 +64,7 @@ export default function VendorDetail() {
       {error && <div>Error loading vendor details.</div>}
       <Spin spinning={isLoading}>
         {completed && (
-          <Form
-            form={form}
-            name="basic"
-            initialValues={initialValues}
-            labelCol={{ span: 8 }}
-            wrapperCol={{ span: 16 }}
-            style={{ maxWidth: 600 }}
-            onFinish={onFinish}
-            autoComplete="off"
-          >
-            <Form.Item<IVendorUpdateParams>
-              label="名称"
-              name="name"
-              rules={[
-                { required: true, message: "Please input your username!" },
-              ]}
-            >
-              <Input />
-            </Form.Item>
-
-            <Form.Item<IVendorUpdateParams>
-              label="备注"
-              name="remark"
-              rules={[
-                { required: true, message: "Please input your password!" },
-              ]}
-            >
-              <Input.TextArea />
-            </Form.Item>
-            <Form.Item label={null}>
-              <Button type="primary" htmlType="submit">
-                提交
-              </Button>
-            </Form.Item>
-          </Form>
+					<VendorForm />
         )}
       </Spin>
     </div>
