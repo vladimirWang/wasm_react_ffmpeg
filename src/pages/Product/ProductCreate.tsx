@@ -6,7 +6,6 @@ import {
 	getProductDetailById,
 	IProductCreateParams,
 	IProductUpdateParams,
-	updateProductById,
 } from "../../api/product";
 import { Button, Form, Input, InputNumber, Spin, Upload } from "antd";
 import ProductForm from "./ProductForm";

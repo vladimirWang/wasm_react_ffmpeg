@@ -37,11 +37,7 @@ export default function VendorForm(props: VendorFormProps) {
 				<Input />
 			</Form.Item>
 
-			<Form.Item<IVendorUpdateParams>
-				label="备注"
-				name="remark"
-				rules={[{ required: true, message: "Please input your password!" }]}
-			>
+			<Form.Item<IVendorUpdateParams> label="备注" name="remark">
 				<Input.TextArea />
 			</Form.Item>
 			<Form.Item label={null}>

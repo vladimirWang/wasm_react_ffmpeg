@@ -108,11 +108,7 @@ export default function ProductForm({
 						>
 							<InputNumber min={0} precision={0} />
 						</Form.Item>
-						<Form.Item<IProductUpdateParams>
-							label="备注"
-							name="remark"
-							rules={[{ required: true, message: "Please input your password!" }]}
-						>
+						<Form.Item<IProductUpdateParams> label="备注" name="remark">
 							<Input.TextArea />
 						</Form.Item>
 					</section>
