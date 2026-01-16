@@ -1,24 +1,29 @@
 import { createBrowserRouter, type RouteObject } from "react-router-dom";
-import { ReactNode } from "react";
-import Home from "../pages/Home";
-import About from "../pages/About";
-import NotFound from "../pages/NotFound";
-import Login from "../pages/Login";
-import Register from "../pages/Register";
-import Products from "../pages/Products";
-import Vendors from "../pages/Vendors";
-import ProductDetail from "../pages/Product/ProductDetail";
-import VendorDetail from "../pages/VendorDetail";
-import Landing from "../pages/Landing";
-import { LayoutComponent } from "../layout";
+import { ReactNode, lazy } from "react";
 import {
   PieChartOutlined,
   DesktopOutlined,
   TeamOutlined,
   FileOutlined,
 } from "@ant-design/icons";
-import ProductCreate from "../pages/Product/ProductCreate";
-import ProductUpdate from "../pages/Product/ProductUpdate";
+import Home from "../pages/Home";
+import About from "../pages/About";
+import NotFound from "../pages/NotFound";
+import Login from "../pages/Login";
+import Register from "../pages/Register";
+// import Products from "../pages/Products";
+// import Vendors from "../pages/Vendors";
+// import ProductDetail from "../pages/Product/ProductDetail";
+// import VendorDetail from "../pages/VendorDetail";
+import Landing from "../pages/Landing";
+import { LayoutComponent } from "../layout";
+// import ProductCreate from "../pages/Product/ProductCreate";
+// import ProductUpdate from "../pages/Product/ProductUpdate";
+const Products = lazy(() => import("../pages/Products"));
+const Vendors = lazy(() => import("../pages/Vendors"));
+const VendorDetail = lazy(() => import("../pages/VendorDetail"));
+const ProductCreate = lazy(() => import("../pages/Product/ProductCreate"));
+const ProductUpdate = lazy(() => import("../pages/Product/ProductUpdate"));
 
 // 扩展路由类型，添加 meta 信息
 export interface RouteMeta {

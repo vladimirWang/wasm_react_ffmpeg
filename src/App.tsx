@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, Suspense } from "react";
 import { Button } from "antd";
 import SumArray from "./components/SumArray";
 import MazeCanvas from "./pages/MazeCanvas";
@@ -96,7 +96,9 @@ function App() {
           <Route path="*" element={<Navigate to="/" replace={true} />} />
         </Routes>
       </BrowserRouter> */}
-      <RouterProvider router={router} />
+      <Suspense fallback={<div>Loading...</div>}>
+        <RouterProvider router={router} />
+      </Suspense>
     </div>
   );
 }
