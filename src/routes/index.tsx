@@ -14,11 +14,12 @@ import Landing from "../pages/Landing";
 import { LayoutComponent } from "../layout";
 import VendorCreate from "../pages/Vendor/VendorCreate";
 import VendorUpdate from "../pages/Vendor/VendorUpdate";
+import StockIns from "../pages/StockIns";
 // import ProductCreate from "../pages/Product/ProductCreate";
 // import ProductUpdate from "../pages/Product/ProductUpdate";
 const Products = lazy(() => import("../pages/Products"));
 const Vendors = lazy(() => import("../pages/Vendors"));
-const VendorDetail = lazy(() => import("../pages/Vendor/VendorDetail"));
+// const VendorDetail = lazy(() => import("../pages/Vendor/VendorDetail"));
 const ProductCreate = lazy(() => import("../pages/Product/ProductCreate"));
 const ProductUpdate = lazy(() => import("../pages/Product/ProductUpdate"));
 
@@ -94,6 +95,15 @@ export const routeConfig: ExtendedRouteObject[] = [
 				Component: VendorUpdate,
 				meta: {
 					hidden: true, // 详情页不在菜单中显示
+				},
+			},
+			{
+				path: "stockin",
+				Component: StockIns,
+				meta: {
+					title: "进货记录",
+					icon: <DesktopOutlined />,
+					order: 4,
 				},
 			},
 		],
