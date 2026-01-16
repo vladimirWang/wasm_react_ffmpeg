@@ -5,10 +5,12 @@ import {
 	getProductDetailById,
 	IProduct,
 	IProductUpdateParams,
-	updateProductById,
+	patchProductById,
 } from "../../api/product";
 import { Button, Form, Input, InputNumber, Spin, Upload } from "antd";
+import { pickIncrementalFields } from "../../utils/common";
 import ProductForm from "./ProductForm";
+import { pick } from "lodash";
 
 export default function ProductUpdate() {
 	const { id } = useParams();
@@ -35,8 +37,13 @@ export default function ProductUpdate() {
 	const [completed, setCompleted] = useState(false);
 
 	const onFinish = async (values: IProductUpdateParams) => {
+		const { updated } = pickIncrementalFields<IProductUpdateParams>(
+			values,
+			initialValues as IProductUpdateParams
+		);
+		const incrementalValues = pick(values, updated);
 		try {
-			const res = await updateProductById(Number(id), values);
+			const res = await patchProductById(Number(id), incrementalValues);
 			if (res.code === 200) {
 				alert("更新成功");
 			} else {

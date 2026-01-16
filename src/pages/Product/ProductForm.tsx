@@ -1,11 +1,7 @@
 import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import useSWR from "swr";
-import {
-	getProductDetailById,
-	IProductUpdateParams,
-	updateProductById,
-} from "../../api/product";
+import { IProductUpdateParams } from "../../api/product";
 import { Button, Form, Input, InputNumber, Select, Spin, Upload } from "antd";
 import { RcFile } from "antd/es/upload";
 import { LoadingOutlined, PlusOutlined } from "@ant-design/icons";
@@ -22,19 +18,6 @@ export default function ProductForm({
 
 	const [imageUrl, setImageUrl] = useState<string>();
 	const [loading, setLoading] = useState(false);
-
-	//   const onFinish = async (values: IProductUpdateParams) => {
-	//     try {
-	//       const res = await updateVendorDetailById(Number(id), values);
-	//       if (res.code === 200) {
-	//         alert("更新成功");
-	//       } else {
-	//         alert(res.message);
-	//       }
-	//     } catch (error) {
-	//       console.error("<delete>  ");
-	//     }
-	//   };
 
 	const beforeUpload = (file: RcFile) => {
 		const isJpgOrPng = file.type === "image/jpeg" || file.type === "image/png";

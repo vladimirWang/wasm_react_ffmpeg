@@ -59,7 +59,7 @@ export type IProductUpdateParams = Partial<
 >;
 
 // 更新产品详情
-export const updateProductById = (
+export const patchProductById = (
 	id: number,
 	data: IProductUpdateParams
 ): Promise<IResponse<IProduct>> => {
