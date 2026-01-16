@@ -29,9 +29,10 @@ export type VendorDetailResponse = IResponse<IVendor>;
 
 // 定义登录请求参数类型
 export interface IVendorQueryParams {
-	limit: number;
-	page: number;
+	limit?: number;
+	page?: number;
 	name?: string;
+	pagination?: boolean;
 }
 
 // 定义注册请求参数类型
@@ -41,7 +42,7 @@ export interface RegisterParams {
 }
 
 // 获取供应商列表
-export const getVendors = async (data: IVendorQueryParams): Promise<IVendorsQueryResponse> => {
+export const getVendors = async (data?: IVendorQueryParams): Promise<IVendorsQueryResponse> => {
 	return request.get<IVendorsQueryResponse>("/api/vendor", { params: data });
 };
 

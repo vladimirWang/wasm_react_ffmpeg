@@ -5,6 +5,7 @@ import {
 	IVendorCreateParams,
 	getVendorDetailById,
 	IVendorUpdateParams,
+	IVendor,
 } from "../../api/vendor";
 import { useParams } from "react-router-dom";
 import useSWR from "swr";
@@ -22,10 +23,7 @@ export default function VendorUpdate() {
 	});
 	const [completed, setCompleted] = useState(false);
 
-	const [initialValues, setInitialValues] = useState<IVendorUpdateParams>({
-		name: "",
-		remark: "",
-	});
+	const [initialValues, setInitialValues] = useState<IVendor>();
 
 	useEffect(() => {
 		setCompleted(false);

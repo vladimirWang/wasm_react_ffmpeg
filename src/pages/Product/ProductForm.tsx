@@ -4,11 +4,12 @@ import useSWR from "swr";
 import {
 	getProductDetailById,
 	IProductUpdateParams,
-	updateVendorDetailById,
+	updateProductById,
 } from "../../api/product";
-import { Button, Form, Input, InputNumber, Spin, Upload } from "antd";
+import { Button, Form, Input, InputNumber, Select, Spin, Upload } from "antd";
 import { RcFile } from "antd/es/upload";
 import { LoadingOutlined, PlusOutlined } from "@ant-design/icons";
+import { getVendors, IVendor } from "../../api/vendor";
 
 export default function ProductForm({
 	initialValues,
@@ -51,6 +52,24 @@ export default function ProductForm({
 		</button>
 	);
 
+	// const [vendors, setVendors] = useState<IVendor[]>([]);
+
+	const vendorsFetch = async () => {
+		const res = await getVendors({ pagination: false });
+		if (res.code !== 200) return [];
+		console.log("---res---: ", res.data);
+		const { list } = res.data;
+		return list.map(item => ({ value: item.id, label: item.name }));
+	};
+
+	const {
+		data: vendors,
+		error: getVendorsError,
+		isLoading: getVendorsLoading,
+	} = useSWR("https://api.example.com/data", vendorsFetch, {
+		revalidateOnFocus: true,
+	});
+
 	return (
 		<div>
 			<Form
@@ -61,14 +80,30 @@ export default function ProductForm({
 				wrapperCol={{ span: 16 }}
 				// style={{ maxWidth: 600 }}
 				onFinish={async values => {
-					// try {
-					// 	await onFinishCallback(values);
-					// } catch (e) {}
+					if (!onFinishCallback) return;
+					setLoading(true);
+					try {
+						await onFinishCallback(values);
+					} catch (e) {
+					} finally {
+						setLoading(false);
+					}
 				}}
 				autoComplete="off"
 			>
 				<div className="flex gap-6 justify-between w-full">
 					<section className="flex-1">
+						<Form.Item<IProductUpdateParams>
+							label="供应商"
+							name="vendorId"
+							rules={[{ required: true, message: "请选择供应商" }]}
+						>
+							<Select
+								style={{ width: 120 }}
+								// onChange={handleChange}
+								options={vendors}
+							/>
+						</Form.Item>
 						<Form.Item<IProductUpdateParams>
 							label="名称"
 							name="name"

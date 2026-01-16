@@ -18,6 +18,7 @@ export default function VendorForm(props: VendorFormProps) {
 			wrapperCol={{ span: 16 }}
 			style={{ maxWidth: 600 }}
 			onFinish={async (values: IVendorUpdateParams) => {
+				if (!props.onFinishCallback) return;
 				setLoading(true);
 				try {
 					await props.onFinishCallback(values);
