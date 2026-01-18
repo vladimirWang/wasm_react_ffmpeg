@@ -43,7 +43,7 @@ const columns: TableProps<IProduct>["columns"] = [
 		// ),
 	},
 	{
-		title: "Action",
+		title: "操作",
 		key: "action",
 		dataIndex: "action",
 		render: (_, record) => (

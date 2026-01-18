@@ -45,7 +45,7 @@ export interface RegisterParams {
 }
 
 // 获取产品列表
-export const getProducts = async (data: IProductQueryParams): Promise<IProductsQueryResponse> => {
+export const getProducts = async (data?: IProductQueryParams): Promise<IProductsQueryResponse> => {
 	return request.get<IProductsQueryResponse>("/api/product", { params: data });
 };
 

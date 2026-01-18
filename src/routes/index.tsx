@@ -22,6 +22,7 @@ const Vendors = lazy(() => import("../pages/Vendors"));
 // const VendorDetail = lazy(() => import("../pages/Vendor/VendorDetail"));
 const ProductCreate = lazy(() => import("../pages/Product/ProductCreate"));
 const ProductUpdate = lazy(() => import("../pages/Product/ProductUpdate"));
+const StockInsCreate = lazy(() => import("../pages/StockIn/StockInCreate"));
 
 // 扩展路由类型，添加 meta 信息
 export interface RouteMeta {
@@ -102,6 +103,14 @@ export const routeConfig: ExtendedRouteObject[] = [
 				Component: StockIns,
 				meta: {
 					title: "进货记录",
+					icon: <DesktopOutlined />,
+					order: 4,
+				},
+			},
+			{
+				path: "stockin/create",
+				Component: StockInsCreate,
+				meta: {
 					icon: <DesktopOutlined />,
 					order: 4,
 				},

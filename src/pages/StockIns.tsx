@@ -3,47 +3,33 @@ import { Button, Flex, Input, Pagination, Space, Table, Tag } from "antd";
 import { PlusCircleOutlined, SearchOutlined } from "@ant-design/icons";
 import type { TableProps } from "antd";
 import { IProduct, IProductQueryParams, getProducts } from "../api/product";
+import { getStockIns, IStockIn } from "../api/stockIn";
 import useSWR from "swr";
 import { Link, useNavigate } from "react-router-dom";
 
-const columns: TableProps<IProduct>["columns"] = [
+const columns: TableProps<IStockIn>["columns"] = [
+	// {
+	// 	title: "name",
+	// 	dataIndex: "name",
+	// 	key: "name",
+	// },
 	{
-		title: "name",
-		dataIndex: "name",
-		key: "name",
+		title: "订单总金额",
+		dataIndex: "totalPrice",
+		key: "totalPrice",
 	},
+	// {
+	// 	title: "balance",
+	// 	dataIndex: "balance",
+	// 	key: "balance",
+	// },
+	// {
+	// 	title: "price",
+	// 	key: "price",
+	// 	dataIndex: "price",
+	// },
 	{
-		title: "cost",
-		dataIndex: "cost",
-		key: "cost",
-	},
-	{
-		title: "balance",
-		dataIndex: "balance",
-		key: "balance",
-	},
-	{
-		title: "price",
-		key: "price",
-		dataIndex: "price",
-		// render: (_, { tags }) => (
-		//   <Flex gap="small" align="center" wrap>
-		//     {tags.map((tag) => {
-		//       let color = tag.length > 5 ? 'geekblue' : 'green';
-		//       if (tag === 'loser') {
-		//         color = 'volcano';
-		//       }
-		//       return (
-		//         <Tag color={color} key={tag}>
-		//           {tag.toUpperCase()}
-		//         </Tag>
-		//       );
-		//     })}
-		//   </Flex>
-		// ),
-	},
-	{
-		title: "Action",
+		title: "操作",
 		key: "action",
 		dataIndex: "action",
 		render: (_, record) => (
@@ -52,22 +38,6 @@ const columns: TableProps<IProduct>["columns"] = [
 				<Link to={`/product/${record.id}`}>查看</Link>
 			</Space>
 		),
-	},
-];
-
-const data: IProduct[] = [
-	{
-		id: 1,
-		name: "John Brown",
-		remark: "32",
-		price: 123,
-		balance: 100,
-		img: "",
-		vendorId: 1,
-		isDel: 0,
-		createdAt: new Date(),
-		updatedAt: new Date(),
-		cost: 50,
 	},
 ];
 
@@ -80,15 +50,20 @@ const StockIns: React.FC = () => {
 	});
 	// 2. 定义SWR的fetcher函数：接收参数，调用getProducts
 	const fetcher = async (params: IProductQueryParams) => {
-		const res = await getProducts({
-			...params,
-			name: params.name === "" ? undefined : params.name,
-		});
+		const res = await getStockIns();
+		if (res.code !== 200) {
+			return {
+				data: {
+					list: [],
+					total: 0,
+				},
+			};
+		}
 		return res; // 若你的getProducts返回的是响应体（如res.data），则这里取res.data
 	};
 
 	const {
-		data: products, // 接口返回的产品列表数据
+		data: stockIns, // 接口返回的产品列表数据
 		error, // 请求错误信息
 		isLoading, // 加载状态
 	} = useSWR(
@@ -137,17 +112,18 @@ const StockIns: React.FC = () => {
 				<Button
 					icon={<PlusCircleOutlined />}
 					onClick={() => {
-						navigate("/product/create");
+						navigate("/stockin/create");
 					}}
 				>
 					新增
 				</Button>
 			</section>
+			{JSON.stringify(stockIns)}
 			{error && <div>Error loading products.</div>}
-			<Table<IProduct>
+			<Table<IStockIn>
 				size="small"
 				columns={columns}
-				dataSource={products?.data.list}
+				dataSource={stockIns?.data.list}
 				loading={isLoading}
 				pagination={false}
 				onRow={record => ({
@@ -159,7 +135,7 @@ const StockIns: React.FC = () => {
 			<br />
 			<section className="flex justify-end">
 				<Pagination
-					total={products?.data.total}
+					total={stockIns?.data.total}
 					showTotal={(total, range) => `${range[0]}-${range[1]} of ${total} items`}
 					defaultPageSize={20}
 					defaultCurrent={page}
