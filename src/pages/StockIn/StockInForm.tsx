@@ -1,26 +1,29 @@
 import { Button, Form, Input, InputNumber, Select, Table } from "antd";
 import type { TableProps } from "antd";
 import { IVendorCreateParams, IVendorUpdateParams } from "../../api/vendor";
-import { useEffect, useState } from "react";
-import { IProductJoinStockIn } from "../../api/stockIn";
+import { useEffect, useMemo, useState } from "react";
+import { IProductJoinStockIn, IStockIn } from "../../api/stockIn";
 import { PlusSquareOutlined } from "@ant-design/icons";
 import { getProducts, IProduct } from "../../api/product";
 import { produce } from "immer";
-import VendorProductTree from "../../components/VendorProductTree";
+import { PageOperation } from "../../enum";
+// import VendorProductTree from "../../components/VendorProductTree";
 
 interface StockInFormProps {
+	pageOperation: PageOperation;
 	onFinishCallback?: (
 		formValue: IVendorUpdateParams,
 		tableValue: IProductJoinStockIn[]
 	) => Promise<void>;
-	initialValues?: IVendorUpdateParams;
+	initialValues?: IStockIn;
+	joinData?: IProductJoinStockIn[];
 }
 
 const defaultJoinData: IProductJoinStockIn[] = [
 	// {
-	// 	productId: 12,
-	// 	cost: 10,
-	// 	count: 20,
+	// 	productId: -1,
+	// 	cost: 4,
+	// 	count: 1,
 	// },
 	// {
 	// 	productId: 10,
@@ -32,10 +35,15 @@ const defaultJoinData: IProductJoinStockIn[] = [
 export default function StockInForm(props: StockInFormProps) {
 	const [loading, setLoading] = useState(false);
 	const [form] = Form.useForm();
-	const [joinData, setJoinData] = useState<IProductJoinStockIn[]>(defaultJoinData);
+	const [joinData, setJoinData] = useState<IProductJoinStockIn[]>(
+		props.joinData || defaultJoinData
+	);
 
-	const [products, setProducts] = useState<IProduct[]>([]);
-
+	const [allProducts, setAllProducts] = useState<IProduct[]>([]);
+	const [restProducts, setRestProducts] = useState<IProduct[]>([]);
+	const editable = useMemo(() => {
+		return props.pageOperation === "create";
+	}, [props.pageOperation]);
 	const columns: TableProps<IProductJoinStockIn>["columns"] = [
 		{
 			title: "序号",
@@ -55,11 +63,12 @@ export default function StockInForm(props: StockInFormProps) {
 					// 	}}
 					// />
 					<Select
+						disabled={!editable}
+						value={joinData[idx].productId}
+						allowClear={true}
 						style={{ width: 150 }}
-						options={products.map(item => ({ value: item.id, label: item.name }))}
+						options={allProducts.map(item => ({ value: item.id, label: item.name }))}
 						onSelect={value => {
-							console.log("idx: ", idx, value);
-							// joinData
 							const nextState = produce(joinData, draftState => {
 								draftState[idx].productId = value;
 							});
@@ -76,6 +85,8 @@ export default function StockInForm(props: StockInFormProps) {
 			render: (_v, _r, idx) => {
 				return (
 					<InputNumber
+						disabled={!editable}
+						value={joinData[idx].cost}
 						min={1}
 						precision={0}
 						style={{ width: 150 }}
@@ -97,6 +108,8 @@ export default function StockInForm(props: StockInFormProps) {
 			render: (_v, _r, idx) => {
 				return (
 					<InputNumber
+						disabled={!editable}
+						value={joinData[idx].count}
 						min={1}
 						precision={0}
 						style={{ width: 150 }}
@@ -110,13 +123,32 @@ export default function StockInForm(props: StockInFormProps) {
 				);
 			},
 		},
+		{
+			title: "操作",
+			render: (_v, _r, idx) => {
+				return (
+					<Button
+						disabled={!editable}
+						type="link"
+						onClick={() => {
+							// const newData = joinData.filter((item, index) => index !== idx);
+							// console.log("newData:----- ", newData);
+							// setJoinData(newData);
+						}}
+					>
+						删除
+					</Button>
+				);
+			},
+		},
 	];
 
 	const loadProducts = async () => {
 		try {
 			const res = await getProducts();
 			if (res.code === 200) {
-				setProducts(res.data.list);
+				setAllProducts(res.data.list);
+				setRestProducts(res.data.list);
 			} else {
 				alert(res.message);
 			}
@@ -136,11 +168,13 @@ export default function StockInForm(props: StockInFormProps) {
 				onClick={() => {
 					setJoinData(joinData.concat({ productId: -1, cost: 1, count: 1 }));
 				}}
+				disabled={!editable}
 			>
 				新增
 			</Button>
 			<Table dataSource={joinData} columns={columns} />
 			<Form
+				disabled={!editable}
 				form={form}
 				name="basic"
 				initialValues={props.initialValues}

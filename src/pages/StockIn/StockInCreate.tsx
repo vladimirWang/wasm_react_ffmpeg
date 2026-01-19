@@ -14,7 +14,7 @@ export default function StockInCreate() {
 	};
 	return (
 		<div>
-			<StockInForm onFinishCallback={onFinishCallback} />
+			<StockInForm onFinishCallback={onFinishCallback} pageOperation="create" />
 		</div>
 	);
 }

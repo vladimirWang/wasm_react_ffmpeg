@@ -9,7 +9,7 @@ import { getVendors, IVendor, IVendorQueryParams } from "../api/vendor";
 
 const columns: TableProps<IVendor>["columns"] = [
 	{
-		title: "name",
+		title: "名称",
 		dataIndex: "name",
 		key: "name",
 	},

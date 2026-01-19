@@ -19,8 +19,9 @@ export interface IProduct {
 	isDel: number;
 	createdAt: Date;
 	updatedAt: Date;
-	price: number;
-	cost: number;
+	latestPrice: number;
+	latestCost: number;
+	productCode?: string;
 }
 
 // 定义登录响应类型

@@ -15,27 +15,17 @@ const columns: TableProps<IStockIn>["columns"] = [
 	// },
 	{
 		title: "订单总金额",
-		dataIndex: "totalPrice",
-		key: "totalPrice",
+		dataIndex: "totalCost",
+		key: "totalCost",
 	},
-	// {
-	// 	title: "balance",
-	// 	dataIndex: "balance",
-	// 	key: "balance",
-	// },
-	// {
-	// 	title: "price",
-	// 	key: "price",
-	// 	dataIndex: "price",
-	// },
 	{
 		title: "操作",
 		key: "action",
 		dataIndex: "action",
 		render: (_, record) => (
 			<Space size="middle">
-				<Link to={`/product/${record.id}`}>编辑</Link>
-				<Link to={`/product/${record.id}`}>查看</Link>
+				<Link to={`/stockin/${record.id}`}>编辑</Link>
+				{/* <Link to={`/stockin/${record.id}`}>查看</Link> */}
 			</Space>
 		),
 	},
@@ -118,7 +108,6 @@ const StockIns: React.FC = () => {
 					新增
 				</Button>
 			</section>
-			{JSON.stringify(stockIns)}
 			{error && <div>Error loading products.</div>}
 			<Table<IStockIn>
 				size="small"
