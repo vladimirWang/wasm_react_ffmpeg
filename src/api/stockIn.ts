@@ -1,21 +1,21 @@
 import request from "../request";
 import { sleep } from "../utils/common";
-import { IPagination, IResponse } from "./commonDef";
+import { IPaginationResp, IPagination, IResponse } from "./commonDef";
 
 export interface IStockIn {
 	totalPrice: number;
 	remark?: string;
 	readonly id: number;
 }
-type IStockInsQueryResponse = IResponse<IPagination<IStockIn>>;
+type IStockInsQueryResponse = IResponse<IPaginationResp<IStockIn>>;
 
 // 获取进货记录
-export const getStockIns = async (data?: IVendorQueryParams): Promise<IStockInsQueryResponse> => {
+export const getStockIns = async (data?: IPagination): Promise<IStockInsQueryResponse> => {
 	return request.get<IStockInsQueryResponse>("/api/stockin", { params: data });
 };
 
 export interface IProductJoinStockIn {
-	price: number;
+	cost: number;
 	count: number;
 	productId: number;
 }

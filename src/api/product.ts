@@ -1,5 +1,12 @@
 import request from "../request";
-import { IPagination, IResponse } from "./commonDef";
+import {
+	IPaginationResp,
+	AtLeastOne,
+	IPagination,
+	IResponse,
+	Undefinedify,
+	IPaginationOptional,
+} from "./commonDef";
 
 // 产品类型定义
 export interface IProduct {
@@ -17,7 +24,7 @@ export interface IProduct {
 }
 
 // 定义登录响应类型
-export type IProductsQueryResponse = IResponse<IPagination<IProduct>>;
+export type IProductsQueryResponse = IResponse<IPaginationResp<IProduct>>;
 
 // 定义注册响应类型
 export interface RegisterResponse {
@@ -32,11 +39,7 @@ export interface RegisterResponse {
 }
 
 // 定义登录请求参数类型
-export interface IProductQueryParams {
-	limit: number;
-	page: number;
-	name?: string;
-}
+export type IProductQueryParams = IPaginationOptional & { name?: string };
 
 // 定义注册请求参数类型
 export interface RegisterParams {
@@ -70,4 +73,14 @@ export type IProductCreateParams = Omit<IProduct, "id" | "createdAt" | "updatedA
 // 新增产品列表
 export const createProduct = async (data: IProductUpdateParams): Promise<IResponse<IProduct>> => {
 	return request.post<IResponse<IProduct>>("/api/product", data);
+};
+
+// 根据供应商id查询产品
+export const getProductsByVendorId = async (
+	vendorId: number,
+	params?: IProductQueryParams
+): Promise<IProductsQueryResponse> => {
+	return request.get<IProductsQueryResponse>("/api/product/getProductsByVendorId/" + vendorId, {
+		params,
+	});
 };

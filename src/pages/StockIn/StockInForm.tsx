@@ -1,4 +1,4 @@
-import { Button, Form, Input, Select, Table } from "antd";
+import { Button, Form, Input, InputNumber, Select, Table } from "antd";
 import type { TableProps } from "antd";
 import { IVendorCreateParams, IVendorUpdateParams } from "../../api/vendor";
 import { useEffect, useState } from "react";
@@ -6,6 +6,7 @@ import { IProductJoinStockIn } from "../../api/stockIn";
 import { PlusSquareOutlined } from "@ant-design/icons";
 import { getProducts, IProduct } from "../../api/product";
 import { produce } from "immer";
+import VendorProductTree from "../../components/VendorProductTree";
 
 interface StockInFormProps {
 	onFinishCallback?: (
@@ -15,17 +16,17 @@ interface StockInFormProps {
 	initialValues?: IVendorUpdateParams;
 }
 
-const defaultJoinData = [
-	{
-		productId: 12,
-		price: 10,
-		count: 20,
-	},
-	{
-		productId: 10,
-		price: 9,
-		count: 10,
-	},
+const defaultJoinData: IProductJoinStockIn[] = [
+	// {
+	// 	productId: 12,
+	// 	cost: 10,
+	// 	count: 20,
+	// },
+	// {
+	// 	productId: 10,
+	// 	cost: 9,
+	// 	count: 10,
+	// },
 ];
 
 export default function StockInForm(props: StockInFormProps) {
@@ -38,7 +39,7 @@ export default function StockInForm(props: StockInFormProps) {
 	const columns: TableProps<IProductJoinStockIn>["columns"] = [
 		{
 			title: "序号",
-			render: (value, r, idx) => {
+			render: (_v, _r, idx) => {
 				return idx + 1;
 			},
 		},
@@ -46,8 +47,13 @@ export default function StockInForm(props: StockInFormProps) {
 			title: "商品名称",
 			dataIndex: "productId",
 			key: "productId",
-			render: (value, r, idx) => {
+			render: (_v, _r, idx) => {
 				return (
+					// <VendorProductTree
+					// 	onChange={(vendorId: number, productId: number) => {
+					// 		console.log("vendorId: ", vendorId, "; productId: ", productId);
+					// 	}}
+					// />
 					<Select
 						style={{ width: 150 }}
 						options={products.map(item => ({ value: item.id, label: item.name }))}
@@ -65,13 +71,44 @@ export default function StockInForm(props: StockInFormProps) {
 		},
 		{
 			title: "价格",
-			dataIndex: "price",
-			key: "price",
+			dataIndex: "cost",
+			key: "cost",
+			render: (_v, _r, idx) => {
+				return (
+					<InputNumber
+						min={1}
+						precision={0}
+						style={{ width: 150 }}
+						onChange={value => {
+							console.log("set number: ", value);
+							const nextState = produce(joinData, draftState => {
+								draftState[idx].cost = Number(value);
+							});
+							setJoinData(nextState);
+						}}
+					/>
+				);
+			},
 		},
 		{
 			title: "数量",
 			dataIndex: "count",
 			key: "count",
+			render: (_v, _r, idx) => {
+				return (
+					<InputNumber
+						min={1}
+						precision={0}
+						style={{ width: 150 }}
+						onChange={value => {
+							const nextState = produce(joinData, draftState => {
+								draftState[idx].count = Number(value);
+							});
+							setJoinData(nextState);
+						}}
+					/>
+				);
+			},
 		},
 	];
 
@@ -97,7 +134,7 @@ export default function StockInForm(props: StockInFormProps) {
 			<Button
 				icon={<PlusSquareOutlined />}
 				onClick={() => {
-					setJoinData(joinData.concat({ productId: -1, price: 1, count: 1 }));
+					setJoinData(joinData.concat({ productId: -1, cost: 1, count: 1 }));
 				}}
 			>
 				新增

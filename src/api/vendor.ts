@@ -1,6 +1,6 @@
 import request from "../request";
 import { sleep } from "../utils/common";
-import { IPagination, IResponse } from "./commonDef";
+import { IPaginationResp, IResponse } from "./commonDef";
 
 // 产品类型定义
 export interface IVendor {
@@ -14,7 +14,7 @@ export interface IVendor {
 }
 
 // 定义登录响应类型
-export type IVendorsQueryResponse = IResponse<IPagination<IProduct>>;
+export type IVendorsQueryResponse = IResponse<IPaginationResp<IVendor>>;
 
 export interface IVendor {
 	readonly id: number;
