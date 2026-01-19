@@ -116,6 +116,7 @@ const Vendors: React.FC = () => {
 				size="small"
 				columns={columns}
 				dataSource={products?.data.list}
+				rowKey={"id"}
 				loading={isLoading}
 				pagination={false}
 				onRow={record => ({

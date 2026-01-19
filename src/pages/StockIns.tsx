@@ -113,6 +113,7 @@ const StockIns: React.FC = () => {
 				size="small"
 				columns={columns}
 				dataSource={stockIns?.data.list}
+				rowKey={"id"}
 				loading={isLoading}
 				pagination={false}
 				onRow={record => ({
