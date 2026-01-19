@@ -1,11 +1,12 @@
 import React, { use, useEffect, useState } from "react";
-import { Button, Flex, Input, Modal, Pagination, Space, Table, Tag } from "antd";
+import { Alert, Button, Flex, Input, Modal, Pagination, Space, Table, Tag } from "antd";
 import { PlusCircleOutlined, SearchOutlined } from "@ant-design/icons";
 import type { TableProps } from "antd";
 import { IProduct, IProductQueryParams, getProducts } from "../api/product";
 import useSWR from "swr";
 import { Link, useNavigate } from "react-router-dom";
 import mockBarcode from "../assets/barcode.jpg";
+import { GlobalModal } from "../components/GlobalModal";
 
 const Products: React.FC = () => {
 	const [isModalOpen, setIsModalOpen] = useState(false);
