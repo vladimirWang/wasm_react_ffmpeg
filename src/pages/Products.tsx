@@ -1,10 +1,10 @@
-import React, { use, useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { Alert, Button, Flex, Input, Modal, Pagination, Space, Table, Tag } from "antd";
 import { PlusCircleOutlined, SearchOutlined } from "@ant-design/icons";
 import type { TableProps } from "antd";
 import { IProduct, IProductQueryParams, getProducts } from "../api/product";
 import useSWR from "swr";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import mockBarcode from "../assets/barcode.jpg";
 import { GlobalModal } from "../components/GlobalModal";
 
@@ -74,11 +74,18 @@ const Products: React.FC = () => {
 		limit: 20,
 		name: "",
 	});
+
+	const swrKey = useMemo(
+		() => ["products", queryParams.page, queryParams.limit, queryParams.name ?? ""] as const,
+		[queryParams.page, queryParams.limit, queryParams.name]
+	);
+
 	// 2. 定义SWR的fetcher函数：接收参数，调用getProducts
-	const fetcher = async (params: IProductQueryParams) => {
+	const fetcher = async ([_tag, page, limit, name]: typeof swrKey) => {
 		const res = await getProducts({
-			...params,
-			name: params.name === "" ? undefined : params.name,
+			page,
+			limit,
+			name: name === "" ? undefined : name,
 		});
 		return res; // 若你的getProducts返回的是响应体（如res.data），则这里取res.data
 	};
@@ -87,14 +94,23 @@ const Products: React.FC = () => {
 		data: products, // 接口返回的产品列表数据
 		error, // 请求错误信息
 		isLoading, // 加载状态
+		mutate,
 	} = useSWR(
-		queryParams, // SWR的key：参数变化则重新请求
+		swrKey, // SWR的key：参数变化则重新请求
 		fetcher,
 		{
 			// 可选配置：比如页面聚焦时重新验证、禁用自动重试等
 			revalidateOnFocus: false,
+			// 路由快速切换时，避免 2s dedupe 导致“偶发不刷新”
+			dedupingInterval: 0,
 		}
 	);
+
+	const location = useLocation();
+	useEffect(() => {
+		// 每次进入该路由都强制重新校验一次数据，避免命中 dedupe/缓存导致不刷新
+		mutate();
+	}, [location.key, mutate]);
 
 	const [keyword, setKeyword] = useState<string>(queryParams.name || "");
 	const [page, setPage] = useState(queryParams.page);

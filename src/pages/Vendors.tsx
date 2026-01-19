@@ -1,10 +1,10 @@
-import React, { use, useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { Button, Flex, Input, Pagination, Space, Table, Tag } from "antd";
 import { PlusCircleFilled, PlusCircleOutlined, SearchOutlined } from "@ant-design/icons";
 import type { TableProps } from "antd";
 import { IProduct, IProductQueryParams, getProducts } from "../api/product";
 import useSWR from "swr";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { getVendors, IVendor, IVendorQueryParams } from "../api/vendor";
 
 const columns: TableProps<IVendor>["columns"] = [
@@ -48,11 +48,18 @@ const Vendors: React.FC = () => {
 		limit: 20,
 		name: "",
 	});
+
+	const swrKey = useMemo(
+		() => ["vendors", queryParams.page, queryParams.limit, queryParams.name ?? ""] as const,
+		[queryParams.page, queryParams.limit, queryParams.name]
+	);
+
 	// 2. 定义SWR的fetcher函数：接收参数，调用getProducts
-	const fetcher = async (params: IVendorQueryParams) => {
+	const fetcher = async ([_tag, page, limit, name]: typeof swrKey) => {
 		const res = await getVendors({
-			...params,
-			name: params.name === "" ? undefined : params.name,
+			page,
+			limit,
+			name: name === "" ? undefined : name,
 		});
 		return res; // 若你的getProducts返回的是响应体（如res.data），则这里取res.data
 	};
@@ -61,14 +68,21 @@ const Vendors: React.FC = () => {
 		data: products, // 接口返回的产品列表数据
 		error, // 请求错误信息
 		isLoading, // 加载状态
+		mutate,
 	} = useSWR(
-		queryParams, // SWR的key：参数变化则重新请求
+		swrKey, // SWR的key：参数变化则重新请求
 		fetcher,
 		{
 			// 可选配置：比如页面聚焦时重新验证、禁用自动重试等
 			revalidateOnFocus: false,
+			dedupingInterval: 0,
 		}
 	);
+
+	const location = useLocation();
+	useEffect(() => {
+		mutate();
+	}, [location.key, mutate]);
 
 	// const [products, setProducts] = React.useState<IProduct[]>(data);
 
