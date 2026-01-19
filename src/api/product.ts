@@ -40,7 +40,7 @@ export interface RegisterResponse {
 }
 
 // 定义登录请求参数类型
-export type IProductQueryParams = IPaginationOptional & { name?: string };
+export type IProductQueryParams = IPagination & { name?: string };
 
 // 定义注册请求参数类型
 export interface RegisterParams {
@@ -49,7 +49,7 @@ export interface RegisterParams {
 }
 
 // 获取产品列表
-export const getProducts = async (data?: IProductQueryParams): Promise<IProductsQueryResponse> => {
+export const getProducts = async (data?: IProductQueryParams | {pagination: false}): Promise<IProductsQueryResponse> => {
 	return request.get<IProductsQueryResponse>("/api/product", { params: data });
 };
 
