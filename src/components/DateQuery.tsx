@@ -24,7 +24,10 @@ export default function DateQuery(props: DateQueryProps) {
 
 	const isControlled = value !== undefined;
 	const [innerValue, setInnerValue] = useState<DateQueryValue>(defaultValue ?? DEFAULT_VALUE);
-	const mergedValue = useMemo(() => (isControlled ? value! : innerValue), [innerValue, isControlled, value]);
+	const mergedValue = useMemo(
+		() => (isControlled ? value! : innerValue),
+		[innerValue, isControlled, value]
+	);
 
 	const emitChange = useCallback(
 		(next: DateQueryValue) => {

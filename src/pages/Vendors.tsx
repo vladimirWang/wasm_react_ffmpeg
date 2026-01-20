@@ -7,6 +7,7 @@ import { Link, useLocation, useNavigate } from "react-router-dom";
 import { batchDeleteVendor, getVendors, IVendor, IVendorQueryParams } from "../api/vendor";
 import { GlobalModal } from "../components/GlobalModal";
 import DateQuery, { DateQueryValue } from "../components/DateQuery";
+import dayjs from "dayjs";
 
 const columns: TableProps<IVendor>["columns"] = [
 	{},
@@ -45,12 +46,15 @@ const columns: TableProps<IVendor>["columns"] = [
 
 const Vendors: React.FC = () => {
 	const navigate = useNavigate();
-	const [deletedAtQuery, setDeletedAtQuery] = useState<DateQueryValue>({ enabled: false, date: null });
+	const [deletedAtQuery, setDeletedAtQuery] = useState<DateQueryValue>({
+		enabled: false,
+		date: null,
+	});
 	const [queryParams, setQueryParams] = useState<IVendorQueryParams>({
 		page: 1,
 		limit: 20,
 		name: "",
-		deletedAt: new Date(2025, 10, 20),
+		deletedAt: false,
 	});
 
 	const swrKey = useMemo(
@@ -183,7 +187,7 @@ const Vendors: React.FC = () => {
 							name: keyword,
 							page: 1,
 							limit: 20,
-							deletedAt
+							deletedAt,
 						});
 					}}
 				></Button>
