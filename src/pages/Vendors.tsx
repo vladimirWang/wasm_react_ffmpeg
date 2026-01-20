@@ -1,14 +1,12 @@
-import React, { createContext, useEffect, useMemo, useState } from "react";
-import { Button, Flex, Input, Modal, Pagination, Select, Space, Switch, Table, Tag } from "antd";
-import { PlusCircleFilled, PlusCircleOutlined, SearchOutlined } from "@ant-design/icons";
+import React, { useEffect, useMemo, useState } from "react";
+import { Button, Input, Modal, Pagination, Space, Table } from "antd";
+import { PlusCircleOutlined, SearchOutlined } from "@ant-design/icons";
 import type { TableProps } from "antd";
-import { IProduct, IProductQueryParams, getProducts } from "../api/product";
 import useSWR from "swr";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { batchDeleteVendor, getVendors, IVendor, IVendorQueryParams } from "../api/vendor";
 import { GlobalModal } from "../components/GlobalModal";
-import { useEasyModal } from "../hooks/useEasyModal";
-import DateQuery from "../components/DateQuery";
+import DateQuery, { DateQueryValue } from "../components/DateQuery";
 
 const columns: TableProps<IVendor>["columns"] = [
 	{},
@@ -47,6 +45,7 @@ const columns: TableProps<IVendor>["columns"] = [
 
 const Vendors: React.FC = () => {
 	const navigate = useNavigate();
+	const [deletedAtQuery, setDeletedAtQuery] = useState<DateQueryValue>({ enabled: false, date: null });
 	const [queryParams, setQueryParams] = useState<IVendorQueryParams>({
 		page: 1,
 		limit: 20,
@@ -115,7 +114,7 @@ const Vendors: React.FC = () => {
 	const [selectedIds, setSelectedIds] = useState<number[]>([]);
 
 	const rowSelection: TableProps<IVendor>["rowSelection"] = {
-		onChange: (selectedRowKeys: React.Key[], selectedRows: IVendor[]) => {
+		onChange: (selectedRowKeys: React.Key[], _selectedRows: IVendor[]) => {
 			setSelectedIds(selectedRowKeys as number[]);
 		},
 		getCheckboxProps: (record: IVendor) => ({
@@ -123,7 +122,6 @@ const Vendors: React.FC = () => {
 			name: record.name,
 		}),
 	};
-	const [includeDeleted, setIncludeDeleted] = useState(false);
 	const [modal, contextHolder] = Modal.useModal();
 	const config = {
 		title: "警告!",
@@ -169,15 +167,23 @@ const Vendors: React.FC = () => {
 						{ value: 0, label: "否" },
 					]}
 				></Select> */}
-				<DateQuery />
+				<DateQuery value={deletedAtQuery} onChange={setDeletedAtQuery} />
 				<Button
 					icon={<SearchOutlined />}
 					onClick={() => {
+						let deletedAt: boolean | Date = false;
+						if (deletedAtQuery.enabled) {
+							if (deletedAtQuery.date) {
+								deletedAt = deletedAtQuery.date.toDate();
+							} else {
+								deletedAt = true;
+							}
+						}
 						setQueryParams({
 							name: keyword,
 							page: 1,
 							limit: 20,
-							deletedAt: new Date(),
+							deletedAt
 						});
 					}}
 				></Button>
