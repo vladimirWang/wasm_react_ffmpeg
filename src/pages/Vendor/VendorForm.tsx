@@ -1,9 +1,10 @@
 import { Button, Form, Input } from "antd";
-import { IVendorCreateParams, IVendorUpdateParams } from "../../api/vendor";
+import { IVendorCreateParams, IVendorUpdateParams, VendorDetailResponse } from "../../api/vendor";
 import { useState } from "react";
+import { GlobalModal } from "../../components/GlobalModal";
 
 interface VendorFormProps {
-	onFinishCallback?: (data: IVendorUpdateParams) => Promise<void>;
+	onFinishCallback?: (data: IVendorUpdateParams) => Promise<VendorDetailResponse>;
 	initialValues?: IVendorUpdateParams;
 }
 export default function VendorForm(props: VendorFormProps) {
@@ -13,7 +14,7 @@ export default function VendorForm(props: VendorFormProps) {
 		<Form
 			form={form}
 			name="basic"
-			initialValues={props.initialValues}
+			initialValues={{ ...props.initialValues }}
 			labelCol={{ span: 8 }}
 			wrapperCol={{ span: 16 }}
 			style={{ maxWidth: 600 }}
@@ -21,8 +22,16 @@ export default function VendorForm(props: VendorFormProps) {
 				if (!props.onFinishCallback) return;
 				setLoading(true);
 				try {
-					await props.onFinishCallback(values);
+					const res = await props.onFinishCallback(values);
+					GlobalModal.open({
+						type: "success",
+						title: res.message,
+					});
 				} catch (e: unknown) {
+					GlobalModal.open({
+						type: "success",
+						title: (e as Error).message,
+					});
 				} finally {
 					setLoading(false);
 				}
@@ -38,7 +47,7 @@ export default function VendorForm(props: VendorFormProps) {
 			</Form.Item>
 
 			<Form.Item<IVendorUpdateParams> label="备注" name="remark">
-				<Input.TextArea />
+				<Input.TextArea showCount maxLength={190} />
 			</Form.Item>
 			<Form.Item label={null}>
 				<Button type="primary" htmlType="submit" loading={loading}>

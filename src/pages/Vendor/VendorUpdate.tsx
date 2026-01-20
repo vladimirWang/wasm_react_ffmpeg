@@ -38,12 +38,10 @@ export default function VendorUpdate() {
 	}, [data]);
 	const onFinishCallback = async (data: IVendorUpdateParams) => {
 		const res = await updateVendorDetailById(Number(id), data);
-
-		return Promise.resolve();
+		return res;
 	};
 	return (
 		<div>
-			{completed ? "yes" : "no"}
 			{error && <p>fetch vendor failed</p>}
 			<Spin spinning={isLoading}>
 				{completed && (

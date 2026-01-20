@@ -16,7 +16,7 @@ let modalState: IAlertState = {
 	visible: false, // 弹窗显示/隐藏
 	title: "默认标题", // 弹窗标题
 	type: "success",
-	duration: 4000,
+	duration: 3000,
 	// content: "默认内容", // 弹窗内容
 	onClose: () => {}, // 关闭后的回调函数
 };

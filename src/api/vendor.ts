@@ -65,6 +65,6 @@ export const updateVendorDetailById = (
 
 export type IVendorCreateParams = Omit<IVendor, "id" | "createdAt" | "updatedAt" | "isDel">;
 // 创建供应商
-export const createVendor = (data: IVendorUpdateParams): Promise<VendorDetailResponse> => {
+export const createVendor = async (data: IVendorUpdateParams): Promise<VendorDetailResponse> => {
 	return request.post<VendorDetailResponse>("/api/vendor/", data);
 };

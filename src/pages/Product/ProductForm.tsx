@@ -96,20 +96,20 @@ export default function ProductForm({
 						</Form.Item>
 						<Form.Item<IProductUpdateParams>
 							label="价格"
-							name="price"
+							name="latestPrice"
 							rules={[{ required: true, message: "请输入价格" }]}
 						>
 							<InputNumber min={0} precision={0} />
 						</Form.Item>
 						<Form.Item<IProductUpdateParams>
 							label="成本"
-							name="cost"
+							name="latestCost"
 							rules={[{ required: true, message: "请输入成本!" }]}
 						>
 							<InputNumber min={0} precision={0} />
 						</Form.Item>
 						<Form.Item<IProductUpdateParams> label="备注" name="remark">
-							<Input.TextArea />
+							<Input.TextArea showCount maxLength={190} />
 						</Form.Item>
 					</section>
 					<section className="flex-1">

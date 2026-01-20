@@ -194,7 +194,7 @@ export default function StockInForm(props: StockInFormProps) {
 				autoComplete="off"
 			>
 				<Form.Item<IVendorUpdateParams> label="备注" name="remark">
-					<Input.TextArea />
+					<Input.TextArea showCount maxLength={190} />
 				</Form.Item>
 				<Form.Item label={null}>
 					<Button type="primary" htmlType="submit" loading={loading}>
