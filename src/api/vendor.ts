@@ -33,6 +33,7 @@ export interface IVendorQueryParams {
 	page?: number;
 	name?: string;
 	pagination?: boolean;
+	deletedAt?: boolean | Date;
 }
 
 // 定义注册请求参数类型
@@ -67,4 +68,9 @@ export type IVendorCreateParams = Omit<IVendor, "id" | "createdAt" | "updatedAt"
 // 创建供应商
 export const createVendor = async (data: IVendorUpdateParams): Promise<VendorDetailResponse> => {
 	return request.post<VendorDetailResponse>("/api/vendor/", data);
+};
+
+export type batchDeleteVendorSchema = { id: number[] };
+export const batchDeleteVendor = async (data: batchDeleteVendorSchema) => {
+	return request.delete("/api/vendor/batch", { data });
 };
