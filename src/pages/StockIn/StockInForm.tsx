@@ -1,11 +1,10 @@
 import { Button, Form, Input, InputNumber, Select, Table } from "antd";
 import type { TableProps } from "antd";
-import { IVendorCreateParams, IVendorUpdateParams } from "../../api/vendor";
+import { IVendorUpdateParams } from "../../api/vendor";
 import { useEffect, useMemo, useState } from "react";
 import { IProductJoinStockIn, IStockIn } from "../../api/stockIn";
 import { PlusSquareOutlined } from "@ant-design/icons";
 import { getProducts, IProduct } from "../../api/product";
-import { produce } from "immer";
 import { PageOperation } from "../../enum";
 // import VendorProductTree from "../../components/VendorProductTree";
 
@@ -35,109 +34,90 @@ const defaultJoinData: IProductJoinStockIn[] = [
 export default function StockInForm(props: StockInFormProps) {
 	const [loading, setLoading] = useState(false);
 	const [form] = Form.useForm();
-	const [joinData, setJoinData] = useState<IProductJoinStockIn[]>(
-		props.joinData || defaultJoinData
-	);
 
 	const [allProducts, setAllProducts] = useState<IProduct[]>([]);
-	const [restProducts, setRestProducts] = useState<IProduct[]>([]);
 	const editable = useMemo(() => {
 		return props.pageOperation === "create";
 	}, [props.pageOperation]);
-	const columns: TableProps<IProductJoinStockIn>["columns"] = [
+
+	type StockInFormValues = IVendorUpdateParams & {
+		joinData: IProductJoinStockIn[];
+	};
+
+	type JoinFieldRow = { key: number; name: number };
+
+	const columnsBase: TableProps<JoinFieldRow>["columns"] = [
 		{
-			title: "序号",
+			title: "#",
 			render: (_v, _r, idx) => {
 				return idx + 1;
 			},
 		},
 		{
 			title: "商品名称",
-			dataIndex: "productId",
 			key: "productId",
-			render: (_v, _r, idx) => {
+			render: (_v, row) => {
 				return (
 					// <VendorProductTree
 					// 	onChange={(vendorId: number, productId: number) => {
 					// 		console.log("vendorId: ", vendorId, "; productId: ", productId);
 					// 	}}
 					// />
-					<Select
-						disabled={!editable}
-						value={joinData[idx].productId}
-						allowClear={true}
-						style={{ width: 150 }}
-						options={allProducts.map(item => ({ value: item.id, label: item.name }))}
-						onSelect={value => {
-							const nextState = produce(joinData, draftState => {
-								draftState[idx].productId = value;
-							});
-							setJoinData(nextState);
-						}}
-					/>
+					<Form.Item
+						name={[row.name, "productId"]}
+						style={{ marginBottom: 0 }}
+						rules={[{ required: true, message: "请选择商品" }]}
+					>
+						<Select
+							disabled={!editable}
+							allowClear={true}
+							style={{ width: 150 }}
+							options={allProducts.map(item => ({
+								value: item.id,
+								label: item.name,
+							}))}
+						/>
+					</Form.Item>
 				);
 			},
 		},
 		{
 			title: "价格",
-			dataIndex: "cost",
 			key: "cost",
-			render: (_v, _r, idx) => {
+			render: (_v, row) => {
 				return (
-					<InputNumber
-						disabled={!editable}
-						value={joinData[idx].cost}
-						min={1}
-						precision={0}
-						style={{ width: 150 }}
-						onChange={value => {
-							console.log("set number: ", value);
-							const nextState = produce(joinData, draftState => {
-								draftState[idx].cost = Number(value);
-							});
-							setJoinData(nextState);
-						}}
-					/>
+					<Form.Item
+						name={[row.name, "cost"]}
+						style={{ marginBottom: 0 }}
+						rules={[{ required: true, message: "请输入价格" }]}
+					>
+						<InputNumber
+							disabled={!editable}
+							min={1}
+							precision={0}
+							style={{ width: 150 }}
+						/>
+					</Form.Item>
 				);
 			},
 		},
 		{
 			title: "数量",
-			dataIndex: "count",
 			key: "count",
-			render: (_v, _r, idx) => {
+			render: (_v, row) => {
 				return (
-					<InputNumber
-						disabled={!editable}
-						value={joinData[idx].count}
-						min={1}
-						precision={0}
-						style={{ width: 150 }}
-						onChange={value => {
-							const nextState = produce(joinData, draftState => {
-								draftState[idx].count = Number(value);
-							});
-							setJoinData(nextState);
-						}}
-					/>
-				);
-			},
-		},
-		{
-			title: "操作",
-			render: (_v, _r, idx) => {
-				return (
-					<Button
-						disabled={!editable}
-						type="link"
-						onClick={() => {
-							// const newData = joinData.filter((item, index) => index !== idx);
-							// console.log("newData:----- ", newData);
-							// setJoinData(newData);
-						}}
+					<Form.Item
+						name={[row.name, "count"]}
+						style={{ marginBottom: 0 }}
+						rules={[{ required: true, message: "请输入数量" }]}
 					>
-						删除
-					</Button>
+						<InputNumber
+							disabled={!editable}
+							min={1}
+							precision={0}
+							style={{ width: 150 }}
+						/>
+					</Form.Item>
 				);
 			},
 		},
@@ -148,7 +128,6 @@ export default function StockInForm(props: StockInFormProps) {
 			const res = await getProducts();
 			if (res.code === 200) {
 				setAllProducts(res.data.list);
-				setRestProducts(res.data.list);
 			} else {
 				alert(res.message);
 			}
@@ -163,29 +142,23 @@ export default function StockInForm(props: StockInFormProps) {
 
 	return (
 		<div>
-			<Button
-				icon={<PlusSquareOutlined />}
-				onClick={() => {
-					setJoinData(joinData.concat({ productId: -1, cost: 1, count: 1 }));
-				}}
-				disabled={!editable}
-			>
-				新增
-			</Button>
-			<Table dataSource={joinData} columns={columns} />
 			<Form
 				disabled={!editable}
 				form={form}
 				name="basic"
-				initialValues={props.initialValues}
+				initialValues={{
+					...props.initialValues,
+					joinData: props.joinData || defaultJoinData,
+				}}
 				labelCol={{ span: 8 }}
 				wrapperCol={{ span: 16 }}
 				style={{ maxWidth: 600 }}
-				onFinish={async (values: IVendorUpdateParams) => {
+				onFinish={async (values: StockInFormValues) => {
 					if (!props.onFinishCallback) return;
 					setLoading(true);
 					try {
-						await props.onFinishCallback(values, joinData);
+						const { joinData, ...rest } = values;
+						await props.onFinishCallback(rest, joinData || []);
 					} catch (e: unknown) {
 					} finally {
 						setLoading(false);
@@ -193,6 +166,44 @@ export default function StockInForm(props: StockInFormProps) {
 				}}
 				autoComplete="off"
 			>
+				<Form.List name="joinData">
+					{(fields, { add, remove }) => (
+						<>
+							<Button
+								icon={<PlusSquareOutlined />}
+								onClick={() => {
+									add({ productId: -1, cost: 1, count: 1 });
+								}}
+								disabled={!editable}
+								size='small'
+							>
+								新增
+							</Button>
+							<Table
+								size="small"
+								rowKey="key"
+								dataSource={fields.map(f => ({ key: f.key, name: f.name }))}
+								columns={[
+									...columnsBase,
+									{
+										title: "操作",
+										key: "action",
+										render: (_v: unknown, row: JoinFieldRow) => (
+											<Button
+												disabled={!editable}
+												type="link"
+												onClick={() => remove(row.name)}
+											>
+												删除
+											</Button>
+										),
+									},
+								]}
+								// pagination={false}
+							/>
+						</>
+					)}
+				</Form.List>
 				<Form.Item<IVendorUpdateParams> label="备注" name="remark">
 					<Input.TextArea showCount maxLength={190} />
 				</Form.Item>
