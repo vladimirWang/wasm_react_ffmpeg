@@ -22,7 +22,7 @@ export interface IProductJoinStockIn {
 }
 
 export interface IStockInCreateParams {
-	joinData: IProductJoinStockIn[];
+	productJoinStockIn: IProductJoinStockIn[];
 	remark?: string;
 }
 
@@ -39,4 +39,11 @@ export type IStockResponse = IResponse<IStockIn>;
 // 获取进货记录
 export const getStockInDetailById = async (id: number): Promise<IStockResponse> => {
 	return request.get<IStockResponse>("/api/stockin/" + id);
+};
+
+// 获取进货记录
+export const updateStockIn = async (id: number,
+	data?: IStockInCreateParams
+): Promise<IStockInsQueryResponse> => {
+	return request.put<IStockInsQueryResponse>("/api/stockin/"+id, data);
 };

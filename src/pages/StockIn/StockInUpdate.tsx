@@ -1,5 +1,5 @@
 import StockInForm from "./StockInForm";
-import { createStockIn, getStockInDetailById, IStockIn } from "../../api/stockIn";
+import { createStockIn, getStockInDetailById, IStockIn, updateStockIn } from "../../api/stockIn";
 import { IProductJoinStockIn } from "../../api/stockIn";
 import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
@@ -30,25 +30,25 @@ export default function StockInUpdate() {
 		} catch (e) {}
 	};
 	const [completed, setCompleted] = useState(false);
-	const [joinData, setJoinData] = useState<IProductJoinStockIn[]>([]);
+	// const [joinData, setJoinData] = useState<IProductJoinStockIn[]>([]);
 	const {
 		data: initialValues,
 		isLoading,
 		error,
 	} = useSWR(id, fetcher, { revalidateOnFocus: false });
 	const onFinishCallback = async (
-		formValue: { remark?: string },
-		talbeValue: IProductJoinStockIn[]
+		formValue: { remark?: string } & { productJoinStockIn: IProductJoinStockIn[] }
 	) => {
 		setCompleted(false);
-		const res = await createStockIn({ joinData: talbeValue, ...formValue });
+		const res = await updateStockIn(Number(id), formValue);
 
 		return Promise.resolve();
 	};
 	useEffect(() => {
 		if (!initialValues) return;
 		setCompleted(true);
-		setJoinData(initialValues.productsJoinStock);
+		// setJoinData(initialValues);
+		// setJoinData(initialValues.productsJoinStock);
 		// console.log("initialValues: ", initialValues);
 	}, [initialValues]);
 	return (
@@ -57,7 +57,7 @@ export default function StockInUpdate() {
 				{completed && (
 					<StockInForm
 						initialValues={initialValues}
-						joinData={joinData}
+						// joinData={joinData}
 						onFinishCallback={onFinishCallback}
 						pageOperation="update"
 					/>

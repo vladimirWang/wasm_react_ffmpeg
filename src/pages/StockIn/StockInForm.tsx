@@ -11,11 +11,9 @@ import { PageOperation } from "../../enum";
 interface StockInFormProps {
 	pageOperation: PageOperation;
 	onFinishCallback?: (
-		formValue: IVendorUpdateParams,
-		tableValue: IProductJoinStockIn[]
+		formValue: IVendorUpdateParams & { productJoinStockIn: IProductJoinStockIn[] }
 	) => Promise<void>;
 	initialValues?: IStockIn;
-	joinData?: IProductJoinStockIn[];
 }
 
 const defaultJoinData: IProductJoinStockIn[] = [
@@ -37,11 +35,12 @@ export default function StockInForm(props: StockInFormProps) {
 
 	const [allProducts, setAllProducts] = useState<IProduct[]>([]);
 	const editable = useMemo(() => {
-		return props.pageOperation === "create";
+		// return props.pageOperation === "create";
+		return true;
 	}, [props.pageOperation]);
 
 	type StockInFormValues = IVendorUpdateParams & {
-		joinData: IProductJoinStockIn[];
+		productJoinStockIn: IProductJoinStockIn[];
 	};
 
 	type JoinFieldRow = { key: number; name: number };
@@ -91,12 +90,7 @@ export default function StockInForm(props: StockInFormProps) {
 						style={{ marginBottom: 0 }}
 						rules={[{ required: true, message: "请输入价格" }]}
 					>
-						<InputNumber
-							disabled={!editable}
-							min={1}
-							precision={0}
-							style={{ width: 150 }}
-						/>
+						<InputNumber disabled={!editable} min={1} precision={0} style={{ width: 150 }} />
 					</Form.Item>
 				);
 			},
@@ -111,12 +105,7 @@ export default function StockInForm(props: StockInFormProps) {
 						style={{ marginBottom: 0 }}
 						rules={[{ required: true, message: "请输入数量" }]}
 					>
-						<InputNumber
-							disabled={!editable}
-							min={1}
-							precision={0}
-							style={{ width: 150 }}
-						/>
+						<InputNumber disabled={!editable} min={1} precision={0} style={{ width: 150 }} />
 					</Form.Item>
 				);
 			},
@@ -142,13 +131,13 @@ export default function StockInForm(props: StockInFormProps) {
 
 	return (
 		<div>
+			{JSON.stringify(props.initialValues)}
 			<Form
 				disabled={!editable}
 				form={form}
 				name="basic"
 				initialValues={{
 					...props.initialValues,
-					joinData: props.joinData || defaultJoinData,
 				}}
 				labelCol={{ span: 8 }}
 				wrapperCol={{ span: 16 }}
@@ -157,8 +146,7 @@ export default function StockInForm(props: StockInFormProps) {
 					if (!props.onFinishCallback) return;
 					setLoading(true);
 					try {
-						const { joinData, ...rest } = values;
-						await props.onFinishCallback(rest, joinData || []);
+						await props.onFinishCallback(values || []);
 					} catch (e: unknown) {
 					} finally {
 						setLoading(false);
@@ -166,7 +154,7 @@ export default function StockInForm(props: StockInFormProps) {
 				}}
 				autoComplete="off"
 			>
-				<Form.List name="joinData">
+				<Form.List name="productJoinStockIn">
 					{(fields, { add, remove }) => (
 						<>
 							<Button
@@ -175,7 +163,7 @@ export default function StockInForm(props: StockInFormProps) {
 									add({ productId: -1, cost: 1, count: 1 });
 								}}
 								disabled={!editable}
-								size='small'
+								size="small"
 							>
 								新增
 							</Button>
@@ -189,11 +177,7 @@ export default function StockInForm(props: StockInFormProps) {
 										title: "操作",
 										key: "action",
 										render: (_v: unknown, row: JoinFieldRow) => (
-											<Button
-												disabled={!editable}
-												type="link"
-												onClick={() => remove(row.name)}
-											>
+											<Button disabled={!editable} type="link" onClick={() => remove(row.name)}>
 												删除
 											</Button>
 										),
