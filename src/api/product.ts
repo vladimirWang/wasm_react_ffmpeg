@@ -1,14 +1,20 @@
 import request from "../request";
 import {
 	IPaginationResp,
-	AtLeastOne,
 	IPagination,
 	IResponse,
-	Undefinedify,
-	IPaginationOptional,
 } from "./commonDef";
 
 // 产品类型定义
+export interface IProductHistoryCostItem {
+	// 后端返回：historyCost[].value
+	value: number;
+	createdAt?: string | Date;
+	updatedAt?: string | Date;
+	time?: string | Date;
+	date?: string | Date;
+}
+
 export interface IProduct {
 	readonly id: number;
 	name: string;
@@ -22,6 +28,7 @@ export interface IProduct {
 	latestPrice: number;
 	latestCost: number;
 	productCode?: string;
+	historyCost?: IProductHistoryCostItem[];
 }
 
 // 定义登录响应类型
