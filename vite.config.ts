@@ -29,4 +29,12 @@ export default defineConfig({
   optimizeDeps: {
     exclude: ["monaco-editor"],
   },
+  // 确保开发模式下生成 source map
+  build: {
+    sourcemap: true, // 生产构建时也生成 source map（可选）
+  },
+  // 开发模式下的 source map 配置
+  css: {
+    devSourcemap: true, // CSS source map
+  },
 });
