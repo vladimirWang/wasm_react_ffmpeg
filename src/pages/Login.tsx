@@ -2,13 +2,11 @@ import React from "react";
 import { LockOutlined, MailOutlined } from "@ant-design/icons";
 import { Button, Flex, Form, Input } from "antd";
 import {
-	getCurrentUser,
-	IUser,
 	userLogin,
 	type LoginParams,
 	type LoginResponse,
 } from "../api/user";
-import { Link } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import Box from "../components/Box";
 
 const loginFormInitialValues = {
@@ -19,7 +17,9 @@ const loginFormInitialValues = {
 
 const Login: React.FC = () => {
 	const [form] = Form.useForm();
-	// const navigate = useNavigate(); // 暂时未使用
+	const navigate = useNavigate();
+	const [searchParams] = useSearchParams();
+
 	const onFinish = async (values: LoginParams) => {
 		try {
 			const res: LoginResponse = await userLogin(values);
@@ -28,7 +28,15 @@ const Login: React.FC = () => {
 			if (res.code === 200) {
 				console.log("token: ", res.data, typeof res.data);
 				localStorage.setItem("access_token", res.data);
-				// navigate("/");
+
+				// 获取回跳地址
+				const redirect = searchParams.get("redirect");
+				// 如果有回跳地址就跳转到那里，否则跳转到首页
+				if (redirect) {
+					navigate(decodeURIComponent(redirect), { replace: true });
+				} else {
+					navigate("/", { replace: true });
+				}
 
 				// const currentUserResponse = await getCurrentUser();
 				// const currentUser: IUser = currentUserResponse.data;

@@ -1,4 +1,4 @@
-import { createBrowserRouter, type RouteObject } from "react-router-dom";
+import { createBrowserRouter, type RouteObject, redirect } from "react-router-dom";
 import { ReactNode, lazy } from "react";
 import { PieChartOutlined, DesktopOutlined, TeamOutlined, FileOutlined } from "@ant-design/icons";
 import Home from "../pages/Home";
@@ -25,18 +25,69 @@ const ProductUpdate = lazy(() => import("../pages/Product/ProductUpdate"));
 const StockInsCreate = lazy(() => import("../pages/StockIn/StockInCreate"));
 const StockInsUpdate = lazy(() => import("../pages/StockIn/StockInUpdate"));
 
+// 检查是否有登录态
+const hasAuth = (): boolean => {
+	const token = localStorage.getItem("access_token");
+	return !!token;
+};
+
+// 路由守卫 loader
+export const authLoader = (meta?: RouteMeta) => {
+	return ({ request }: { request: Request }) => {
+		const url = new URL(request.url);
+		const pathname = url.pathname;
+
+		// // 如果是登录页或注册页，直接放行，避免死循环
+		// if (pathname === "/landing/login" || pathname === "/landing/register") {
+		// 	return null;
+		// }
+
+		// auth: false 或 'free' 表示无需登录
+		if (meta?.auth === false || meta?.auth === "free") {
+			return null;
+		}
+
+		// 默认需要登录，如果没有 token 则重定向到登录页
+		if (!hasAuth()) {
+			const currentPath = pathname + url.search;
+			const redirectUrl = encodeURIComponent(currentPath);
+			return redirect(`/landing/login?redirect=${redirectUrl}`);
+		}
+
+		return null;
+	};
+};
+
 // 扩展路由类型，添加 meta 信息
 export interface RouteMeta {
 	title?: string; // 菜单标题
 	icon?: ReactNode; // 菜单图标
 	hidden?: boolean; // 是否在菜单中隐藏
 	order?: number; // 菜单排序
+	auth?: boolean | "free"; // 是否需要登录，false 或 'free' 表示无需登录
 }
 
 export interface ExtendedRouteObject extends Omit<RouteObject, "children"> {
 	meta?: RouteMeta;
 	children?: ExtendedRouteObject[];
 }
+
+// 递归函数：为路由配置添加 loader
+const addAuthLoader = (routes: ExtendedRouteObject[]): RouteObject[] => {
+	return routes.map((route) => {
+		const { meta, children, ...rest } = route;
+		const newRoute: RouteObject = {
+			...rest,
+			loader: authLoader(meta),
+		};
+
+		if (children) {
+			newRoute.children = addAuthLoader(children);
+		}
+
+		return newRoute;
+	});
+};
 
 // 路由配置
 export const routeConfig: ExtendedRouteObject[] = [
@@ -129,12 +180,16 @@ export const routeConfig: ExtendedRouteObject[] = [
 	{
 		path: "/landing",
 		Component: Landing,
+		meta: {
+			auth: "free", // 父路由也需要设置为 free，避免死循环
+		},
 		children: [
 			{
 				path: "login",
 				Component: Login,
 				meta: {
 					hidden: true,
+					auth: "free",
 				},
 			},
 			{
@@ -142,6 +197,7 @@ export const routeConfig: ExtendedRouteObject[] = [
 				Component: Register,
 				meta: {
 					hidden: true,
+					auth: "free",
 				},
 			},
 		],
@@ -154,6 +210,7 @@ export const routeConfig: ExtendedRouteObject[] = [
 			icon: <FileOutlined />,
 			order: 4,
 			hidden: true,
+			auth: "free",
 		},
 	},
 	{
@@ -165,5 +222,5 @@ export const routeConfig: ExtendedRouteObject[] = [
 	},
 ];
 
-// 创建路由
-export const router = createBrowserRouter(routeConfig as RouteObject[]);
+// 创建路由（应用 auth loader）
+export const router = createBrowserRouter(addAuthLoader(routeConfig));
