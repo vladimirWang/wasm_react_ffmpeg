@@ -21,7 +21,7 @@ const axiosInstance: AxiosInstance = axios.create({
 axiosInstance.interceptors.request.use(config => {
 	const token = localStorage.getItem("access_token");
 	console.log("interceptor token: ", token);
-	if (token) config.headers.Authorization = `Bearer ${token}`;
+	if (token) config.headers.Authorization = `${token}`;
 	// if (config.method === "GET" && config.params.includeDeleted === 1) {
 	// 	delete config.params.includeDeleted;
 	// 	config.params.deletedAt = true;

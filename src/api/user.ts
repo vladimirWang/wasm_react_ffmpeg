@@ -1,4 +1,5 @@
 import request from "../request";
+import { IResponse } from "./commonDef";
 
 // 定义登录响应类型
 export type LoginResponse = IResponse<string>;
@@ -36,5 +37,5 @@ export const userRegister = (
 
 
 export const getCurrentUser = (): Promise<RegisterResponse> => {
-  return request.get<RegisterResponse>("/api/user/current", data);
+  return request.get<RegisterResponse>("/api/user/current");
 };

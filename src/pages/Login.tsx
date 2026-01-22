@@ -1,6 +1,6 @@
 import React from "react";
 import { LockOutlined, MailOutlined } from "@ant-design/icons";
-import { Button, Checkbox, Flex, Form, Input } from "antd";
+import { Button, Flex, Form, Input } from "antd";
 import {
 	getCurrentUser,
 	IUser,
@@ -8,7 +8,7 @@ import {
 	type LoginParams,
 	type LoginResponse,
 } from "../api/user";
-import { Link, useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 import Box from "../components/Box";
 
 const loginFormInitialValues = {
@@ -19,7 +19,7 @@ const loginFormInitialValues = {
 
 const Login: React.FC = () => {
 	const [form] = Form.useForm();
-	const navigate = useNavigate();
+	// const navigate = useNavigate(); // 暂时未使用
 	const onFinish = async (values: LoginParams) => {
 		try {
 			const res: LoginResponse = await userLogin(values);
@@ -30,8 +30,9 @@ const Login: React.FC = () => {
 				localStorage.setItem("access_token", res.data);
 				// navigate("/");
 
-				const currentUser: IUser = await getCurrentUser();
-				console.log("currentUser: ", currentUser);
+				// const currentUserResponse = await getCurrentUser();
+				// const currentUser: IUser = currentUserResponse.data;
+				// console.log("currentUser: ", currentUser);
 			} else {
 				alert(res.message);
 			}
