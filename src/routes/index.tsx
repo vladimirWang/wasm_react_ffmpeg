@@ -25,6 +25,7 @@ const ProductUpdate = lazy(() => import("../pages/Product/ProductUpdate"));
 const StockInsCreate = lazy(() => import("../pages/StockIn/StockInCreate"));
 const StockInsUpdate = lazy(() => import("../pages/StockIn/StockInUpdate"));
 import { getCurrentUser, type IUser } from "../api/user";
+import { useUserStore } from "../store/userStore";
 
 // 用户信息缓存
 let cachedUser: IUser | null = null;
@@ -70,6 +71,8 @@ export const clearUserCache = () => {
 	userPromise = null;
 	localStorage.removeItem(CACHE_KEY);
 	localStorage.removeItem(CACHE_EXPIRY_KEY);
+	// 清除 zustand store
+	useUserStore.getState().clearUser();
 };
 
 // 获取当前用户信息（带缓存）
@@ -109,6 +112,8 @@ const fetchCurrentUser = async (): Promise<IUser | null> => {
 					if (res.code === 200 && res.data) {
 						console.log("fetchCurrentUser res.data: ", res.data);
 						saveCachedUser(res.data);
+						// 更新 zustand store
+						useUserStore.getState().setUser(res.data);
 						return res.data;
 					}
 					// 如果 code 不是 200，抛出错误
@@ -121,8 +126,16 @@ const fetchCurrentUser = async (): Promise<IUser | null> => {
 				if (res && typeof res === 'object' && ('userId' in res || 'email' in res || 'id' in res)) {
 					// 直接的 user 对象
 					console.log("fetchCurrentUser direct user object: ", res);
-					const user = res as IUser;
+					// 处理字段映射：如果 API 返回的是 userId，需要映射到 id
+					const user: IUser = {
+						id: (res as any).userId?.toString() || (res as any).id || '',
+						email: (res as any).email || '',
+						username: (res as any).username,
+						createdAt: (res as any).createdAt || new Date().toISOString(),
+					};
 					saveCachedUser(user);
+					// 更新 zustand store
+					useUserStore.getState().setUser(user);
 					return user;
 				}
 
