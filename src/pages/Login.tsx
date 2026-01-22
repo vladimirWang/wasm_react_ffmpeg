@@ -8,6 +8,7 @@ import {
 } from "../api/user";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import Box from "../components/Box";
+import { clearUserCache } from "../routes";
 
 const loginFormInitialValues = {
 	email: "123456@qq.com",
@@ -28,6 +29,8 @@ const Login: React.FC = () => {
 			if (res.code === 200) {
 				console.log("token: ", res.data, typeof res.data);
 				localStorage.setItem("access_token", res.data);
+				// 清除旧的用户缓存，让 authLoader 重新获取用户信息
+				clearUserCache();
 
 				// 获取回跳地址
 				const redirect = searchParams.get("redirect");
