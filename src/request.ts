@@ -19,7 +19,8 @@ const axiosInstance: AxiosInstance = axios.create({
 
 // 请求拦截器：统一添加 Token
 axiosInstance.interceptors.request.use(config => {
-	const token = localStorage.getItem("warehouse_token");
+	const token = localStorage.getItem("access_token");
+	console.log("interceptor token: ", token);
 	if (token) config.headers.Authorization = `Bearer ${token}`;
 	// if (config.method === "GET" && config.params.includeDeleted === 1) {
 	// 	delete config.params.includeDeleted;

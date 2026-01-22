@@ -1,7 +1,13 @@
 import React from "react";
 import { LockOutlined, MailOutlined } from "@ant-design/icons";
 import { Button, Checkbox, Flex, Form, Input } from "antd";
-import { userLogin, type LoginParams, type LoginResponse } from "../api/user";
+import {
+	getCurrentUser,
+	IUser,
+	userLogin,
+	type LoginParams,
+	type LoginResponse,
+} from "../api/user";
 import { Link, useNavigate } from "react-router-dom";
 import Box from "../components/Box";
 
@@ -20,9 +26,12 @@ const Login: React.FC = () => {
 			console.log("res: ", res);
 			// 现在 res 有正确的类型提示
 			if (res.code === 200) {
-				console.log("res: ", res.data);
+				console.log("token: ", res.data, typeof res.data);
 				localStorage.setItem("access_token", res.data);
-				navigate("/");
+				// navigate("/");
+
+				const currentUser: IUser = await getCurrentUser();
+				console.log("currentUser: ", currentUser);
 			} else {
 				alert(res.message);
 			}
