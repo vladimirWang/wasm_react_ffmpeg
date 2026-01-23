@@ -24,6 +24,7 @@ const ProductCreate = lazy(() => import("../pages/Product/ProductCreate"));
 const ProductUpdate = lazy(() => import("../pages/Product/ProductUpdate"));
 const StockInsCreate = lazy(() => import("../pages/StockIn/StockInCreate"));
 const StockInsUpdate = lazy(() => import("../pages/StockIn/StockInUpdate"));
+const StockInsView = lazy(() => import("../pages/StockIn/StockInView"));
 import { getCurrentUser, type IUser } from "../api/user";
 import { useUserStore } from "../store/userStore";
 
@@ -103,11 +104,11 @@ const fetchCurrentUser = async (): Promise<IUser | null> => {
 	// 发起新请求
 	try {
 		userPromise = getCurrentUser()
-			.then((res) => {
+			.then(res => {
 				console.log("fetchCurrentUser res: ", res);
 
 				// 检查是否是 IResponse 格式（有 code 和 data）
-				if (res && typeof res === 'object' && 'code' in res && 'data' in res) {
+				if (res && typeof res === "object" && "code" in res && "data" in res) {
 					// IResponse 格式
 					if (res.code === 200 && res.data) {
 						console.log("fetchCurrentUser res.data: ", res.data);
@@ -123,13 +124,13 @@ const fetchCurrentUser = async (): Promise<IUser | null> => {
 				}
 
 				// 检查是否是直接的 user 对象（有 userId 或 email 等用户属性）
-				if (res && typeof res === 'object' && ('userId' in res || 'email' in res || 'id' in res)) {
+				if (res && typeof res === "object" && ("userId" in res || "email" in res || "id" in res)) {
 					// 直接的 user 对象
 					console.log("fetchCurrentUser direct user object: ", res);
 					// 处理字段映射：如果 API 返回的是 userId，需要映射到 id
 					const user: IUser = {
-						id: (res as any).userId?.toString() || (res as any).id || '',
-						email: (res as any).email || '',
+						id: (res as any).userId?.toString() || (res as any).id || "",
+						email: (res as any).email || "",
 						username: (res as any).username,
 						createdAt: (res as any).createdAt || new Date().toISOString(),
 					};
@@ -144,13 +145,14 @@ const fetchCurrentUser = async (): Promise<IUser | null> => {
 				(error as any).code = 0;
 				throw error;
 			})
-			.catch((error) => {
+			.catch(error => {
 				// 处理被 reject 的 Promise（来自响应拦截器）
 				console.error("getCurrentUser catch error: ", error);
 
 				// 错误可能是对象（来自响应拦截器）或 Error 实例
 				const errorCode = error?.code || (error instanceof Error ? 0 : error.code);
-				const errorMessage = error?.message || (error instanceof Error ? error.message : "获取用户信息失败");
+				const errorMessage =
+					error?.message || (error instanceof Error ? error.message : "获取用户信息失败");
 
 				// 如果是 401 或其他认证错误，清除 token 和缓存
 				if (errorCode === 401 || errorCode === 403) {
@@ -235,7 +237,7 @@ export interface ExtendedRouteObject extends Omit<RouteObject, "children"> {
 
 // 递归函数：为路由配置添加 loader
 const addAuthLoader = (routes: ExtendedRouteObject[]): RouteObject[] => {
-	return routes.map((route) => {
+	return routes.map(route => {
 		const { meta, children, ...rest } = route;
 		const newRoute: RouteObject = {
 			...rest,
@@ -329,8 +331,16 @@ export const routeConfig: ExtendedRouteObject[] = [
 				},
 			},
 			{
-				path: "stockin/:id",
+				path: "stockin/update/:id",
 				Component: StockInsUpdate,
+				meta: {
+					icon: <DesktopOutlined />,
+					order: 4,
+				},
+			},
+			{
+				path: "stockin/:id",
+				Component: StockInsView,
 				meta: {
 					icon: <DesktopOutlined />,
 					order: 4,

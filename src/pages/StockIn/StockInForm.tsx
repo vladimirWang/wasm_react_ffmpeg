@@ -131,7 +131,6 @@ export default function StockInForm(props: StockInFormProps) {
 
 	return (
 		<div>
-			{JSON.stringify(props.initialValues)}
 			<Form
 				disabled={!editable}
 				form={form}
@@ -157,31 +156,43 @@ export default function StockInForm(props: StockInFormProps) {
 				<Form.List name="productJoinStockIn">
 					{(fields, { add, remove }) => (
 						<>
-							<Button
-								icon={<PlusSquareOutlined />}
-								onClick={() => {
-									add({ productId: -1, cost: 1, count: 1 });
-								}}
-								disabled={!editable}
-								size="small"
-							>
-								新增
-							</Button>
+							{props.pageOperation !== "view" && (
+								<Button
+									icon={<PlusSquareOutlined />}
+									onClick={() => {
+										add({ productId: -1, cost: 1, count: 1 });
+									}}
+									disabled={!editable}
+									size="small"
+								>
+									新增
+								</Button>
+							)}
 							<Table
 								size="small"
 								rowKey="key"
 								dataSource={fields.map(f => ({ key: f.key, name: f.name }))}
 								columns={[
 									...columnsBase,
-									{
-										title: "操作",
-										key: "action",
-										render: (_v: unknown, row: JoinFieldRow) => (
-											<Button disabled={!editable} type="link" onClick={() => remove(row.name)}>
-												删除
-											</Button>
-										),
-									},
+									...(props.pageOperation !== "view"
+										? [
+												{
+													title: "操作",
+													key: "action",
+													render: (_v: unknown, row: JoinFieldRow) => (
+														<>
+															<Button
+																disabled={!editable}
+																type="link"
+																onClick={() => remove(row.name)}
+															>
+																删除
+															</Button>
+														</>
+													),
+												},
+											]
+										: []),
 								]}
 								// pagination={false}
 							/>
@@ -191,11 +202,13 @@ export default function StockInForm(props: StockInFormProps) {
 				<Form.Item<IVendorUpdateParams> label="备注" name="remark">
 					<Input.TextArea showCount maxLength={190} />
 				</Form.Item>
-				<Form.Item label={null}>
-					<Button type="primary" htmlType="submit" loading={loading}>
-						提交
-					</Button>
-				</Form.Item>
+				{props.pageOperation !== "view" && (
+					<Form.Item label={null}>
+						<Button type="primary" htmlType="submit" loading={loading}>
+							提交
+						</Button>
+					</Form.Item>
+				)}
 			</Form>
 		</div>
 	);

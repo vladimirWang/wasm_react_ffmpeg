@@ -5,7 +5,7 @@ import {
 	CheckCircleOutlined,
 	CloseCircleOutlined,
 } from "@ant-design/icons";
-import type { UploadProps } from "antd";
+import type { TableProps, UploadProps } from "antd";
 import { getProducts, IProduct } from "../../api/product";
 import { getVendors, IVendor } from "../../api/vendor";
 import { createStockIn, StockInRecord } from "../../api/stockIn";
@@ -33,6 +33,83 @@ const StockInUploadModal: React.FC<StockInUploadModalProps> = ({
 	const [loadingData, setLoadingData] = useState(false); // 加载产品和供应商数据的状态
 	const [filterStatus, setFilterStatus] = useState<"all" | "success" | "failed">("all"); // 筛选状态
 	const [selectedRowKeys, setSelectedRowKeys] = useState<React.Key[]>([]); // 选中的行 key
+
+	const columns:TableProps<StockInRecord>["columns"] = [
+		{
+			title: "行号",
+			key: "rowIndex",
+			width: 60,
+			render: (_, record) => record.rowIndex || "-",
+		},
+		{
+			title: "商品ID",
+			dataIndex: "productId",
+			key: "productId",
+			width: 80,
+		},
+		{
+			title: "商品名称",
+			key: "productName",
+			width: 100,
+			ellipsis: {
+				showTitle: false,
+			},
+			render: (_, record) => {
+				const product = products.find(p => p.id === record.productId);
+				const productName = product ? product.name : "-";
+				return (
+					<Tooltip placement="topLeft" title={productName}>
+						<span className="block overflow-hidden text-ellipsis whitespace-nowrap">
+							{productName}
+						</span>
+					</Tooltip>
+				);
+			},
+		},
+		{
+			title: "供应商ID",
+			dataIndex: "vendorId",
+			key: "vendorId",
+			width: 80,
+		},
+		{
+			title: "供应商名称",
+			key: "vendorName",
+			width: 150,
+			render: (_, record) => {
+				const vendor = vendors.find(v => v.id === record.vendorId);
+				return vendor ? vendor.name : "-";
+			},
+		},
+		{
+			title: "数量",
+			dataIndex: "count",
+			key: "count",
+			width: 80,
+		},
+		{
+			title: "价格",
+			dataIndex: "cost",
+			key: "cost",
+			width: 100,
+		},
+		{
+			title: "匹配结果",
+			key: "matchResult",
+			fixed: "right",
+			width: 100,
+			render: (_, record) => {
+				const product = products.find(p => p.id === record.productId);
+				const vendor = vendors.find(v => v.id === record.vendorId);
+				const isMatched = product && vendor;
+				return isMatched ? (
+					<CheckCircleOutlined style={{ color: "#52c41a", fontSize: 18 }} />
+				) : (
+					<CloseCircleOutlined style={{ color: "#ff4d4f", fontSize: 18 }} />
+				);
+			},
+		},
+	]
 
 	// 解析 Excel 文件 - 第二行作为字段 key
 	const parseExcelFile = async (file: File): Promise<StockInRecord[]> => {
@@ -383,82 +460,7 @@ const StockInUploadModal: React.FC<StockInUploadModalProps> = ({
 											setSelectedRowKeys(selectedKeys);
 										},
 									}}
-									columns={[
-										{
-											title: "行号",
-											key: "rowIndex",
-											width: 60,
-											render: (_, record) => record.rowIndex || "-",
-										},
-										{
-											title: "商品ID",
-											dataIndex: "productId",
-											key: "productId",
-											width: 80,
-										},
-										{
-											title: "商品名称",
-											key: "productName",
-											width: 100,
-											ellipsis: {
-												showTitle: false,
-											},
-											render: (_, record) => {
-												const product = products.find(p => p.id === record.productId);
-												const productName = product ? product.name : "-";
-												return (
-													<Tooltip placement="topLeft" title={productName}>
-														<span className="block overflow-hidden text-ellipsis whitespace-nowrap">
-															{productName}
-														</span>
-													</Tooltip>
-												);
-											},
-										},
-										{
-											title: "供应商ID",
-											dataIndex: "vendorId",
-											key: "vendorId",
-											width: 80,
-										},
-										{
-											title: "供应商名称",
-											key: "vendorName",
-											width: 150,
-											render: (_, record) => {
-												const vendor = vendors.find(v => v.id === record.vendorId);
-												return vendor ? vendor.name : "-";
-											},
-										},
-										{
-											title: "数量",
-											dataIndex: "count",
-											key: "count",
-											width: 80,
-										},
-										{
-											title: "价格",
-											dataIndex: "cost",
-											key: "cost",
-											width: 100,
-										},
-										{
-											title: "匹配结果",
-											key: "matchResult",
-											fixed: "right",
-											width: 100,
-											render: (_, record) => {
-												const product = products.find(p => p.id === record.productId);
-												const vendor = vendors.find(v => v.id === record.vendorId);
-												const isMatched = product && vendor;
-												return isMatched ? (
-													<CheckCircleOutlined style={{ color: "#52c41a", fontSize: 18 }} />
-												) : (
-													<CloseCircleOutlined style={{ color: "#ff4d4f", fontSize: 18 }} />
-												);
-											},
-										},
-									]}
+									columns={columns}
 									dataSource={filteredRecords.sort((a, b) => (a.rowIndex || 0) - (b.rowIndex || 0))}
 									rowKey={(record, index) => `record-${record.rowIndex ?? index}`}
 									pagination={{

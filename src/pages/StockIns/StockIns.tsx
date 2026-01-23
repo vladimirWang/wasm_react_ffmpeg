@@ -1,39 +1,12 @@
 import React, { useState } from "react";
-import { Button, Input, Pagination, Space, Table } from "antd";
-import {
-	PlusCircleOutlined,
-	SearchOutlined,
-} from "@ant-design/icons";
+import { Button, Input, message, Pagination, Space, Table, Tooltip } from "antd";
+import { CheckCircleOutlined, PlusCircleOutlined, SearchOutlined } from "@ant-design/icons";
 import type { TableProps } from "antd";
 import { IProductQueryParams } from "../../api/product";
-import { getStockIns, IStockIn } from "../../api/stockIn";
-import useSWR from "swr";
+import { getStockIns, IStockIn, confirmStockInCompleted } from "../../api/stockIn";
+import useSWR, { mutate } from "swr";
 import { Link, useNavigate } from "react-router-dom";
 import StockInUploadModal from "./StockInUploadModal";
-
-const columns: TableProps<IStockIn>["columns"] = [
-	// {
-	// 	title: "name",
-	// 	dataIndex: "name",
-	// 	key: "name",
-	// },
-	{
-		title: "订单总金额",
-		dataIndex: "totalCost",
-		key: "totalCost",
-	},
-	{
-		title: "操作",
-		key: "action",
-		dataIndex: "action",
-		render: (_, record) => (
-			<Space size="middle">
-				<Link to={`/stockin/${record.id}`}>编辑</Link>
-				{/* <Link to={`/stockin/${record.id}`}>查看</Link> */}
-			</Space>
-		),
-	},
-];
 
 const StockIns: React.FC = () => {
 	const [fileUploadModalOpen, setFileUploadModalOpen] = useState(false);
@@ -71,18 +44,65 @@ const StockIns: React.FC = () => {
 		}
 	);
 
-	// const [products, setProducts] = React.useState<IProduct[]>(data);
+	const columns: TableProps<IStockIn>["columns"] = [
+		// {
+		// 	title: "name",
+		// 	dataIndex: "name",
+		// 	key: "name",
+		// },
+		{
+			title: "进货单id",
+			dataIndex: "id",
+			key: "id",
+		},
+		{
+			title: "订单总金额",
+			dataIndex: "totalCost",
+			key: "totalCost",
+		},
+		{
+			title: "状态",
+			dataIndex: "status",
+			key: "status",
+			render: (_, record) => {
+				return record.status === "COMPLETED" ? "已确认" : "未确认";
+			},
+		},
+		{
+			title: "操作",
+			key: "action",
+			dataIndex: "action",
+			fixed: "right",
+			width: 150,
+			render: (_, record) => (
+				<Space size="middle">
+					{record.status === "COMPLETED" && <Link to={`/stockin/${record.id}`}>查看</Link>}
+					{record.status === "PENDING" && (
+						<>
+							<Link to={`/stockin/update/${record.id}`}>编辑</Link>
+							<Tooltip title="确认进货完成">
+								<Button
+									onClick={async () => {
+										try {
+											const res = await confirmStockInCompleted(record.id);
+											message.success(res.message);
+											mutate();
+										} catch (e) {
+											message.error((e as Error).message);
+										}
+									}}
+									icon={<CheckCircleOutlined style={{ color: "#52c41a", fontSize: 18 }} />}
+								></Button>
+							</Tooltip>
+						</>
+					)}
 
-	// const loadProducts = async () => {
-	//   // const res = await fetch('/api/product?limit=10&page=1&name=');
-	//   // const json = await res.json();
-	//   // setProducts(json.data.list);
-	//   const res = await getProducts({ limit: 10, page: 1, name: '' });
-	//   setProducts(res.data.list);
-	// }
-	// useEffect(() => {
-	//   // loadProducts()
-	// }, [])
+					{/* <Link to={`/stockin/${record.id}`}>查看</Link> */}
+				</Space>
+			),
+		},
+	];
+
 	const [keyword, setKeyword] = useState<string>(queryParams.name || "");
 	const [page, setPage] = useState(queryParams.page);
 

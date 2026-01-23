@@ -2,11 +2,14 @@ import request from "../request";
 import { sleep } from "../utils/common";
 import { IPaginationResp, IPagination, IResponse } from "./commonDef";
 
+// 进货单状态
+type StockInStatus = 'PENDING' | 'COMPLETED';
 export interface IStockIn {
 	totalPrice: number;
 	remark?: string;
 	readonly id: number;
 	productsJoinStock: [];
+	status: StockInStatus;
 }
 type IStockInsQueryResponse = IResponse<IPaginationResp<IStockIn>>;
 
@@ -51,10 +54,11 @@ export const getStockInDetailById = async (id: number): Promise<IStockResponse> 
 };
 
 // 获取进货记录
-export const updateStockIn = async (id: number,
+export const updateStockIn = async (
+	id: number,
 	data?: IStockInCreateParams
 ): Promise<IStockInsQueryResponse> => {
-	return request.put<IStockInsQueryResponse>("/api/stockin/"+id, data);
+	return request.put<IStockInsQueryResponse>("/api/stockin/" + id, data);
 };
 
 // 文件上传接口
@@ -67,16 +71,17 @@ export const uploadStockInFile = async (file: File): Promise<IResponse<any>> => 
 	const token = localStorage.getItem("access_token");
 	const baseURL = import.meta.env.VITE_API_BASE_URL || "";
 
-	const response = await axios.post(
-		`${baseURL}/api/upload/excel`,
-		formData,
-		{
-			headers: {
-				"Content-Type": "multipart/form-data",
-				...(token && { Authorization: token }),
-			},
-		}
-	);
+	const response = await axios.post(`${baseURL}/api/upload/excel`, formData, {
+		headers: {
+			"Content-Type": "multipart/form-data",
+			...(token && { Authorization: token }),
+		},
+	});
 
 	return response.data;
+};
+
+// 进货单确认完成
+export const confirmStockInCompleted = async (id: number): Promise<IStockResponse> => {
+	return request.patch<IStockResponse>("/api/stockin/confirmCompleted/" + id);
 };
