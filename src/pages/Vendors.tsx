@@ -201,7 +201,7 @@ const Vendors: React.FC = () => {
 			{error && <div>Error loading products.</div>}
 			<Table<IVendor>
 				size="small"
-				rowSelection={{ type: "checkbox", ...rowSelection }}
+				// rowSelection={{ type: "checkbox", ...rowSelection }}
 				columns={columns}
 				dataSource={products?.data.list}
 				rowKey={"id"}
@@ -214,11 +214,11 @@ const Vendors: React.FC = () => {
 				})}
 			/>
 			<br />
-			<section>
+			{/* <section>
 				<Button size="small" onClick={handleBatchDelete} disabled={selectedIds.length === 0}>
 					删除
 				</Button>
-			</section>
+			</section> */}
 			<section className="flex justify-end">
 				<Pagination
 					total={products?.data.total}
