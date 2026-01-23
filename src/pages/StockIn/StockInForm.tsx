@@ -35,8 +35,7 @@ export default function StockInForm(props: StockInFormProps) {
 
 	const [allProducts, setAllProducts] = useState<IProduct[]>([]);
 	const editable = useMemo(() => {
-		// return props.pageOperation === "create";
-		return true;
+		return props.pageOperation !== "view";
 	}, [props.pageOperation]);
 
 	type StockInFormValues = IVendorUpdateParams & {

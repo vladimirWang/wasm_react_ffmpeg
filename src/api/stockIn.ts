@@ -3,13 +3,15 @@ import { sleep } from "../utils/common";
 import { IPaginationResp, IPagination, IResponse } from "./commonDef";
 
 // 进货单状态
-type StockInStatus = 'PENDING' | 'COMPLETED';
+type StockInStatus = "PENDING" | "COMPLETED";
 export interface IStockIn {
 	totalPrice: number;
 	remark?: string;
 	readonly id: number;
 	productsJoinStock: [];
 	status: StockInStatus;
+	createdAt: Date;
+	completedAt?: Date;
 }
 type IStockInsQueryResponse = IResponse<IPaginationResp<IStockIn>>;
 

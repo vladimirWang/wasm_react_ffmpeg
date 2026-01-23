@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { Alert, Button, Flex, Input, Modal, Pagination, Space, Table, Tag } from "antd";
+import { Alert, Button, Flex, Input, Modal, Pagination, Space, Table, Tag, Tooltip } from "antd";
 import { PlusCircleOutlined, SearchOutlined } from "@ant-design/icons";
 import type { TableProps } from "antd";
 import { IProduct, IProductQueryParams, getProducts } from "../api/product";
@@ -27,6 +27,16 @@ const Products: React.FC = () => {
 			title: "名称",
 			dataIndex: "name",
 			key: "name",
+			width: 100,
+			render: (text, record) => {
+				return (
+					<Tooltip placement="topLeft" title={record.name}>
+						<span className="block overflow-hidden text-ellipsis whitespace-nowrap">
+							{record.name}
+						</span>
+					</Tooltip>
+				);
+			},
 		},
 		{
 			title: "最新售价",

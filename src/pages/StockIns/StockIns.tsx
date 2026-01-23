@@ -7,6 +7,8 @@ import { getStockIns, IStockIn, confirmStockInCompleted } from "../../api/stockI
 import useSWR, { mutate } from "swr";
 import { Link, useNavigate } from "react-router-dom";
 import StockInUploadModal from "./StockInUploadModal";
+import dayjs from "dayjs";
+
 
 const StockIns: React.FC = () => {
 	const [fileUploadModalOpen, setFileUploadModalOpen] = useState(false);
@@ -66,6 +68,24 @@ const StockIns: React.FC = () => {
 			key: "status",
 			render: (_, record) => {
 				return record.status === "COMPLETED" ? "已确认" : "未确认";
+			},
+		},
+		{
+			title: "创建日期",
+			dataIndex: "createdAt",
+			key: "createdAt",
+			render: (_, record) => {
+				return dayjs(record.createdAt).format("YYYY-MM-DD HH:mm:ss");
+			},
+		},
+		{
+			title: "收货日期",
+			dataIndex: "completedAt",
+			key: "completedAt",
+			render: (_, record) => {
+				return record.completedAt
+					? dayjs(record.completedAt).format("YYYY-MM-DD HH:mm:ss")
+					: null;
 			},
 		},
 		{
