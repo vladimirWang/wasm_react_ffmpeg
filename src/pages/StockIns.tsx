@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Button, Input, message, Modal, Pagination, Space, Table, Upload, Steps, Select } from "antd";
+import { Button, Input, message, Modal, Pagination, Space, Table, Upload, Steps, Select, Tooltip } from "antd";
 import {
 	InboxOutlined,
 	PlusCircleOutlined,
@@ -98,6 +98,7 @@ const StockIns: React.FC = () => {
 	const [vendors, setVendors] = useState<IVendor[]>([]); // 供应商列表
 	const [loadingData, setLoadingData] = useState(false); // 加载产品和供应商数据的状态
 	const [filterStatus, setFilterStatus] = useState<"all" | "success" | "failed">("all"); // 筛选状态
+	const [selectedRowKeys, setSelectedRowKeys] = useState<React.Key[]>([]); // 选中的行 key
 
 	// 解析 Excel 文件 - 第二行作为字段 key
 	const parseExcelFile = async (file: File): Promise<StockInRecord[]> => {
@@ -308,6 +309,27 @@ const StockIns: React.FC = () => {
 		setCurrentStep(0);
 		setParsedRecords([]);
 		setUploadedFile(null);
+		setSelectedRowKeys([]);
+	};
+
+	// 删除选中的记录
+	const handleDeleteSelected = () => {
+		if (selectedRowKeys.length === 0) {
+			message.warning("请先选择要删除的记录");
+			return;
+		}
+
+		// 根据选中的 rowKey 删除记录
+		// rowKey 格式为 `record-${record.rowIndex || index}`
+		const keysToDelete = new Set(selectedRowKeys.map(key => String(key)));
+		const newRecords = parsedRecords.filter((record, index) => {
+			const rowKey = `record-${record.rowIndex ?? index}`;
+			return !keysToDelete.has(rowKey);
+		});
+
+		setParsedRecords(newRecords);
+		setSelectedRowKeys([]);
+		message.success(`已删除 ${selectedRowKeys.length} 条记录`);
 	};
 
 	const props: UploadProps = {
@@ -505,33 +527,49 @@ const StockIns: React.FC = () => {
 										size="small"
 										bordered
 										loading={loadingData}
+										rowSelection={{
+											selectedRowKeys,
+											onChange: (selectedKeys) => {
+												setSelectedRowKeys(selectedKeys);
+											},
+										}}
 										columns={[
 								{
 									title: "行号",
 									key: "rowIndex",
-									width: 80,
+									width: 60,
 									render: (_, record) => record.rowIndex || "-",
 								},
 								{
 									title: "商品ID",
 									dataIndex: "productId",
 									key: "productId",
-									width: 100,
+									width: 80,
 								},
 								{
 									title: "商品名称",
 									key: "productName",
-									width: 150,
+									width: 100,
+									ellipsis: {
+										showTitle: false,
+									},
 									render: (_, record) => {
 										const product = products.find(p => p.id === record.productId);
-										return product ? product.name : "-";
+										const productName = product ? product.name : "-";
+										return (
+											<Tooltip placement="topLeft" title={productName}>
+												<span style={{ display: "block", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+													{productName}
+												</span>
+											</Tooltip>
+										);
 									},
 								},
 								{
 									title: "供应商ID",
 									dataIndex: "vendorId",
 									key: "vendorId",
-									width: 100,
+									width: 80,
 								},
 								{
 									title: "供应商名称",
@@ -572,24 +610,33 @@ const StockIns: React.FC = () => {
 								},
 										]}
 										dataSource={filteredRecords.sort((a, b) => (a.rowIndex || 0) - (b.rowIndex || 0))}
-										rowKey={(record, index) => `record-${record.rowIndex || index}`}
+										rowKey={(record, index) => `record-${record.rowIndex ?? index}`}
 										pagination={{
 											pageSize: 10,
 											showSizeChanger: false,
 										}}
 										scroll={{ y: 300, x: 800 }}
 									/>
+									<div style={{ marginTop: 16, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+										<Button
+											danger
+											onClick={handleDeleteSelected}
+											disabled={selectedRowKeys.length === 0}
+										>
+											删除选中 ({selectedRowKeys.length})
+										</Button>
+										<div>
+											<Button onClick={() => setCurrentStep(0)} style={{ marginRight: 8 }}>
+												返回
+											</Button>
+											<Button type="primary" onClick={handleConfirmImport} loading={uploading}>
+												确认导入
+											</Button>
+										</div>
+									</div>
 								</>
 							);
 						})()}
-						<div style={{ marginTop: 16, textAlign: "right" }}>
-							<Button onClick={() => setCurrentStep(0)} style={{ marginRight: 8 }}>
-								返回
-							</Button>
-							<Button type="primary" onClick={handleConfirmImport} loading={uploading}>
-								确认导入
-							</Button>
-						</div>
 					</div>
 				)}
 			</Modal>
