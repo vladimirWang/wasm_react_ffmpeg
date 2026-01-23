@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { Button, Input, Modal, Pagination, Space, Table } from "antd";
+import { Button, Input, message, Modal, Pagination, Space, Table } from "antd";
 import { PlusCircleOutlined, SearchOutlined } from "@ant-design/icons";
 import type { TableProps } from "antd";
 import useSWR from "swr";
@@ -138,15 +138,9 @@ const Vendors: React.FC = () => {
 		try {
 			const res = await batchDeleteVendor({ id: selectedIds });
 			mutate();
-			GlobalModal.open({
-				type: "success",
-				title: res.message,
-			});
+			message.success(res.message);
 		} catch (e) {
-			GlobalModal.open({
-				type: "error",
-				title: (e as Error).message,
-			});
+			message.error((e as Error).message);
 		}
 	};
 

@@ -25,6 +25,7 @@ const ProductUpdate = lazy(() => import("../pages/Product/ProductUpdate"));
 const StockInsCreate = lazy(() => import("../pages/StockIn/StockInCreate"));
 const StockInsUpdate = lazy(() => import("../pages/StockIn/StockInUpdate"));
 const StockInsView = lazy(() => import("../pages/StockIn/StockInView"));
+const StockOuts = lazy(() => import("../pages/StockOuts/StockOuts"));
 import { getCurrentUser, type IUser } from "../api/user";
 import { useUserStore } from "../store/userStore";
 
@@ -344,6 +345,15 @@ export const routeConfig: ExtendedRouteObject[] = [
 				meta: {
 					icon: <DesktopOutlined />,
 					order: 4,
+				},
+			},
+			{
+				path: "stockout",
+				Component: StockOuts,
+				meta: {
+					title: "出货记录",
+					icon: <DesktopOutlined />,
+					order: 5,
 				},
 			},
 		],

@@ -3,13 +3,13 @@ import { Button, Input, message, Pagination, Space, Table, Tooltip } from "antd"
 import { CheckCircleOutlined, PlusCircleOutlined, SearchOutlined } from "@ant-design/icons";
 import type { TableProps } from "antd";
 import { IProductQueryParams } from "../../api/product";
-import { getStockIns, IStockIn, confirmStockInCompleted } from "../../api/stockIn";
+import { getStockOuts, IStockOut } from "../../api/stockOut";
 import useSWR, { mutate } from "swr";
 import { Link, useNavigate } from "react-router-dom";
-import StockInUploadModal from "./StockInUploadModal";
+// import StockInUploadModal from "./StockInUploadModal";
 import dayjs from "dayjs";
 
-const StockIns: React.FC = () => {
+const StockOuts: React.FC = () => {
 	const [fileUploadModalOpen, setFileUploadModalOpen] = useState(false);
 	const navigate = useNavigate();
 	const [queryParams, setQueryParams] = useState<IProductQueryParams>({
@@ -19,7 +19,7 @@ const StockIns: React.FC = () => {
 	});
 	// 2. 定义SWR的fetcher函数：接收参数，调用getStockIns
 	const fetcher = async (_params: IProductQueryParams) => {
-		const res = await getStockIns();
+		const res = await getStockOuts();
 		if (res.code !== 200) {
 			return {
 				data: {
@@ -45,21 +45,21 @@ const StockIns: React.FC = () => {
 		}
 	);
 
-	const columns: TableProps<IStockIn>["columns"] = [
+	const columns: TableProps<IStockOut>["columns"] = [
 		// {
 		// 	title: "name",
 		// 	dataIndex: "name",
 		// 	key: "name",
 		// },
 		{
-			title: "进货单id",
+			title: "出货单id",
 			dataIndex: "id",
 			key: "id",
 		},
 		{
 			title: "订单总金额",
-			dataIndex: "totalCost",
-			key: "totalCost",
+			dataIndex: "totalPrice",
+			key: "totalPrice",
 		},
 		{
 			title: "状态",
@@ -85,39 +85,39 @@ const StockIns: React.FC = () => {
 				return record.completedAt ? dayjs(record.completedAt).format("YYYY-MM-DD HH:mm:ss") : null;
 			},
 		},
-		{
-			title: "操作",
-			key: "action",
-			dataIndex: "action",
-			fixed: "right",
-			width: 150,
-			render: (_, record) => (
-				<Space size="middle">
-					{record.status === "COMPLETED" && <Link to={`/stockin/${record.id}`}>查看</Link>}
-					{record.status === "PENDING" && (
-						<>
-							<Link to={`/stockin/update/${record.id}`}>编辑</Link>
-							<Tooltip title="确认进货完成">
-								<Button
-									onClick={async () => {
-										try {
-											const res = await confirmStockInCompleted(record.id);
-											message.success(res.message);
-											mutate();
-										} catch (e) {
-											message.error((e as Error).message);
-										}
-									}}
-									icon={<CheckCircleOutlined style={{ color: "#52c41a", fontSize: 18 }} />}
-								></Button>
-							</Tooltip>
-						</>
-					)}
+		// {
+		// 	title: "操作",
+		// 	key: "action",
+		// 	dataIndex: "action",
+		// 	fixed: "right",
+		// 	width: 150,
+		// 	render: (_, record) => (
+		// 		<Space size="middle">
+		// 			{record.status === "COMPLETED" && <Link to={`/stockin/${record.id}`}>查看</Link>}
+		// 			{record.status === "PENDING" && (
+		// 				<>
+		// 					<Link to={`/stockin/update/${record.id}`}>编辑</Link>
+		// 					<Tooltip title="确认进货完成">
+		// 						<Button
+		// 							onClick={async () => {
+		// 								try {
+		// 									const res = await confirmStockInCompleted(record.id);
+		// 									message.success(res.message);
+		// 									mutate();
+		// 								} catch (e) {
+		// 									message.error((e as Error).message);
+		// 								}
+		// 							}}
+		// 							icon={<CheckCircleOutlined style={{ color: "#52c41a", fontSize: 18 }} />}
+		// 						></Button>
+		// 					</Tooltip>
+		// 				</>
+		// 			)}
 
-					{/* <Link to={`/stockin/${record.id}`}>查看</Link> */}
-				</Space>
-			),
-		},
+		// 			{/* <Link to={`/stockin/${record.id}`}>查看</Link> */}
+		// 		</Space>
+		// 	),
+		// },
 	];
 
 	const [keyword, setKeyword] = useState<string>(queryParams.name || "");
@@ -159,7 +159,7 @@ const StockIns: React.FC = () => {
 				</Button>
 			</section>
 			{error && <div>Error loading products.</div>}
-			<Table<IStockIn>
+			<Table<IStockOut>
 				size="small"
 				columns={columns}
 				dataSource={stockIns?.data.list}
@@ -188,16 +188,16 @@ const StockIns: React.FC = () => {
 					}}
 				/>
 			</section>
-			<StockInUploadModal
+			{/* <StockInUploadModal
 				open={fileUploadModalOpen}
 				onCancel={() => setFileUploadModalOpen(false)}
 				onSuccess={() => {
 					mutate();
 					setFileUploadModalOpen(false);
 				}}
-			/>
+			/> */}
 		</div>
 	);
 };
 
-export default StockIns;
+export default StockOuts;

@@ -1,4 +1,4 @@
-import { Button, Form, Input } from "antd";
+import { Button, Form, Input, message } from "antd";
 import { IVendorCreateParams, IVendorUpdateParams, VendorDetailResponse } from "../../api/vendor";
 import { useState } from "react";
 import { GlobalModal } from "../../components/GlobalModal";
@@ -23,15 +23,9 @@ export default function VendorForm(props: VendorFormProps) {
 				setLoading(true);
 				try {
 					const res = await props.onFinishCallback(values);
-					GlobalModal.open({
-						type: "success",
-						title: res.message,
-					});
+					message.success(res.message);
 				} catch (e: unknown) {
-					GlobalModal.open({
-						type: "success",
-						title: (e as Error).message,
-					});
+					message.error((e as Error).message);
 				} finally {
 					setLoading(false);
 				}

@@ -4,7 +4,7 @@ import { IProductJoinStockIn } from "../../api/stockIn";
 import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import useSWR from "swr";
-import { Spin } from "antd";
+import { message, Spin } from "antd";
 
 export default function StockInUpdate() {
 	// const [initialValues, setInitialValues] = useState<IStockIn>();
@@ -41,7 +41,11 @@ export default function StockInUpdate() {
 	) => {
 		setCompleted(false);
 		const res = await updateStockIn(Number(id), formValue);
-
+		if (res.code !== 200) {
+			message.warning(res.message);
+		} else {
+			message.success(res.message);
+		}
 		return Promise.resolve();
 	};
 	useEffect(() => {

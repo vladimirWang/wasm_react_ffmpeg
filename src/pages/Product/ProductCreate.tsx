@@ -7,7 +7,7 @@ import {
 	IProductCreateParams,
 	IProductUpdateParams,
 } from "../../api/product";
-import { Button, Form, Input, InputNumber, Spin, Upload } from "antd";
+import { Button, Form, Input, InputNumber, message, Spin, Upload } from "antd";
 import ProductForm from "./ProductForm";
 
 export default function ProductCreate() {
@@ -19,12 +19,12 @@ export default function ProductCreate() {
 			// values.vendorId = 2;
 			const res = await createProduct(values);
 			if (res.code === 200) {
-				alert("更新成功");
+				message.success(res.message);
 			} else {
-				alert(res.message);
+				message.warning(res.message);
 			}
 		} catch (error) {
-			console.error("<delete>  ");
+			message.error((error as Error).message);
 		} finally {
 			setLoading(false);
 			return Promise.resolve();
