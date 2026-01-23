@@ -21,6 +21,14 @@ export interface IProductJoinStockIn {
 	productId: number;
 }
 
+// Excel 解析后的数据格式
+export interface StockInRecord {
+	productId: number;
+	vendorId: number;
+	count: number;
+	cost: number;
+}
+
 export interface IStockInCreateParams {
 	productJoinStockIn: IProductJoinStockIn[];
 	remark?: string;

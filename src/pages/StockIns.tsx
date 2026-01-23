@@ -1,12 +1,12 @@
-import React, { use, useEffect, useState } from "react";
-import { Button, Flex, Input, message, Modal, Pagination, Space, Table, Tag, Upload } from "antd";
+import React, { useState } from "react";
+import { Button, Input, message, Modal, Pagination, Space, Table, Upload, Steps } from "antd";
 import { InboxOutlined, PlusCircleOutlined, SearchOutlined } from "@ant-design/icons";
 import type { TableProps, UploadProps } from "antd";
-import { IProduct, IProductQueryParams, getProducts } from "../api/product";
-import { getStockIns, IStockIn, uploadStockInFile } from "../api/stockIn";
+import { IProductQueryParams } from "../api/product";
+import { getStockIns, IStockIn, createStockIn, StockInRecord } from "../api/stockIn";
 import useSWR from "swr";
 import { Link, useNavigate } from "react-router-dom";
-import type { RcFile } from "antd/es/upload";
+import * as XLSX from "xlsx";
 
 const { Dragger } = Upload;
 const columns: TableProps<IStockIn>["columns"] = [
@@ -41,8 +41,8 @@ const StockIns: React.FC = () => {
 		limit: 20,
 		name: "",
 	});
-	// 2. 定义SWR的fetcher函数：接收参数，调用getProducts
-	const fetcher = async (params: IProductQueryParams) => {
+	// 2. 定义SWR的fetcher函数：接收参数，调用getStockIns
+	const fetcher = async (_params: IProductQueryParams) => {
 		const res = await getStockIns();
 		if (res.code !== 200) {
 			return {
@@ -84,32 +84,169 @@ const StockIns: React.FC = () => {
 	const [keyword, setKeyword] = useState<string>(queryParams.name || "");
 	const [page, setPage] = useState(queryParams.page);
 	const [uploading, setUploading] = useState(false);
+	const [currentStep, setCurrentStep] = useState(0); // Steps 当前步骤
+	const [parsedRecords, setParsedRecords] = useState<StockInRecord[]>([]); // 解析后的数据
+	const [uploadedFile, setUploadedFile] = useState<File | null>(null); // 上传的文件
 
-	// 自定义上传方法
+	// 解析 Excel 文件 - 第二行作为字段 key
+	const parseExcelFile = async (file: File): Promise<StockInRecord[]> => {
+		return new Promise((resolve, reject) => {
+			const reader = new FileReader();
+			reader.onload = e => {
+				try {
+					const data = new Uint8Array(e.target?.result as ArrayBuffer);
+					const workbook = XLSX.read(data, { type: "array" });
+
+					// 读取第一个工作表
+					const firstSheetName = workbook.SheetNames[0];
+					const worksheet = workbook.Sheets[firstSheetName];
+
+					// 将工作表转换为 JSON 数组
+					const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 }) as any[][];
+
+					if (jsonData.length < 3) {
+						reject(new Error("Excel 文件格式不正确：至少需要 3 行数据（第一行忽略，第二行表头，第三行开始为数据）"));
+						return;
+					}
+
+					// 第二行作为字段 key（表头）
+					const headerRow = jsonData[1];
+					if (!headerRow || headerRow.length === 0) {
+						reject(new Error("Excel 文件格式不正确：第二行必须包含字段名称"));
+						return;
+					}
+
+					// 创建字段映射：字段名 -> 列索引
+					const fieldMap: Record<string, number> = {};
+					headerRow.forEach((header: any, index: number) => {
+						if (header) {
+							const headerStr = String(header).trim().toLowerCase();
+							// 支持多种字段名映射
+							if (headerStr.includes("productid") || headerStr.includes("商品id") || headerStr.includes("产品id")) {
+								fieldMap["productId"] = index;
+							} else if (headerStr.includes("vendorid") || headerStr.includes("供应商id") || headerStr.includes("厂商id")) {
+								fieldMap["vendorId"] = index;
+							} else if (headerStr.includes("count") || headerStr.includes("数量")) {
+								fieldMap["count"] = index;
+							} else if (headerStr.includes("cost") || headerStr.includes("价格") || headerStr.includes("成本")) {
+								fieldMap["cost"] = index;
+							}
+						}
+					});
+
+					// 验证必需的字段是否存在
+					const requiredFields = ["productId", "vendorId", "count", "cost"];
+					const missingFields = requiredFields.filter(field => fieldMap[field] === undefined);
+					if (missingFields.length > 0) {
+						reject(new Error(`Excel 文件缺少必需字段：${missingFields.join(", ")}`));
+						return;
+					}
+
+					// 从第三行开始解析数据（索引从 2 开始）
+					const records: StockInRecord[] = [];
+					for (let i = 2; i < jsonData.length; i++) {
+						const row = jsonData[i];
+						if (!row || row.length === 0) continue; // 跳过空行
+
+						const productId = Number(row[fieldMap["productId"]]);
+						const vendorId = Number(row[fieldMap["vendorId"]]);
+						const count = Number(row[fieldMap["count"]]);
+						const cost = Number(row[fieldMap["cost"]]);
+
+						// 验证数据有效性
+						if (!isNaN(productId) && !isNaN(vendorId) && !isNaN(count) && !isNaN(cost)) {
+							records.push({
+								productId,
+								vendorId,
+								count,
+								cost,
+							});
+						}
+					}
+
+					if (records.length === 0) {
+						reject(new Error("Excel 文件中没有有效数据"));
+						return;
+					}
+
+					resolve(records);
+				} catch (error) {
+					reject(error);
+				}
+			};
+			reader.onerror = () => {
+				reject(new Error("文件读取失败"));
+			};
+			reader.readAsArrayBuffer(file);
+		});
+	};
+
+	// 自定义上传方法 - 改为前端解析
 	const customRequest = async (options: any) => {
-		const { file, onSuccess, onError, onProgress } = options;
+		const { file, onSuccess, onError } = options;
 
 		try {
 			setUploading(true);
-			const res = await uploadStockInFile(file as File);
 
-			if (res.code === 200) {
-				onSuccess?.(res, file);
-				message.success(`${file.name} 上传成功`);
-				// 上传成功后刷新列表
-				mutate();
-				// 关闭弹窗
-				setFileUploadModalOpen(false);
-			} else {
-				onError?.(new Error(res.message || "上传失败"));
-				message.error(res.message || `${file.name} 上传失败`);
-			}
+			// 前端解析 Excel 文件
+			const records: StockInRecord[] = await parseExcelFile(file as File);
+
+			// 保存解析结果和文件，切换到第二步
+			setParsedRecords(records);
+			setUploadedFile(file as File);
+			setCurrentStep(1);
+			onSuccess?.(records, file);
+			message.success(`成功解析 ${records.length} 条记录`);
 		} catch (error: any) {
 			onError?.(error);
-			message.error(error?.message || `${file.name} 上传失败`);
+			message.error(error?.message || `${file.name} 解析失败`);
 		} finally {
 			setUploading(false);
 		}
+	};
+
+	// 确认导入
+	const handleConfirmImport = async () => {
+		try {
+			setUploading(true);
+
+			// 将 StockInRecord[] 转换为 IProductJoinStockIn[] 格式
+			const productJoinStockIn = parsedRecords.map(record => ({
+				productId: record.productId,
+				count: record.count,
+				cost: record.cost,
+			}));
+
+			// 调用创建进货记录接口
+			const res = await createStockIn({
+				productJoinStockIn,
+			});
+
+			if (res.code === 200) {
+				message.success(`成功导入 ${parsedRecords.length} 条进货记录`);
+				// 上传成功后刷新列表
+				mutate();
+				// 重置状态并关闭弹窗
+				setCurrentStep(0);
+				setParsedRecords([]);
+				setUploadedFile(null);
+				setFileUploadModalOpen(false);
+			} else {
+				message.error(res.message || "导入失败");
+			}
+		} catch (error: any) {
+			message.error(error?.message || "导入失败");
+		} finally {
+			setUploading(false);
+		}
+	};
+
+	// 重置 Modal 状态
+	const handleModalCancel = () => {
+		setFileUploadModalOpen(false);
+		setCurrentStep(0);
+		setParsedRecords([]);
+		setUploadedFile(null);
 	};
 
 	const props: UploadProps = {
@@ -127,7 +264,7 @@ const StockIns: React.FC = () => {
 		onDrop(e) {
 			console.log("Dropped files", e.dataTransfer.files);
 		},
-		beforeUpload: (file) => {
+		beforeUpload: file => {
 			console.log("beforeUpload file: ", file);
 			return true;
 			// // 可以在这里添加文件类型和大小验证
@@ -219,19 +356,94 @@ const StockIns: React.FC = () => {
 			<Modal
 				open={fileUploadModalOpen}
 				title="批量导入进货记录"
-				onCancel={() => setFileUploadModalOpen(false)}
+				onCancel={handleModalCancel}
 				footer={null}
+				width={800}
 				confirmLoading={uploading}
 			>
-				<Dragger {...props} disabled={uploading}>
-					<p className="ant-upload-drag-icon">
-						<InboxOutlined />
-					</p>
-					<p className="ant-upload-text">点击或拖拽文件到此区域上传</p>
-					<p className="ant-upload-hint">
-						支持 Excel 文件 (.xlsx, .xls)，文件大小不超过 10MB
-					</p>
-				</Dragger>
+				<Steps
+					current={currentStep}
+					items={[
+						{
+							title: "上传文件",
+							description: "选择 Excel 文件并上传",
+						},
+						{
+							title: "数据预览",
+							description: "确认解析后的数据",
+						},
+					]}
+					style={{ marginBottom: 24 }}
+				/>
+
+				{currentStep === 0 && (
+					<Dragger {...props} disabled={uploading}>
+						<p className="ant-upload-drag-icon">
+							<InboxOutlined />
+						</p>
+						<p className="ant-upload-text">点击或拖拽文件到此区域上传</p>
+						<p className="ant-upload-hint">
+							支持 Excel 文件 (.xlsx, .xls)，文件大小不超过 10MB
+							<br />
+							注意：第一行将被忽略，第二行应为字段名称（productId, vendorId, count, cost），第三行开始为数据
+						</p>
+					</Dragger>
+				)}
+
+				{currentStep === 1 && (
+					<div>
+						<div style={{ marginBottom: 16 }}>
+							<p>
+								<strong>文件：</strong>
+								{uploadedFile?.name}
+							</p>
+							<p>
+								<strong>解析结果：</strong>
+								共 {parsedRecords.length} 条记录
+							</p>
+						</div>
+						<Table<StockInRecord>
+							size="small"
+							columns={[
+								{
+									title: "商品ID",
+									dataIndex: "productId",
+									key: "productId",
+								},
+								{
+									title: "供应商ID",
+									dataIndex: "vendorId",
+									key: "vendorId",
+								},
+								{
+									title: "数量",
+									dataIndex: "count",
+									key: "count",
+								},
+								{
+									title: "价格",
+									dataIndex: "cost",
+									key: "cost",
+								},
+							]}
+							dataSource={parsedRecords}
+							rowKey={(_record, index) => `record-${index}`}
+							pagination={{
+								pageSize: 10,
+								showSizeChanger: false,
+							}}
+							scroll={{ y: 300 }}
+						/>
+						<div style={{ marginTop: 16, textAlign: "right" }}>
+							<Button onClick={() => setCurrentStep(0)} style={{ marginRight: 8 }}>
+								返回
+							</Button>
+							<Button type="primary" onClick={handleConfirmImport} loading={uploading}>
+								确认导入
+							</Button>
+						</div>
+					</div>
+				)}
 			</Modal>
 		</div>
 	);
