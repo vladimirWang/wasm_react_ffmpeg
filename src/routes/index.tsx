@@ -14,7 +14,7 @@ import Landing from "../pages/Landing";
 import { LayoutComponent } from "../layout";
 import VendorCreate from "../pages/Vendor/VendorCreate";
 import VendorUpdate from "../pages/Vendor/VendorUpdate";
-import StockIns from "../pages/StockIns";
+import StockIns from "../pages/StockIns/StockIns";
 // import ProductCreate from "../pages/Product/ProductCreate";
 // import ProductUpdate from "../pages/Product/ProductUpdate";
 const Products = lazy(() => import("../pages/Products"));
