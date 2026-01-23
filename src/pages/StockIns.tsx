@@ -1,8 +1,15 @@
 import React, { useState } from "react";
 import { Button, Input, message, Modal, Pagination, Space, Table, Upload, Steps } from "antd";
-import { InboxOutlined, PlusCircleOutlined, SearchOutlined } from "@ant-design/icons";
+import {
+	InboxOutlined,
+	PlusCircleOutlined,
+	SearchOutlined,
+	CheckCircleOutlined,
+	CloseCircleOutlined,
+} from "@ant-design/icons";
 import type { TableProps, UploadProps } from "antd";
-import { IProductQueryParams } from "../api/product";
+import { IProductQueryParams, getProducts, IProduct } from "../api/product";
+import { getVendors, IVendor } from "../api/vendor";
 import { getStockIns, IStockIn, createStockIn, StockInRecord } from "../api/stockIn";
 import useSWR from "swr";
 import { Link, useNavigate } from "react-router-dom";
@@ -87,6 +94,9 @@ const StockIns: React.FC = () => {
 	const [currentStep, setCurrentStep] = useState(0); // Steps 当前步骤
 	const [parsedRecords, setParsedRecords] = useState<StockInRecord[]>([]); // 解析后的数据
 	const [uploadedFile, setUploadedFile] = useState<File | null>(null); // 上传的文件
+	const [products, setProducts] = useState<IProduct[]>([]); // 产品列表
+	const [vendors, setVendors] = useState<IVendor[]>([]); // 供应商列表
+	const [loadingData, setLoadingData] = useState(false); // 加载产品和供应商数据的状态
 
 	// 解析 Excel 文件 - 第二行作为字段 key
 	const parseExcelFile = async (file: File): Promise<StockInRecord[]> => {
@@ -105,7 +115,11 @@ const StockIns: React.FC = () => {
 					const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 }) as any[][];
 
 					if (jsonData.length < 3) {
-						reject(new Error("Excel 文件格式不正确：至少需要 3 行数据（第一行忽略，第二行表头，第三行开始为数据）"));
+						reject(
+							new Error(
+								"Excel 文件格式不正确：至少需要 3 行数据（第一行忽略，第二行表头，第三行开始为数据）"
+							)
+						);
 						return;
 					}
 
@@ -122,13 +136,25 @@ const StockIns: React.FC = () => {
 						if (header) {
 							const headerStr = String(header).trim().toLowerCase();
 							// 支持多种字段名映射
-							if (headerStr.includes("productid") || headerStr.includes("商品id") || headerStr.includes("产品id")) {
+							if (
+								headerStr.includes("productid") ||
+								headerStr.includes("商品id") ||
+								headerStr.includes("产品id")
+							) {
 								fieldMap["productId"] = index;
-							} else if (headerStr.includes("vendorid") || headerStr.includes("供应商id") || headerStr.includes("厂商id")) {
+							} else if (
+								headerStr.includes("vendorid") ||
+								headerStr.includes("供应商id") ||
+								headerStr.includes("厂商id")
+							) {
 								fieldMap["vendorId"] = index;
 							} else if (headerStr.includes("count") || headerStr.includes("数量")) {
 								fieldMap["count"] = index;
-							} else if (headerStr.includes("cost") || headerStr.includes("价格") || headerStr.includes("成本")) {
+							} else if (
+								headerStr.includes("cost") ||
+								headerStr.includes("价格") ||
+								headerStr.includes("成本")
+							) {
 								fieldMap["cost"] = index;
 							}
 						}
@@ -181,6 +207,33 @@ const StockIns: React.FC = () => {
 		});
 	};
 
+	// 加载产品和供应商数据
+	const loadProductsAndVendors = async () => {
+		try {
+			setLoadingData(true);
+			const [productsRes, vendorsRes] = await Promise.all([
+				getProducts({ pagination: false }),
+				getVendors({ pagination: false }),
+			]);
+
+			if (productsRes.code === 200) {
+				setProducts(productsRes.data.list);
+			} else {
+				message.error("加载产品数据失败");
+			}
+
+			if (vendorsRes.code === 200) {
+				setVendors(vendorsRes.data.list);
+			} else {
+				message.error("加载供应商数据失败");
+			}
+		} catch (error: any) {
+			message.error(error?.message || "加载数据失败");
+		} finally {
+			setLoadingData(false);
+		}
+	};
+
 	// 自定义上传方法 - 改为前端解析
 	const customRequest = async (options: any) => {
 		const { file, onSuccess, onError } = options;
@@ -190,6 +243,9 @@ const StockIns: React.FC = () => {
 
 			// 前端解析 Excel 文件
 			const records: StockInRecord[] = await parseExcelFile(file as File);
+
+			// 加载产品和供应商数据
+			await loadProductsAndVendors();
 
 			// 保存解析结果和文件，切换到第二步
 			setParsedRecords(records);
@@ -383,9 +439,10 @@ const StockIns: React.FC = () => {
 						</p>
 						<p className="ant-upload-text">点击或拖拽文件到此区域上传</p>
 						<p className="ant-upload-hint">
-							支持 Excel 文件 (.xlsx, .xls)，文件大小不超过 10MB
+							支持 Excel 文件 (.xlsx, .xls)
 							<br />
-							注意：第一行将被忽略，第二行应为字段名称（productId, vendorId, count, cost），第三行开始为数据
+							注意：第一行将被忽略，第二行应为字段名称（productId, vendorId, count,
+							cost），第三行开始为数据
 						</p>
 					</Dragger>
 				)}
@@ -398,32 +455,69 @@ const StockIns: React.FC = () => {
 								{uploadedFile?.name}
 							</p>
 							<p>
-								<strong>解析结果：</strong>
-								共 {parsedRecords.length} 条记录
+								<strong>解析结果：</strong>共 {parsedRecords.length} 条记录
 							</p>
 						</div>
 						<Table<StockInRecord>
 							size="small"
+							loading={loadingData}
 							columns={[
 								{
 									title: "商品ID",
 									dataIndex: "productId",
 									key: "productId",
+									width: 100,
+								},
+								{
+									title: "商品名称",
+									key: "productName",
+									width: 150,
+									render: (_, record) => {
+										const product = products.find(p => p.id === record.productId);
+										return product ? product.name : "-";
+									},
 								},
 								{
 									title: "供应商ID",
 									dataIndex: "vendorId",
 									key: "vendorId",
+									width: 100,
+								},
+								{
+									title: "供应商名称",
+									key: "vendorName",
+									width: 150,
+									render: (_, record) => {
+										const vendor = vendors.find(v => v.id === record.vendorId);
+										return vendor ? vendor.name : "-";
+									},
 								},
 								{
 									title: "数量",
 									dataIndex: "count",
 									key: "count",
+									width: 80,
 								},
 								{
 									title: "价格",
 									dataIndex: "cost",
 									key: "cost",
+									width: 100,
+								},
+								{
+									title: "匹配结果",
+									key: "matchResult",
+									width: 100,
+									render: (_, record) => {
+										const product = products.find(p => p.id === record.productId);
+										const vendor = vendors.find(v => v.id === record.vendorId);
+										const isMatched = product && vendor;
+										return isMatched ? (
+											<CheckCircleOutlined style={{ color: "#52c41a", fontSize: 18 }} />
+										) : (
+											<CloseCircleOutlined style={{ color: "#ff4d4f", fontSize: 18 }} />
+										);
+									},
 								},
 							]}
 							dataSource={parsedRecords}
@@ -432,7 +526,7 @@ const StockIns: React.FC = () => {
 								pageSize: 10,
 								showSizeChanger: false,
 							}}
-							scroll={{ y: 300 }}
+							scroll={{ y: 300, x: 800 }}
 						/>
 						<div style={{ marginTop: 16, textAlign: "right" }}>
 							<Button onClick={() => setCurrentStep(0)} style={{ marginRight: 8 }}>
