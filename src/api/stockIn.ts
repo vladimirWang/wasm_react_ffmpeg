@@ -47,3 +47,27 @@ export const updateStockIn = async (id: number,
 ): Promise<IStockInsQueryResponse> => {
 	return request.put<IStockInsQueryResponse>("/api/stockin/"+id, data);
 };
+
+// 文件上传接口
+export const uploadStockInFile = async (file: File): Promise<IResponse<any>> => {
+	const formData = new FormData();
+	formData.append("file", file);
+
+	// 使用 axios 直接上传，因为需要设置 multipart/form-data
+	const axios = (await import("axios")).default;
+	const token = localStorage.getItem("access_token");
+	const baseURL = import.meta.env.VITE_API_BASE_URL || "";
+
+	const response = await axios.post(
+		`${baseURL}/api/upload/excel`,
+		formData,
+		{
+			headers: {
+				"Content-Type": "multipart/form-data",
+				...(token && { Authorization: token }),
+			},
+		}
+	);
+
+	return response.data;
+};

@@ -3,9 +3,10 @@ import { Button, Flex, Input, message, Modal, Pagination, Space, Table, Tag, Upl
 import { InboxOutlined, PlusCircleOutlined, SearchOutlined } from "@ant-design/icons";
 import type { TableProps, UploadProps } from "antd";
 import { IProduct, IProductQueryParams, getProducts } from "../api/product";
-import { getStockIns, IStockIn } from "../api/stockIn";
+import { getStockIns, IStockIn, uploadStockInFile } from "../api/stockIn";
 import useSWR from "swr";
 import { Link, useNavigate } from "react-router-dom";
+import type { RcFile } from "antd/es/upload";
 
 const { Dragger } = Upload;
 const columns: TableProps<IStockIn>["columns"] = [
@@ -58,6 +59,7 @@ const StockIns: React.FC = () => {
 		data: stockIns, // 接口返回的产品列表数据
 		error, // 请求错误信息
 		isLoading, // 加载状态
+		mutate, // 用于手动刷新数据
 	} = useSWR(
 		queryParams, // SWR的key：参数变化则重新请求
 		fetcher,
@@ -81,25 +83,71 @@ const StockIns: React.FC = () => {
 	// }, [])
 	const [keyword, setKeyword] = useState<string>(queryParams.name || "");
 	const [page, setPage] = useState(queryParams.page);
+	const [uploading, setUploading] = useState(false);
+
+	// 自定义上传方法
+	const customRequest = async (options: any) => {
+		const { file, onSuccess, onError, onProgress } = options;
+
+		try {
+			setUploading(true);
+			const res = await uploadStockInFile(file as File);
+
+			if (res.code === 200) {
+				onSuccess?.(res, file);
+				message.success(`${file.name} 上传成功`);
+				// 上传成功后刷新列表
+				mutate();
+				// 关闭弹窗
+				setFileUploadModalOpen(false);
+			} else {
+				onError?.(new Error(res.message || "上传失败"));
+				message.error(res.message || `${file.name} 上传失败`);
+			}
+		} catch (error: any) {
+			onError?.(error);
+			message.error(error?.message || `${file.name} 上传失败`);
+		} finally {
+			setUploading(false);
+		}
+	};
 
 	const props: UploadProps = {
 		name: "file",
-		multiple: true,
-		action: "https://localhost:3000/upload",
+		multiple: false, // 改为单文件上传，如果需要多文件可以改为 true
+		customRequest, // 使用自定义上传方法
 		onChange(info) {
 			const { status } = info.file;
-			console.log("status: ", status, info.file);
-			if (status !== "uploading") {
-				console.log(info.file, info.fileList);
-			}
 			if (status === "done") {
-				message.success(`${info.file.name} file uploaded successfully.`);
+				console.log(`${info.file.name} file uploaded successfully.`);
 			} else if (status === "error") {
-				message.error(`${info.file.name} file upload failed.`);
+				console.error(`${info.file.name} file upload failed.`);
 			}
 		},
 		onDrop(e) {
 			console.log("Dropped files", e.dataTransfer.files);
+		},
+		beforeUpload: (file) => {
+			console.log("beforeUpload file: ", file);
+			return true;
+			// // 可以在这里添加文件类型和大小验证
+			// const isExcel = file.type === "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+			// 	|| file.type === "application/vnd.ms-excel"
+			// 	|| file.name.endsWith(".xlsx")
+			// 	|| file.name.endsWith(".xls");
+
+			// if (!isExcel) {
+			// 	message.error("只能上传 Excel 文件 (.xlsx, .xls)");
+			// 	return Upload.LIST_IGNORE;
+			// }
+
+			// const isLt10M = file.size / 1024 / 1024 < 10;
+			// if (!isLt10M) {
+			// 	message.error("文件大小不能超过 10MB");
+			// 	return Upload.LIST_IGNORE;
+			// }
+
+			// return true;
 		},
 	};
 
@@ -168,15 +216,20 @@ const StockIns: React.FC = () => {
 					}}
 				/>
 			</section>
-			<Modal open={fileUploadModalOpen}>
-				<Dragger {...props}>
+			<Modal
+				open={fileUploadModalOpen}
+				title="批量导入进货记录"
+				onCancel={() => setFileUploadModalOpen(false)}
+				footer={null}
+				confirmLoading={uploading}
+			>
+				<Dragger {...props} disabled={uploading}>
 					<p className="ant-upload-drag-icon">
 						<InboxOutlined />
 					</p>
-					<p className="ant-upload-text">Click or drag file to this area to upload</p>
+					<p className="ant-upload-text">点击或拖拽文件到此区域上传</p>
 					<p className="ant-upload-hint">
-						Support for a single or bulk upload. Strictly prohibited from uploading company data or
-						other banned files.
+						支持 Excel 文件 (.xlsx, .xls)，文件大小不超过 10MB
 					</p>
 				</Dragger>
 			</Modal>
