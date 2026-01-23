@@ -1,12 +1,13 @@
 import React, { use, useEffect, useState } from "react";
-import { Button, Flex, Input, Pagination, Space, Table, Tag } from "antd";
-import { PlusCircleOutlined, SearchOutlined } from "@ant-design/icons";
-import type { TableProps } from "antd";
+import { Button, Flex, Input, message, Modal, Pagination, Space, Table, Tag, Upload } from "antd";
+import { InboxOutlined, PlusCircleOutlined, SearchOutlined } from "@ant-design/icons";
+import type { TableProps, UploadProps } from "antd";
 import { IProduct, IProductQueryParams, getProducts } from "../api/product";
 import { getStockIns, IStockIn } from "../api/stockIn";
 import useSWR from "swr";
 import { Link, useNavigate } from "react-router-dom";
 
+const { Dragger } = Upload;
 const columns: TableProps<IStockIn>["columns"] = [
 	// {
 	// 	title: "name",
@@ -32,6 +33,7 @@ const columns: TableProps<IStockIn>["columns"] = [
 ];
 
 const StockIns: React.FC = () => {
+	const [fileUploadModalOpen, setFileUploadModalOpen] = useState(false);
 	const navigate = useNavigate();
 	const [queryParams, setQueryParams] = useState<IProductQueryParams>({
 		page: 1,
@@ -80,6 +82,27 @@ const StockIns: React.FC = () => {
 	const [keyword, setKeyword] = useState<string>(queryParams.name || "");
 	const [page, setPage] = useState(queryParams.page);
 
+	const props: UploadProps = {
+		name: "file",
+		multiple: true,
+		action: "https://localhost:3000/upload",
+		onChange(info) {
+			const { status } = info.file;
+			console.log("status: ", status, info.file);
+			if (status !== "uploading") {
+				console.log(info.file, info.fileList);
+			}
+			if (status === "done") {
+				message.success(`${info.file.name} file uploaded successfully.`);
+			} else if (status === "error") {
+				message.error(`${info.file.name} file upload failed.`);
+			}
+		},
+		onDrop(e) {
+			console.log("Dropped files", e.dataTransfer.files);
+		},
+	};
+
 	return (
 		<div className="py-2 px-3">
 			<section className="flex gap-5">
@@ -106,6 +129,13 @@ const StockIns: React.FC = () => {
 					}}
 				>
 					新增
+				</Button>
+				<Button
+					onClick={() => {
+						setFileUploadModalOpen(true);
+					}}
+				>
+					通过文件批量导入
 				</Button>
 			</section>
 			{error && <div>Error loading products.</div>}
@@ -138,6 +168,18 @@ const StockIns: React.FC = () => {
 					}}
 				/>
 			</section>
+			<Modal open={fileUploadModalOpen}>
+				<Dragger {...props}>
+					<p className="ant-upload-drag-icon">
+						<InboxOutlined />
+					</p>
+					<p className="ant-upload-text">Click or drag file to this area to upload</p>
+					<p className="ant-upload-hint">
+						Support for a single or bulk upload. Strictly prohibited from uploading company data or
+						other banned files.
+					</p>
+				</Dragger>
+			</Modal>
 		</div>
 	);
 };
