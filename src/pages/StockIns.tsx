@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Button, Input, message, Modal, Pagination, Space, Table, Upload, Steps } from "antd";
+import { Button, Input, message, Modal, Pagination, Space, Table, Upload, Steps, Select } from "antd";
 import {
 	InboxOutlined,
 	PlusCircleOutlined,
@@ -97,6 +97,7 @@ const StockIns: React.FC = () => {
 	const [products, setProducts] = useState<IProduct[]>([]); // 产品列表
 	const [vendors, setVendors] = useState<IVendor[]>([]); // 供应商列表
 	const [loadingData, setLoadingData] = useState(false); // 加载产品和供应商数据的状态
+	const [filterStatus, setFilterStatus] = useState<"all" | "success" | "failed">("all"); // 筛选状态
 
 	// 解析 Excel 文件 - 第二行作为字段 key
 	const parseExcelFile = async (file: File): Promise<StockInRecord[]> => {
@@ -453,20 +454,58 @@ const StockIns: React.FC = () => {
 
 				{currentStep === 1 && (
 					<div>
-						<div style={{ marginBottom: 16 }}>
-							<p>
-								<strong>文件：</strong>
-								{uploadedFile?.name}
-							</p>
-							<p>
-								<strong>解析结果：</strong>共 {parsedRecords.length} 条记录
-							</p>
-						</div>
-						<Table<StockInRecord>
-							size="small"
-							bordered
-							loading={loadingData}
-							columns={[
+						{(() => {
+							// 计算成功和失败的记录数
+							const successCount = parsedRecords.filter(record => {
+								const product = products.find(p => p.id === record.productId);
+								const vendor = vendors.find(v => v.id === record.vendorId);
+								return product && vendor;
+							}).length;
+							const failedCount = parsedRecords.length - successCount;
+
+							// 根据筛选条件过滤数据
+							const filteredRecords = parsedRecords.filter(record => {
+								const product = products.find(p => p.id === record.productId);
+								const vendor = vendors.find(v => v.id === record.vendorId);
+								const isMatched = product && vendor;
+
+								if (filterStatus === "all") return true;
+								if (filterStatus === "success") return isMatched;
+								if (filterStatus === "failed") return !isMatched;
+								return true;
+							});
+
+							return (
+								<>
+									<div style={{ marginBottom: 16 }}>
+										<div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+											<div>
+												<p>
+													<strong>文件：</strong>
+													{uploadedFile?.name}
+												</p>
+												<p>
+													<strong>解析结果：</strong>
+													成功 {successCount} 条，失败 {failedCount} 条
+												</p>
+											</div>
+											<Select
+												value={filterStatus}
+												onChange={setFilterStatus}
+												style={{ width: 120 }}
+												options={[
+													{ label: "全部", value: "all" },
+													{ label: "成功", value: "success" },
+													{ label: "失败", value: "failed" },
+												]}
+											/>
+										</div>
+									</div>
+									<Table<StockInRecord>
+										size="small"
+										bordered
+										loading={loadingData}
+										columns={[
 								{
 									title: "行号",
 									key: "rowIndex",
@@ -531,15 +570,18 @@ const StockIns: React.FC = () => {
 										);
 									},
 								},
-							]}
-							dataSource={parsedRecords.sort((a, b) => (a.rowIndex || 0) - (b.rowIndex || 0))}
-							rowKey={(record, index) => `record-${record.rowIndex || index}`}
-							pagination={{
-								pageSize: 10,
-								showSizeChanger: false,
-							}}
-							scroll={{ y: 300, x: 800 }}
-						/>
+										]}
+										dataSource={filteredRecords.sort((a, b) => (a.rowIndex || 0) - (b.rowIndex || 0))}
+										rowKey={(record, index) => `record-${record.rowIndex || index}`}
+										pagination={{
+											pageSize: 10,
+											showSizeChanger: false,
+										}}
+										scroll={{ y: 300, x: 800 }}
+									/>
+								</>
+							);
+						})()}
 						<div style={{ marginTop: 16, textAlign: "right" }}>
 							<Button onClick={() => setCurrentStep(0)} style={{ marginRight: 8 }}>
 								返回
