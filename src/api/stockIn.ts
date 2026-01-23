@@ -27,6 +27,7 @@ export interface StockInRecord {
 	vendorId: number;
 	count: number;
 	cost: number;
+	rowIndex?: number; // Excel 中的原始行号（用于保持顺序）
 }
 
 export interface IStockInCreateParams {

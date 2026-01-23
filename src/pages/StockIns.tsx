@@ -169,6 +169,9 @@ const StockIns: React.FC = () => {
 					}
 
 					// 从第三行开始解析数据（索引从 2 开始）
+					// 注意：Excel 行号从 1 开始，数组索引从 0 开始
+					// 第一行（索引 0）被忽略，第二行（索引 1）是表头，第三行（索引 2）开始是数据
+					// 所以 Excel 行号 = 数组索引 + 1，数据行的 Excel 行号 = i + 1
 					const records: StockInRecord[] = [];
 					for (let i = 2; i < jsonData.length; i++) {
 						const row = jsonData[i];
@@ -186,6 +189,7 @@ const StockIns: React.FC = () => {
 								vendorId,
 								count,
 								cost,
+								rowIndex: i + 1, // Excel 中的行号（从 1 开始）
 							});
 						}
 					}
@@ -460,8 +464,15 @@ const StockIns: React.FC = () => {
 						</div>
 						<Table<StockInRecord>
 							size="small"
+							bordered
 							loading={loadingData}
 							columns={[
+								{
+									title: "行号",
+									key: "rowIndex",
+									width: 80,
+									render: (_, record) => record.rowIndex || "-",
+								},
 								{
 									title: "商品ID",
 									dataIndex: "productId",
@@ -507,6 +518,7 @@ const StockIns: React.FC = () => {
 								{
 									title: "匹配结果",
 									key: "matchResult",
+									fixed: "right",
 									width: 100,
 									render: (_, record) => {
 										const product = products.find(p => p.id === record.productId);
@@ -520,8 +532,8 @@ const StockIns: React.FC = () => {
 									},
 								},
 							]}
-							dataSource={parsedRecords}
-							rowKey={(_record, index) => `record-${index}`}
+							dataSource={parsedRecords.sort((a, b) => (a.rowIndex || 0) - (b.rowIndex || 0))}
+							rowKey={(record, index) => `record-${record.rowIndex || index}`}
 							pagination={{
 								pageSize: 10,
 								showSizeChanger: false,
