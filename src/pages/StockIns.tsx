@@ -456,7 +456,7 @@ const StockIns: React.FC = () => {
 							description: "确认解析后的数据",
 						},
 					]}
-					style={{ marginBottom: 24 }}
+					className="mb-6"
 				/>
 
 				{currentStep === 0 && (
@@ -499,8 +499,8 @@ const StockIns: React.FC = () => {
 
 							return (
 								<>
-									<div style={{ marginBottom: 16 }}>
-										<div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+									<div className="mb-4">
+										<div className="flex justify-between items-center">
 											<div>
 												<p>
 													<strong>文件：</strong>
@@ -514,7 +514,7 @@ const StockIns: React.FC = () => {
 											<Select
 												value={filterStatus}
 												onChange={setFilterStatus}
-												style={{ width: 120 }}
+												className="w-[120px]"
 												options={[
 													{ label: "全部", value: "all" },
 													{ label: "成功", value: "success" },
@@ -558,7 +558,7 @@ const StockIns: React.FC = () => {
 										const productName = product ? product.name : "-";
 										return (
 											<Tooltip placement="topLeft" title={productName}>
-												<span style={{ display: "block", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+												<span className="block overflow-hidden text-ellipsis whitespace-nowrap">
 													{productName}
 												</span>
 											</Tooltip>
@@ -617,7 +617,7 @@ const StockIns: React.FC = () => {
 										}}
 										scroll={{ y: 300, x: 800 }}
 									/>
-									<div style={{ marginTop: 16, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+									<div className="mt-4 flex justify-between items-center">
 										<Button
 											danger
 											onClick={handleDeleteSelected}
@@ -625,8 +625,8 @@ const StockIns: React.FC = () => {
 										>
 											删除选中 ({selectedRowKeys.length})
 										</Button>
-										<div>
-											<Button onClick={() => setCurrentStep(0)} style={{ marginRight: 8 }}>
+										<div className="flex gap-2">
+											<Button onClick={() => setCurrentStep(0)}>
 												返回
 											</Button>
 											<Button type="primary" onClick={handleConfirmImport} loading={uploading}>
