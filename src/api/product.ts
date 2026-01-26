@@ -1,9 +1,5 @@
 import request from "../request";
-import {
-	IPaginationResp,
-	IPagination,
-	IResponse,
-} from "./commonDef";
+import { IPaginationResp, IPagination, IResponse } from "./commonDef";
 
 // 产品类型定义
 export interface IProductHistoryCostItem {
@@ -29,6 +25,8 @@ export interface IProduct {
 	latestCost: number;
 	productCode?: string;
 	historyCost?: IProductHistoryCostItem[];
+	stockInPending: number;
+	stockOutPending: number;
 }
 
 // 定义登录响应类型
@@ -56,7 +54,9 @@ export interface RegisterParams {
 }
 
 // 获取产品列表
-export const getProducts = async (data?: IProductQueryParams | {pagination: false}): Promise<IProductsQueryResponse> => {
+export const getProducts = async (
+	data?: IProductQueryParams | { pagination: false }
+): Promise<IProductsQueryResponse> => {
 	return request.get<IProductsQueryResponse>("/api/product", { params: data });
 };
 
