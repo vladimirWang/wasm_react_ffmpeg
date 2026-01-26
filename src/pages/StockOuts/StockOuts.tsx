@@ -3,7 +3,7 @@ import { Button, Input, message, Pagination, Space, Table, Tooltip } from "antd"
 import { CheckCircleOutlined, PlusCircleOutlined, SearchOutlined } from "@ant-design/icons";
 import type { TableProps } from "antd";
 import { IProductQueryParams } from "../../api/product";
-import { getStockOuts, IStockOut } from "../../api/stockOut";
+import { getStockOuts, IStockOut, confirmStockOutCompleted } from "../../api/stockOut";
 import useSWR, { mutate } from "swr";
 import { Link, useNavigate } from "react-router-dom";
 // import StockInUploadModal from "./StockInUploadModal";
@@ -93,20 +93,20 @@ const StockOuts: React.FC = () => {
 			width: 150,
 			render: (_, record) => (
 				<Space size="middle">
-					{record.status === "COMPLETED" && <Link to={`/stockin/${record.id}`}>查看</Link>}
+					{record.status === "COMPLETED" && <Link to={`/stockout/${record.id}`}>查看</Link>}
 					{record.status === "PENDING" && (
 						<>
 							<Link to={`/stockout/update/${record.id}`}>编辑</Link>
 							<Tooltip title="确认进货完成">
 								<Button
 									onClick={async () => {
-										// try {
-										// 	const res = await confirmStockInCompleted(record.id);
-										// 	message.success(res.message);
-										// 	mutate();
-										// } catch (e) {
-										// 	message.error((e as Error).message);
-										// }
+										try {
+											const res = await confirmStockOutCompleted(record.id);
+											message.success(res.message);
+											mutate();
+										} catch (e) {
+											message.error((e as Error).message);
+										}
 									}}
 									icon={<CheckCircleOutlined style={{ color: "#52c41a", fontSize: 18 }} />}
 								></Button>

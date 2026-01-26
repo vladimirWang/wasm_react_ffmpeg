@@ -12,8 +12,51 @@ export interface IStockOut {
 	totalPrice: number;
 	remark?: string;
 	status: StockInStatus;
+	productsJoinStock: [];
 }
+
+export interface IProductJoinStockOut {
+	price: number;
+	count: number;
+	productId: number;
+}
+
+interface IStockOutRecord {
+	productId: number;
+	count: number;
+	price: number;
+}
+
+export interface ICreateStockOutParams {
+	remark?: string;
+	productJoinStockOut: IProductJoinStockOut[];
+}
+
+type IStockOutsQueryResponse = IResponse<IPaginationResp<IStockOut>>;
+type IStockOutResponse = IResponse<IStockOut>;
 
 export const getStockOuts = () => {
 	return request.get("/api/stockout");
+};
+
+// 获取出货详情
+export const getStockOutDetailById = async (id: number): Promise<IStockOutResponse> => {
+	return request.get<IStockOutResponse>("/api/stockout/" + id);
+};
+
+// 更新出货记录
+export const updateStockOut = async (
+	id: number,
+	data?: ICreateStockOutParams
+): Promise<IStockOutsQueryResponse> => {
+	return request.put<IStockOutResponse>("/api/stockout/" + id, data);
+};
+
+// 新建出货
+export const createStockOut = (data: ICreateStockOutParams) => {
+	return request.post("/api/stockout");
+};
+
+export const confirmStockOutCompleted = (id: number) => {
+	return request.patch("/api/stockout/confirmCompleted/" + id);
 };
