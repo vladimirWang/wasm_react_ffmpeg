@@ -26,7 +26,7 @@ const HotSales = () => {
 				setData(
 					result.data.map((item: any) => ({
 						type: item.product.name,
-						value: item.count * item.price,
+						value: item.totalAmount,
 					}))
 				);
 			}
