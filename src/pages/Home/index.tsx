@@ -6,11 +6,15 @@ import TreeMapDemo from "./TreeMapDemo";
 import ColumnDemo from "./ColumnDemo";
 import DemoScatter from "./ScatterDemo";
 import RadarDemo from "./RadaDemo";
+import HotSales from "./HotSales";
 
 export default function Home() {
 	return (
 		<div>
 			<div className="grid grid-cols-2 gap-4">
+				<div>
+					<HotSales />
+				</div>
 				<div>
 					<LineDemo />
 				</div>
