@@ -57,7 +57,7 @@ const StockIns: React.FC = () => {
 			key: "id",
 		},
 		{
-			title: "订单总金额",
+			title: "进货单总金额",
 			dataIndex: "totalCost",
 			key: "totalCost",
 		},
