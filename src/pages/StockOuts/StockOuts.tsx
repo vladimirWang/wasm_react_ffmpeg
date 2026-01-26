@@ -85,39 +85,39 @@ const StockOuts: React.FC = () => {
 				return record.completedAt ? dayjs(record.completedAt).format("YYYY-MM-DD HH:mm:ss") : null;
 			},
 		},
-		// {
-		// 	title: "操作",
-		// 	key: "action",
-		// 	dataIndex: "action",
-		// 	fixed: "right",
-		// 	width: 150,
-		// 	render: (_, record) => (
-		// 		<Space size="middle">
-		// 			{record.status === "COMPLETED" && <Link to={`/stockin/${record.id}`}>查看</Link>}
-		// 			{record.status === "PENDING" && (
-		// 				<>
-		// 					<Link to={`/stockin/update/${record.id}`}>编辑</Link>
-		// 					<Tooltip title="确认进货完成">
-		// 						<Button
-		// 							onClick={async () => {
-		// 								try {
-		// 									const res = await confirmStockInCompleted(record.id);
-		// 									message.success(res.message);
-		// 									mutate();
-		// 								} catch (e) {
-		// 									message.error((e as Error).message);
-		// 								}
-		// 							}}
-		// 							icon={<CheckCircleOutlined style={{ color: "#52c41a", fontSize: 18 }} />}
-		// 						></Button>
-		// 					</Tooltip>
-		// 				</>
-		// 			)}
+		{
+			title: "操作",
+			key: "action",
+			dataIndex: "action",
+			fixed: "right",
+			width: 150,
+			render: (_, record) => (
+				<Space size="middle">
+					{record.status === "COMPLETED" && <Link to={`/stockin/${record.id}`}>查看</Link>}
+					{record.status === "PENDING" && (
+						<>
+							<Link to={`/stockout/update/${record.id}`}>编辑</Link>
+							<Tooltip title="确认进货完成">
+								<Button
+									onClick={async () => {
+										// try {
+										// 	const res = await confirmStockInCompleted(record.id);
+										// 	message.success(res.message);
+										// 	mutate();
+										// } catch (e) {
+										// 	message.error((e as Error).message);
+										// }
+									}}
+									icon={<CheckCircleOutlined style={{ color: "#52c41a", fontSize: 18 }} />}
+								></Button>
+							</Tooltip>
+						</>
+					)}
 
-		// 			{/* <Link to={`/stockin/${record.id}`}>查看</Link> */}
-		// 		</Space>
-		// 	),
-		// },
+					{/* <Link to={`/stockin/${record.id}`}>查看</Link> */}
+				</Space>
+			),
+		},
 	];
 
 	const [keyword, setKeyword] = useState<string>(queryParams.name || "");
