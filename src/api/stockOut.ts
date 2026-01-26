@@ -54,7 +54,7 @@ export const updateStockOut = async (
 
 // 新建出货
 export const createStockOut = (data: ICreateStockOutParams) => {
-	return request.post("/api/stockout");
+	return request.post("/api/stockout/multiple", data);
 };
 
 export const confirmStockOutCompleted = (id: number) => {

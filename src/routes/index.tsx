@@ -25,6 +25,7 @@ const ProductUpdate = lazy(() => import("../pages/Product/ProductUpdate"));
 const StockInsCreate = lazy(() => import("../pages/StockIn/StockInCreate"));
 const StockInsUpdate = lazy(() => import("../pages/StockIn/StockInUpdate"));
 const StockInsView = lazy(() => import("../pages/StockIn/StockInView"));
+const StockOutCreate = lazy(() => import("../pages/stockOut/StockOutCreate"));
 const StockOutView = lazy(() => import("../pages/stockOut/StockOutView"));
 const StockOutUpdate = lazy(() => import("../pages/stockOut/StockOutUpdate"));
 const StockOuts = lazy(() => import("../pages/StockOuts/StockOuts"));
@@ -359,9 +360,19 @@ export const routeConfig: ExtendedRouteObject[] = [
 				},
 			},
 			{
+				path: "stockout/create",
+				Component: StockOutCreate,
+				meta: {
+					hidden: true,
+					icon: <DesktopOutlined />,
+					order: 4,
+				},
+			},
+			{
 				path: "stockout/update/:id",
 				Component: StockOutUpdate,
 				meta: {
+					hidden: true,
 					icon: <DesktopOutlined />,
 					order: 4,
 				},
@@ -370,6 +381,7 @@ export const routeConfig: ExtendedRouteObject[] = [
 				path: "stockout/:id",
 				Component: StockOutView,
 				meta: {
+					hidden: true,
 					icon: <DesktopOutlined />,
 					order: 4,
 				},

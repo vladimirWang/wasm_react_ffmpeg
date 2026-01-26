@@ -4,9 +4,9 @@ import { CheckCircleOutlined, PlusCircleOutlined, SearchOutlined } from "@ant-de
 import type { TableProps } from "antd";
 import { IProductQueryParams } from "../../api/product";
 import { getStockOuts, IStockOut, confirmStockOutCompleted } from "../../api/stockOut";
-import useSWR, { mutate } from "swr";
+import useSWR from "swr";
 import { Link, useNavigate } from "react-router-dom";
-// import StockInUploadModal from "./StockInUploadModal";
+import StockOutUploadModal from "./StockOutUploadModal";
 import dayjs from "dayjs";
 
 const StockOuts: React.FC = () => {
@@ -145,7 +145,7 @@ const StockOuts: React.FC = () => {
 				<Button
 					icon={<PlusCircleOutlined />}
 					onClick={() => {
-						navigate("/stockin/create");
+						navigate("/stockout/create");
 					}}
 				>
 					新增
@@ -188,14 +188,14 @@ const StockOuts: React.FC = () => {
 					}}
 				/>
 			</section>
-			{/* <StockInUploadModal
+			<StockOutUploadModal
 				open={fileUploadModalOpen}
 				onCancel={() => setFileUploadModalOpen(false)}
 				onSuccess={() => {
 					mutate();
 					setFileUploadModalOpen(false);
 				}}
-			/> */}
+			/>
 		</div>
 	);
 };
