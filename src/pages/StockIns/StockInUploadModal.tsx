@@ -1,10 +1,6 @@
 import React, { useState } from "react";
 import { Button, message, Modal, Table, Upload, Steps, Select, Tooltip } from "antd";
-import {
-	InboxOutlined,
-	CheckCircleOutlined,
-	CloseCircleOutlined,
-} from "@ant-design/icons";
+import { InboxOutlined, CheckCircleOutlined, CloseCircleOutlined } from "@ant-design/icons";
 import type { TableProps, UploadProps } from "antd";
 import { getProducts, IProduct } from "../../api/product";
 import { getVendors, IVendor } from "../../api/vendor";
@@ -19,11 +15,7 @@ interface StockInUploadModalProps {
 	onSuccess: () => void;
 }
 
-const StockInUploadModal: React.FC<StockInUploadModalProps> = ({
-	open,
-	onCancel,
-	onSuccess,
-}) => {
+const StockInUploadModal: React.FC<StockInUploadModalProps> = ({ open, onCancel, onSuccess }) => {
 	const [uploading, setUploading] = useState(false);
 	const [currentStep, setCurrentStep] = useState(0); // Steps 当前步骤
 	const [parsedRecords, setParsedRecords] = useState<StockInRecord[]>([]); // 解析后的数据
@@ -34,7 +26,7 @@ const StockInUploadModal: React.FC<StockInUploadModalProps> = ({
 	const [filterStatus, setFilterStatus] = useState<"all" | "success" | "failed">("all"); // 筛选状态
 	const [selectedRowKeys, setSelectedRowKeys] = useState<React.Key[]>([]); // 选中的行 key
 
-	const columns:TableProps<StockInRecord>["columns"] = [
+	const columns: TableProps<StockInRecord>["columns"] = [
 		{
 			title: "行号",
 			key: "rowIndex",
@@ -109,7 +101,7 @@ const StockInUploadModal: React.FC<StockInUploadModalProps> = ({
 				);
 			},
 		},
-	]
+	];
 
 	// 解析 Excel 文件 - 第二行作为字段 key
 	const parseExcelFile = async (file: File): Promise<StockInRecord[]> => {
@@ -233,19 +225,8 @@ const StockInUploadModal: React.FC<StockInUploadModalProps> = ({
 				getVendors({ pagination: false }),
 			]);
 
-			if (productsRes.code === 200) {
-				setProducts(productsRes.data.list);
-			} else {
-				message.error("加载产品数据失败");
-			}
-
-			if (vendorsRes.code === 200) {
-				setVendors(vendorsRes.data.list);
-			} else {
-				message.error("加载供应商数据失败");
-			}
-		} catch (error: any) {
-			message.error(error?.message || "加载数据失败");
+			setProducts(productsRes.list);
+			setVendors(vendorsRes.list);
 		} finally {
 			setLoadingData(false);
 		}
@@ -291,21 +272,13 @@ const StockInUploadModal: React.FC<StockInUploadModalProps> = ({
 			}));
 
 			// 调用创建进货记录接口
-			const res = await createStockIn({
+			await createStockIn({
 				productJoinStockIn,
 			});
-
-			if (res.code === 200) {
-				message.success(`成功导入 ${parsedRecords.length} 条进货记录`);
-				// 上传成功后刷新列表
-				onSuccess();
-				// 重置状态并关闭弹窗
-				handleModalCancel();
-			} else {
-				message.error(res.message || "导入失败");
-			}
-		} catch (error: any) {
-			message.error(error?.message || "导入失败");
+			// 上传成功后刷新列表
+			onSuccess();
+			// 重置状态并关闭弹窗
+			handleModalCancel();
 		} finally {
 			setUploading(false);
 		}
@@ -456,7 +429,7 @@ const StockInUploadModal: React.FC<StockInUploadModalProps> = ({
 									loading={loadingData}
 									rowSelection={{
 										selectedRowKeys,
-										onChange: (selectedKeys) => {
+										onChange: selectedKeys => {
 											setSelectedRowKeys(selectedKeys);
 										},
 									}}
@@ -478,9 +451,7 @@ const StockInUploadModal: React.FC<StockInUploadModalProps> = ({
 										删除选中 ({selectedRowKeys.length})
 									</Button>
 									<div className="flex gap-2">
-										<Button onClick={() => setCurrentStep(0)}>
-											返回
-										</Button>
+										<Button onClick={() => setCurrentStep(0)}>返回</Button>
 										<Button type="primary" onClick={handleConfirmImport} loading={uploading}>
 											确认导入
 										</Button>

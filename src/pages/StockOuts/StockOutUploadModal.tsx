@@ -1,10 +1,6 @@
 import React, { useState } from "react";
 import { Button, message, Modal, Table, Upload, Steps, Select, Tooltip } from "antd";
-import {
-	InboxOutlined,
-	CheckCircleOutlined,
-	CloseCircleOutlined,
-} from "@ant-design/icons";
+import { InboxOutlined, CheckCircleOutlined, CloseCircleOutlined } from "@ant-design/icons";
 import type { TableProps, UploadProps } from "antd";
 import { getProducts, IProduct } from "../../api/product";
 import { createStockOut, IProductJoinStockOut } from "../../api/stockOut";
@@ -26,11 +22,7 @@ interface StockOutUploadModalProps {
 	onSuccess: () => void;
 }
 
-const StockOutUploadModal: React.FC<StockOutUploadModalProps> = ({
-	open,
-	onCancel,
-	onSuccess,
-}) => {
+const StockOutUploadModal: React.FC<StockOutUploadModalProps> = ({ open, onCancel, onSuccess }) => {
 	const [uploading, setUploading] = useState(false);
 	const [currentStep, setCurrentStep] = useState(0); // Steps 当前步骤
 	const [parsedRecords, setParsedRecords] = useState<StockOutRecord[]>([]); // 解析后的数据
@@ -209,13 +201,7 @@ const StockOutUploadModal: React.FC<StockOutUploadModalProps> = ({
 			setLoadingData(true);
 			const productsRes = await getProducts({ pagination: false });
 
-			if (productsRes.code === 200) {
-				setProducts(productsRes.data.list);
-			} else {
-				message.error("加载产品数据失败");
-			}
-		} catch (error: any) {
-			message.error(error?.message || "加载数据失败");
+			setProducts(productsRes.list);
 		} finally {
 			setLoadingData(false);
 		}
@@ -422,7 +408,7 @@ const StockOutUploadModal: React.FC<StockOutUploadModalProps> = ({
 									loading={loadingData}
 									rowSelection={{
 										selectedRowKeys,
-										onChange: (selectedKeys) => {
+										onChange: selectedKeys => {
 											setSelectedRowKeys(selectedKeys);
 										},
 									}}
@@ -444,9 +430,7 @@ const StockOutUploadModal: React.FC<StockOutUploadModalProps> = ({
 										删除选中 ({selectedRowKeys.length})
 									</Button>
 									<div className="flex gap-2">
-										<Button onClick={() => setCurrentStep(0)}>
-											返回
-										</Button>
+										<Button onClick={() => setCurrentStep(0)}>返回</Button>
 										<Button type="primary" onClick={handleConfirmImport} loading={uploading}>
 											确认导入
 										</Button>
