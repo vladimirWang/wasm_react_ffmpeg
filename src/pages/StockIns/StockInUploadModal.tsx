@@ -4,8 +4,10 @@ import { InboxOutlined, CheckCircleOutlined, CloseCircleOutlined } from "@ant-de
 import type { TableProps, UploadProps } from "antd";
 import { getProducts, IProduct } from "../../api/product";
 import { getVendors, IVendor } from "../../api/vendor";
-import { createStockIn, StockInRecord } from "../../api/stockIn";
+import { createStockIn, StockInRecord, IStockInsQueryResponse } from "../../api/stockIn";
 import * as XLSX from "xlsx";
+import { composePromise, dateToMsSince1900, excelSerialToDate } from "../../utils/common";
+import dayjs from "dayjs";
 
 const { Dragger } = Upload;
 
@@ -15,10 +17,24 @@ interface StockInUploadModalProps {
 	onSuccess: () => void;
 }
 
+/**
+ * 多批次导入的索引和打平后的索引映射
+ * 0:       按createdAt分组的索引索引
+ * [1, 3]:  0对应打拼后的数据的第0到第3条数据
+ *  {
+ * 	   0: [1, 3],
+ * 	   1: [3, 6],
+ * 	}
+ */
+interface ImportedRecordBatch {
+	[idx: number]: number[];
+}
+
 const StockInUploadModal: React.FC<StockInUploadModalProps> = ({ open, onCancel, onSuccess }) => {
 	const [uploading, setUploading] = useState(false);
 	const [currentStep, setCurrentStep] = useState(0); // Steps 当前步骤
-	const [parsedRecords, setParsedRecords] = useState<StockInRecord[]>([]); // 解析后的数据
+	const [parsedRecords, setParsedRecords] = useState<StockInRecord[]>([]); // 打平后的数据
+	const [groupedRecords, setGroupedRecords] = useState<Array<StockInRecord[]>>([]); // 打平后的数据
 	const [uploadedFile, setUploadedFile] = useState<File | null>(null); // 上传的文件
 	const [products, setProducts] = useState<IProduct[]>([]); // 产品列表
 	const [vendors, setVendors] = useState<IVendor[]>([]); // 供应商列表
@@ -32,6 +48,12 @@ const StockInUploadModal: React.FC<StockInUploadModalProps> = ({ open, onCancel,
 			key: "rowIndex",
 			width: 60,
 			render: (_, record) => record.rowIndex || "-",
+		},
+		{
+			title: "创建日期",
+			dataIndex: "createdAt",
+			key: "createdAt",
+			width: 100,
 		},
 		{
 			title: "商品ID",
@@ -101,10 +123,26 @@ const StockInUploadModal: React.FC<StockInUploadModalProps> = ({ open, onCancel,
 				);
 			},
 		},
+		{
+			title: "导入结果",
+			key: "matchResult",
+			fixed: "right",
+			width: 100,
+			render: (_, record) => {
+				const product = products.find(p => p.id === record.productId);
+				const vendor = vendors.find(v => v.id === record.vendorId);
+				const isMatched = product && vendor;
+				return isMatched ? (
+					<CheckCircleOutlined style={{ color: "#52c41a", fontSize: 18 }} />
+				) : (
+					<CloseCircleOutlined style={{ color: "#ff4d4f", fontSize: 18 }} />
+				);
+			},
+		},
 	];
 
 	// 解析 Excel 文件 - 第二行作为字段 key
-	const parseExcelFile = async (file: File): Promise<StockInRecord[]> => {
+	const parseExcelFile = async (file: File): Promise<Array<StockInRecord[]>> => {
 		return new Promise((resolve, reject) => {
 			const reader = new FileReader();
 			reader.onload = e => {
@@ -142,25 +180,36 @@ const StockInUploadModal: React.FC<StockInUploadModalProps> = ({ open, onCancel,
 							const headerStr = String(header).trim().toLowerCase();
 							// 支持多种字段名映射
 							if (
-								headerStr.includes("productid") ||
-								headerStr.includes("商品id") ||
-								headerStr.includes("产品id")
+								headerStr.includes("productid")
+								// ||
+								// headerStr.includes("商品id") ||
+								// headerStr.includes("产品id")
 							) {
 								fieldMap["productId"] = index;
 							} else if (
-								headerStr.includes("vendorid") ||
-								headerStr.includes("供应商id") ||
-								headerStr.includes("厂商id")
+								headerStr.includes("vendorid")
+								//  ||
+								// headerStr.includes("供应商id") ||
+								// headerStr.includes("厂商id")
 							) {
 								fieldMap["vendorId"] = index;
-							} else if (headerStr.includes("count") || headerStr.includes("数量")) {
+							} else if (
+								headerStr.includes("count")
+								//  || headerStr.includes("数量")
+							) {
 								fieldMap["count"] = index;
 							} else if (
-								headerStr.includes("cost") ||
-								headerStr.includes("价格") ||
-								headerStr.includes("成本")
+								headerStr.includes("cost")
+								// ||
+								// headerStr.includes("价格") ||
+								// headerStr.includes("成本")
 							) {
 								fieldMap["cost"] = index;
+							} else if (
+								headerStr.includes("createdat")
+								// || headerStr.includes("创建日期")
+							) {
+								fieldMap["createdAt"] = index;
 							}
 						}
 					});
@@ -177,7 +226,9 @@ const StockInUploadModal: React.FC<StockInUploadModalProps> = ({ open, onCancel,
 					// 注意：Excel 行号从 1 开始，数组索引从 0 开始
 					// 第一行（索引 0）被忽略，第二行（索引 1）是表头，第三行（索引 2）开始是数据
 					// 所以 Excel 行号 = 数组索引 + 1，数据行的 Excel 行号 = i + 1
-					const records: StockInRecord[] = [];
+					const createdAtMap: Record<string, StockInRecord[]> = {};
+					// const groups: Array<StockInRecord[]> = [];
+					// const records: StockInRecord[] = [];
 					for (let i = 2; i < jsonData.length; i++) {
 						const row = jsonData[i];
 						if (!row || row.length === 0) continue; // 跳过空行
@@ -186,25 +237,38 @@ const StockInUploadModal: React.FC<StockInUploadModalProps> = ({ open, onCancel,
 						const vendorId = Number(row[fieldMap["vendorId"]]);
 						const count = Number(row[fieldMap["count"]]);
 						const cost = Number(row[fieldMap["cost"]]);
+						const createdAtSerial = row[fieldMap["createdAt"]] || dateToMsSince1900(new Date());
+						const createdAt = excelSerialToDate(createdAtSerial);
+						const formatCreatedAt = dayjs(createdAt).format("YYYY-MM-DD");
 
-						// 验证数据有效性
-						if (!isNaN(productId) && !isNaN(vendorId) && !isNaN(count) && !isNaN(cost)) {
-							records.push({
+						if (!createdAtMap[formatCreatedAt]) {
+							createdAtMap[formatCreatedAt] = [];
+						}
+						if (
+							!isNaN(productId) &&
+							!isNaN(vendorId) &&
+							!isNaN(count) &&
+							!isNaN(cost) &&
+							!!formatCreatedAt
+						) {
+							createdAtMap[formatCreatedAt].push({
 								productId,
 								vendorId,
 								count,
 								cost,
+								createdAt: formatCreatedAt,
 								rowIndex: i + 1, // Excel 中的行号（从 1 开始）
 							});
 						}
 					}
 
-					if (records.length === 0) {
+					const values = Object.values(createdAtMap);
+					if (values.length === 0) {
 						reject(new Error("Excel 文件中没有有效数据"));
 						return;
 					}
 
-					resolve(records);
+					resolve(values);
 				} catch (error) {
 					reject(error);
 				}
@@ -239,18 +303,29 @@ const StockInUploadModal: React.FC<StockInUploadModalProps> = ({ open, onCancel,
 		try {
 			setUploading(true);
 
-			// 前端解析 Excel 文件
-			const records: StockInRecord[] = await parseExcelFile(file as File);
-
+			// // 前端解析 Excel 文件
+			const records: Array<StockInRecord[]> = await parseExcelFile(file as File);
+			const importedRecordBatch: ImportedRecordBatch = {};
+			setGroupedRecords(records);
+			records.forEach((record, index) => {
+				const previous = records.slice(0, index);
+				const previousLength = previous.reduce((a, c) => {
+					return a + c.length;
+				}, 0);
+				importedRecordBatch[index] = [previousLength, previousLength + record.length];
+			});
+			console.log("============records: ", records);
+			console.log("============importedRecordBatch: ", importedRecordBatch);
+			const flatRecords = records.flat(1);
 			// 加载产品和供应商数据
 			await loadProductsAndVendors();
 
 			// 保存解析结果和文件，切换到第二步
-			setParsedRecords(records);
+			setParsedRecords(flatRecords);
 			setUploadedFile(file as File);
 			setCurrentStep(1);
-			onUploadSuccess?.(records, file);
-			message.success(`成功解析 ${records.length} 条记录`);
+			onUploadSuccess?.(flatRecords, file);
+			message.success(`成功解析 ${flatRecords.length} 条记录`);
 		} catch (error: any) {
 			onError?.(error);
 			message.error(error?.message || `${file.name} 解析失败`);
@@ -259,22 +334,33 @@ const StockInUploadModal: React.FC<StockInUploadModalProps> = ({ open, onCancel,
 		}
 	};
 
+	const makeGroupBYBatchInfo = (data: Array<StockInRecord[]>) => {};
+
 	// 确认导入
 	const handleConfirmImport = async () => {
+		const promises = groupedRecords.map(record => {
+			return createStockIn({
+				productJoinStockIn: record.map(item => {
+					return {
+						productId: item.productId,
+						count: item.count,
+						cost: item.cost,
+						createdAt: item.createdAt,
+					};
+				}),
+			});
+		});
 		try {
 			setUploading(true);
-
+			const res = await Promise.allSettled(promises);
+			// composePromise<IStockInsQueryResponse[]>(promises);
+			// console.log("============res: ");
 			// 将 StockInRecord[] 转换为 IProductJoinStockIn[] 格式
-			const productJoinStockIn = parsedRecords.map(record => ({
-				productId: record.productId,
-				count: record.count,
-				cost: record.cost,
-			}));
 
-			// 调用创建进货记录接口
-			await createStockIn({
-				productJoinStockIn,
-			});
+			// // 调用创建进货记录接口
+			// await createStockIn({
+			// 	productJoinStockIn,
+			// });
 			// 上传成功后刷新列表
 			onSuccess();
 			// 重置状态并关闭弹窗

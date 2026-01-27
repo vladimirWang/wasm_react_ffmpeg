@@ -13,7 +13,7 @@ export interface IStockIn {
 	createdAt: Date;
 	completedAt?: Date;
 }
-type IStockInsQueryResponse = IPaginationResp<IStockIn>;
+export type IStockInsQueryResponse = IPaginationResp<IStockIn>;
 
 // 获取进货记录
 export const getStockIns = async (data?: IPagination): Promise<IStockInsQueryResponse> => {
@@ -28,6 +28,7 @@ export interface IProductJoinStockIn {
 
 // Excel 解析后的数据格式
 export interface StockInRecord {
+	createdAt: string;
 	productId: number;
 	vendorId: number;
 	count: number;
