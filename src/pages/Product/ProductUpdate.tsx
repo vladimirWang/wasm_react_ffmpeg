@@ -19,12 +19,7 @@ export default function ProductUpdate() {
 
 	const fetcher = async (id: string) => {
 		const res = await getProductDetailById(Number(id));
-		console.log("---res---: ", res);
-		if (res.code === 200) {
-			return res.data;
-		} else {
-			return null;
-		}
+		return res;
 	};
 	const { data, error, isLoading } = useSWR(
 		id, // SWR的key：参数变化则重新请求
@@ -43,30 +38,33 @@ export default function ProductUpdate() {
 		);
 		const incrementalValues = pick(values, updated);
 		try {
-			const res = await patchProductById(Number(id), incrementalValues);
-			if (res.code === 200) {
-				alert("更新成功");
-			} else {
-				alert(res.message);
-			}
+			await patchProductById(Number(id), incrementalValues);
 		} catch (error) {
 			console.error("<delete>  ");
+		} finally {
+			return Promise.resolve();
 		}
 	};
 
 	useEffect(() => {
-		if (data) {
+		if (data && !error) {
 			// 当数据加载完成后，设置表单值
 			setInitialValues(data);
 			setCompleted(true);
 		}
-	}, [data]);
+	}, [data, error]);
 
 	return (
 		<div>
 			{error && <div>Error loading vendor details.</div>}
 			<Spin spinning={isLoading}>
-				{completed && <ProductForm initialValues={initialValues} onFinishCallback={onFinish} />}
+				{completed && (
+					<ProductForm
+						initialValues={initialValues}
+						onFinishCallback={onFinish}
+						pageOperation="update"
+					/>
+				)}
 			</Spin>
 		</div>
 	);

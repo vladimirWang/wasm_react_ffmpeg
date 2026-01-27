@@ -16,13 +16,11 @@ export default function StockInCreate() {
 		formValue: { remark?: string } & { productJoinStockOut: IProductJoinStockOut[] }
 	) => {
 		// console.log(formValue, "--formvalue");
-		const res = await createStockOut(formValue);
-		if (res.code !== 200) {
-			message.warning(res.message);
-		} else {
-			message.success(res.message);
+		try {
+			await createStockOut(formValue);
+		} finally {
+			return Promise.resolve();
 		}
-		return Promise.resolve();
 	};
 	return (
 		<div>
@@ -30,7 +28,7 @@ export default function StockInCreate() {
 				// initialValues={initialValues}
 				// joinData={joinData}
 				onFinishCallback={onFinishCallback}
-				pageOperation="update"
+				pageOperation="create"
 			/>
 		</div>
 	);

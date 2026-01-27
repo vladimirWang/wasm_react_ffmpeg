@@ -11,7 +11,7 @@ import { useParams } from "react-router-dom";
 import useSWR from "swr";
 import { Spin } from "antd";
 
-export default function VendorUpdate() {
+export default function VendorView() {
 	const { id } = useParams();
 	const fetcher = async (id: string) => {
 		const res = await getVendorDetailById(Number(id));
@@ -37,21 +37,11 @@ export default function VendorUpdate() {
 		}
 	}, [data, error]);
 
-	const onFinishCallback = async (data: IVendorUpdateParams) => {
-		const res = await updateVendorDetailById(Number(id), data);
-		return res;
-	};
 	return (
 		<div>
 			{error && <p>fetch vendor failed: {error.message}</p>}
 			<Spin spinning={isLoading}>
-				{completed && (
-					<VendorForm
-						initialValues={initialValues}
-						onFinishCallback={onFinishCallback}
-						pageOperation="update"
-					/>
-				)}
+				{completed && <VendorForm initialValues={initialValues} pageOperation="view" />}
 			</Spin>
 		</div>
 	);

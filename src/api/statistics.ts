@@ -20,9 +20,16 @@ export interface getHotSalesParams {
 	endDate: Date;
 }
 
+type HotSalesItem = {
+	product: IProduct;
+	totalAmount: number;
+	productId: number;
+};
 // 热销商品
-export const getHotSales = (params: getHotSalesParams) => {
+export const getHotSales = (params: getHotSalesParams): Promise<HotSalesItem[]> => {
 	const startDate = dayjs(params.startDate).format("YYYY-MM-DD");
 	const endDate = dayjs(params.endDate).format("YYYY-MM-DD");
-	return request.get("/api/statistics/hot-sales", { params: { startDate, endDate } });
+	return request.get<HotSalesItem[]>("/api/statistics/hot-sales", {
+		params: { startDate, endDate },
+	});
 };

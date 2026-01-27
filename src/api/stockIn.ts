@@ -13,7 +13,7 @@ export interface IStockIn {
 	createdAt: Date;
 	completedAt?: Date;
 }
-type IStockInsQueryResponse = IResponse<IPaginationResp<IStockIn>>;
+type IStockInsQueryResponse = IPaginationResp<IStockIn>;
 
 // 获取进货记录
 export const getStockIns = async (data?: IPagination): Promise<IStockInsQueryResponse> => {
@@ -47,12 +47,12 @@ export const createStockIn = async (
 	return request.post<IStockInsQueryResponse>("/api/stockin/multiple", data);
 };
 
-// 进货记录数据类型
-export type IStockResponse = IResponse<IStockIn>;
+// // 进货记录数据类型
+// export type IStockResponse = IResponse<IStockIn>;
 
 // 获取进货记录
-export const getStockInDetailById = async (id: number): Promise<IStockResponse> => {
-	return request.get<IStockResponse>("/api/stockin/" + id);
+export const getStockInDetailById = async (id: number): Promise<IStockIn> => {
+	return request.get<IStockIn>("/api/stockin/" + id);
 };
 
 // 获取进货记录
@@ -84,6 +84,6 @@ export const uploadStockInFile = async (file: File): Promise<IResponse<any>> => 
 };
 
 // 进货单确认完成
-export const confirmStockInCompleted = async (id: number): Promise<IStockResponse> => {
-	return request.patch<IStockResponse>("/api/stockin/confirmCompleted/" + id);
+export const confirmStockInCompleted = async (id: number): Promise<IStockIn> => {
+	return request.patch<IStockIn>("/api/stockin/confirmCompleted/" + id);
 };

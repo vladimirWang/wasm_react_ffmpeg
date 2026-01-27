@@ -1,4 +1,15 @@
-import { Button, Card, Form, Input, InputNumber, Select, Table, Space, Divider } from "antd";
+import {
+	Button,
+	Card,
+	Form,
+	Input,
+	InputNumber,
+	Select,
+	Table,
+	Space,
+	Divider,
+	message,
+} from "antd";
 import type { TableProps } from "antd";
 import { IVendorUpdateParams } from "../../api/vendor";
 import { useEffect, useMemo, useState } from "react";
@@ -133,13 +144,9 @@ export default function StockOutForm(props: StockInFormProps) {
 	const loadProducts = async () => {
 		try {
 			const res = await getProducts();
-			if (res.code === 200) {
-				setAllProducts(res.data.list);
-			} else {
-				alert(res.message);
-			}
+			setAllProducts(res.list);
 		} catch (e) {
-			alert((e as Error).message);
+			message.error((e as Error).message);
 		}
 	};
 

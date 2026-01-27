@@ -20,14 +20,6 @@ const StockOuts: React.FC = () => {
 	// 2. 定义SWR的fetcher函数：接收参数，调用getStockIns
 	const fetcher = async (_params: IProductQueryParams) => {
 		const res = await getStockOuts();
-		if (res.code !== 200) {
-			return {
-				data: {
-					list: [],
-					total: 0,
-				},
-			};
-		}
 		return res; // 若你的getProducts返回的是响应体（如res.data），则这里取res.data
 	};
 
@@ -162,7 +154,7 @@ const StockOuts: React.FC = () => {
 			<Table<IStockOut>
 				size="small"
 				columns={columns}
-				dataSource={stockIns?.data.list}
+				dataSource={stockIns?.list}
 				rowKey={"id"}
 				loading={isLoading}
 				pagination={false}
@@ -175,7 +167,7 @@ const StockOuts: React.FC = () => {
 			<br />
 			<section className="flex justify-end">
 				<Pagination
-					total={stockIns?.data.total}
+					total={stockIns?.total}
 					showTotal={(total, range) => `${range[0]}-${range[1]} of ${total} items`}
 					defaultPageSize={20}
 					defaultCurrent={page}

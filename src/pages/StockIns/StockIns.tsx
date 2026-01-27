@@ -20,14 +20,6 @@ const StockIns: React.FC = () => {
 	// 2. 定义SWR的fetcher函数：接收参数，调用getStockIns
 	const fetcher = async (_params: IProductQueryParams) => {
 		const res = await getStockIns();
-		if (res.code !== 200) {
-			return {
-				data: {
-					list: [],
-					total: 0,
-				},
-			};
-		}
 		return res; // 若你的getProducts返回的是响应体（如res.data），则这里取res.data
 	};
 
@@ -100,13 +92,7 @@ const StockIns: React.FC = () => {
 							<Tooltip title="确认进货完成">
 								<Button
 									onClick={async () => {
-										try {
-											const res = await confirmStockInCompleted(record.id);
-											message.success(res.message);
-											mutate();
-										} catch (e) {
-											message.error((e as Error).message);
-										}
+										await confirmStockInCompleted(record.id);
 									}}
 									icon={<CheckCircleOutlined style={{ color: "#52c41a", fontSize: 18 }} />}
 								></Button>
@@ -162,7 +148,7 @@ const StockIns: React.FC = () => {
 			<Table<IStockIn>
 				size="small"
 				columns={columns}
-				dataSource={stockIns?.data.list}
+				dataSource={stockIns?.list}
 				rowKey={"id"}
 				loading={isLoading}
 				pagination={false}
@@ -175,7 +161,7 @@ const StockIns: React.FC = () => {
 			<br />
 			<section className="flex justify-end">
 				<Pagination
-					total={stockIns?.data.total}
+					total={stockIns?.total}
 					showTotal={(total, range) => `${range[0]}-${range[1]} of ${total} items`}
 					defaultPageSize={20}
 					defaultCurrent={page}

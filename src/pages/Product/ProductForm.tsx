@@ -2,18 +2,21 @@ import { useState } from "react";
 import { useParams } from "react-router-dom";
 import useSWR from "swr";
 import { IProductUpdateParams } from "../../api/product";
-import { Button, Card, Empty, Flex, Form, Input, InputNumber, Select, Upload } from "antd";
+import { Button, Card, Empty, Flex, Form, Input, InputNumber, message, Select, Upload } from "antd";
 import { RcFile } from "antd/es/upload";
 import { LoadingOutlined, PlusOutlined } from "@ant-design/icons";
 import { getVendors } from "../../api/vendor";
 import { CostHistoryDrawer } from "./CostHistoryDrawer";
+import { PageOperation } from "../../enum";
 
 export default function ProductForm({
 	initialValues,
 	onFinishCallback,
+	pageOperation,
 }: {
 	initialValues?: IProductUpdateParams;
 	onFinishCallback?: (values: IProductUpdateParams) => Promise<void>;
+	pageOperation: PageOperation;
 }) {
 	const [form] = Form.useForm();
 	const { id } = useParams();
@@ -26,7 +29,7 @@ export default function ProductForm({
 	const beforeUpload = (file: RcFile) => {
 		const isJpgOrPng = file.type === "image/jpeg" || file.type === "image/png";
 		if (!isJpgOrPng) {
-			alert("You can only upload JPG/PNG file!");
+			message.error("You can only upload JPG/PNG file!");
 		}
 		return isJpgOrPng;
 	};
@@ -50,15 +53,10 @@ export default function ProductForm({
 
 	const vendorsFetch = async () => {
 		const res = await getVendors({ pagination: false });
-		if (res.code !== 200) return [];
-		console.log("---res---: ", res.data);
-		const { list } = res.data;
-		return list.map(item => ({ value: item.id, label: item.name }));
+		return res.list.map(item => ({ value: item.id, label: item.name }));
 	};
 
-	const {
-		data: vendors,
-	} = useSWR("https://api.example.com/data", vendorsFetch, {
+	const { data: vendors } = useSWR("https://api.example.com/data", vendorsFetch, {
 		revalidateOnFocus: true,
 	});
 
@@ -67,6 +65,7 @@ export default function ProductForm({
 	return (
 		<div className="p-6">
 			<Form
+				disabled={pageOperation === "view"}
 				form={form}
 				name="basic"
 				initialValues={initialValues}
@@ -91,11 +90,7 @@ export default function ProductForm({
 							name="vendorId"
 							rules={[{ required: true, message: "请选择供应商" }]}
 						>
-							<Select
-								style={{ width: "100%" }}
-								placeholder="请选择供应商"
-								options={vendors}
-							/>
+							<Select style={{ width: "100%" }} placeholder="请选择供应商" options={vendors} />
 						</Form.Item>
 						<Form.Item<IProductUpdateParams>
 							label="名称"
@@ -137,19 +132,11 @@ export default function ProductForm({
 							</Form.Item>
 						</Flex>
 						<Form.Item<IProductUpdateParams> label="备注" name="remark">
-							<Input.TextArea
-								showCount
-								maxLength={190}
-								rows={4}
-								placeholder="请输入备注信息"
-							/>
+							<Input.TextArea showCount maxLength={190} rows={4} placeholder="请输入备注信息" />
 						</Form.Item>
 					</section>
 					<section className="flex-1 space-y-4">
-						<Form.Item<IProductUpdateParams>
-							label="产品图片"
-							name="img"
-						>
+						<Form.Item<IProductUpdateParams> label="产品图片" name="img">
 							<Upload
 								name="avatar"
 								listType="picture-card"
@@ -173,25 +160,16 @@ export default function ProductForm({
 							className="mt-4"
 							extra={
 								productId && (
-									<Button
-										type="link"
-										size="small"
-										onClick={() => setCostDrawerOpen(true)}
-									>
+									<Button type="link" size="small" onClick={() => setCostDrawerOpen(true)}>
 										查看详情
 									</Button>
 								)
 							}
 						>
 							{!productId ? (
-								<Empty
-									description="创建产品时暂无历史成本"
-									image={Empty.PRESENTED_IMAGE_SIMPLE}
-								/>
+								<Empty description="创建产品时暂无历史成本" image={Empty.PRESENTED_IMAGE_SIMPLE} />
 							) : (
-								<div className="text-gray-500 text-sm">
-									点击右上角"查看详情"查看历史成本趋势
-								</div>
+								<div className="text-gray-500 text-sm">点击右上角"查看详情"查看历史成本趋势</div>
 							)}
 						</Card>
 					</section>

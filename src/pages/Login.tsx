@@ -23,31 +23,23 @@ const Login: React.FC = () => {
 
 	const onFinish = async (values: LoginParams) => {
 		try {
-			const res: LoginResponse = await userLogin(values);
-			console.log("res: ", res);
-			// 现在 res 有正确的类型提示
-			if (res.code === 200) {
-				console.log("token: ", res.data, typeof res.data);
-				localStorage.setItem("access_token", res.data);
-				// 清除旧的用户缓存，让 authLoader 重新获取用户信息
-				clearUserCache();
+			// 响应拦截器已经处理了 IResponse 格式，直接返回 token (string)
+			const token = await userLogin(values);
+			console.log("token: ", token, typeof token);
+			localStorage.setItem("access_token", token);
+			// 清除旧的用户缓存，让 authLoader 重新获取用户信息
+			clearUserCache();
 
-				// 获取回跳地址
-				const redirect = searchParams.get("redirect");
-				// 如果有回跳地址就跳转到那里，否则跳转到首页
-				if (redirect) {
-					navigate(decodeURIComponent(redirect), { replace: true });
-				} else {
-					navigate("/", { replace: true });
-				}
-
-				// const currentUserResponse = await getCurrentUser();
-				// const currentUser: IUser = currentUserResponse.data;
-				// console.log("currentUser: ", currentUser);
+			// 获取回跳地址
+			const redirect = searchParams.get("redirect");
+			// 如果有回跳地址就跳转到那里，否则跳转到首页
+			if (redirect) {
+				navigate(decodeURIComponent(redirect), { replace: true });
 			} else {
-				alert(res.message);
+				navigate("/", { replace: true });
 			}
 		} catch (error: unknown) {
+			// 错误提示已由响应拦截器统一处理
 			if (error instanceof Error) {
 				console.error(error.message);
 			} else {

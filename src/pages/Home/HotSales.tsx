@@ -20,16 +20,12 @@ const HotSales = () => {
 			// const startDate = new Date("2025-08-01");
 			// const endDate = new Date("2026-01-26");
 			const result = await getHotSales({ startDate, endDate });
-			// 根据 API 返回的数据格式更新状态
-			// 假设 API 返回的数据格式为 { type: string, value: number }[]
-			if (result?.code === 200) {
-				setData(
-					result.data.map((item: any) => ({
-						type: item.product.name,
-						value: item.totalAmount,
-					}))
-				);
-			}
+			setData(
+				result.map(item => ({
+					type: item.product.name,
+					value: item.totalAmount,
+				}))
+			);
 		} catch (e) {
 			message.error((e as Error).message);
 		}

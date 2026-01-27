@@ -10,7 +10,7 @@ export default function VendorCreate() {
 	};
 	return (
 		<div>
-			<VendorForm onFinishCallback={onFinishCallback} />
+			<VendorForm onFinishCallback={onFinishCallback} pageOperation="create" />
 		</div>
 	);
 }

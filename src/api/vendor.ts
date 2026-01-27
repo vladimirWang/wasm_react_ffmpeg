@@ -14,7 +14,7 @@ export interface IVendor {
 }
 
 // 定义登录响应类型
-export type IVendorsQueryResponse = IResponse<IPaginationResp<IVendor>>;
+export type IVendorsQueryResponse = IPaginationResp<IVendor>;
 
 export interface IVendor {
 	readonly id: number;
@@ -48,8 +48,13 @@ export const getVendors = async (data?: IVendorQueryParams): Promise<IVendorsQue
 };
 
 // 根据ID获取供应商详情
-export const getVendorDetailById = async (id: number): Promise<VendorDetailResponse> => {
-	return request.get<VendorDetailResponse>("/api/vendor/" + id);
+export const getVendorDetailById = async (id: number): Promise<IVendor> => {
+	return request.get<IVendor>("/api/vendor/" + id);
+	// return Promise.reject({
+	// 	code: 1009,
+	// 	message: "test error",
+	// 	data: null,
+	// }) as unknown as IVendor;
 };
 
 // 供应商更新参数类型

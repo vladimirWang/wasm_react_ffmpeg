@@ -32,16 +32,16 @@ export interface ICreateStockOutParams {
 	productJoinStockOut: IProductJoinStockOut[];
 }
 
-type IStockOutsQueryResponse = IResponse<IPaginationResp<IStockOut>>;
-type IStockOutResponse = IResponse<IStockOut>;
+type IStockOutsQueryResponse = IPaginationResp<IStockOut>;
+// type IStockOutResponse = IResponse<IStockOut>;
 
-export const getStockOuts = () => {
-	return request.get("/api/stockout");
+export const getStockOuts = (): Promise<IStockOutsQueryResponse> => {
+	return request.get<IStockOutsQueryResponse>("/api/stockout");
 };
 
 // 获取出货详情
-export const getStockOutDetailById = async (id: number): Promise<IStockOutResponse> => {
-	return request.get<IStockOutResponse>("/api/stockout/" + id);
+export const getStockOutDetailById = async (id: number): Promise<IStockOut> => {
+	return request.get<IStockOut>("/api/stockout/" + id);
 };
 
 // 更新出货记录
@@ -49,7 +49,7 @@ export const updateStockOut = async (
 	id: number,
 	data?: ICreateStockOutParams
 ): Promise<IStockOutsQueryResponse> => {
-	return request.put<IStockOutResponse>("/api/stockout/" + id, data);
+	return request.put<IStockOut>("/api/stockout/" + id, data);
 };
 
 // 新建出货

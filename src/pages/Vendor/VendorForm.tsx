@@ -2,16 +2,19 @@ import { Button, Form, Input, message } from "antd";
 import { IVendorCreateParams, IVendorUpdateParams, VendorDetailResponse } from "../../api/vendor";
 import { useState } from "react";
 import { GlobalModal } from "../../components/GlobalModal";
+import { PageOperation } from "../../enum";
 
 interface VendorFormProps {
 	onFinishCallback?: (data: IVendorUpdateParams) => Promise<VendorDetailResponse>;
 	initialValues?: IVendorUpdateParams;
+	pageOperation: PageOperation;
 }
 export default function VendorForm(props: VendorFormProps) {
 	const [loading, setLoading] = useState(false);
 	const [form] = Form.useForm();
 	return (
 		<Form
+			disabled={props.pageOperation === "view"}
 			form={form}
 			name="basic"
 			initialValues={{ ...props.initialValues }}

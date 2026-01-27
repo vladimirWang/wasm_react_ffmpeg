@@ -1,6 +1,17 @@
 import axios, { type AxiosInstance, type AxiosResponse, type AxiosRequestConfig } from "axios";
 import { message } from "antd";
 import { sleep } from "./utils/common";
+import { type IResponse } from "./api/commonDef";
+
+// 扩展 AxiosRequestConfig，添加自定义配置字段
+declare module "axios" {
+	export interface AxiosRequestConfig {
+		// 是否显示成功提示，默认 false（不显示）
+		showSuccessMessage?: boolean;
+		// 是否显示失败提示，默认 true（显示）
+		showErrorMessage?: boolean;
+	}
+}
 
 // 自定义请求接口，返回 T 而不是 AxiosResponse<T>
 interface CustomAxiosInstance {
@@ -31,12 +42,44 @@ axiosInstance.interceptors.request.use(config => {
 	return config;
 });
 
-// 响应拦截器：返回 response.data，但保持类型安全
+// 响应拦截器：统一处理响应结果提示
 axiosInstance.interceptors.response.use(
 	<T = any>(response: AxiosResponse<T>) => {
-		return response.data as T;
+		const config = response.config;
+		const data = response.data;
+
+		// 检查响应是否符合 IResponse 格式
+		if (data && typeof data === "object" && "code" in data && "message" in data && "data" in data) {
+			const responseData = data as IResponse<any>;
+			const { code, message: msg } = responseData;
+
+			// 判断是否成功（通常 code === 200 表示成功）
+			if (code === 200) {
+				// 成功：根据配置决定是否显示提示
+				const showSuccessMessage = config.showSuccessMessage ?? false;
+				if (showSuccessMessage && msg) {
+					message.success(msg);
+				}
+				// 返回 data 字段
+				return responseData.data as T;
+			} else {
+				// 业务失败（HTTP 200 但 code !== 200）：根据配置决定是否显示提示
+				const showErrorMessage = config.showErrorMessage ?? true;
+				if (showErrorMessage && msg) {
+					message.error(msg);
+				}
+				// 抛出错误（不会进入错误拦截器，因为 HTTP 状态码是 200）
+				return Promise.reject(responseData);
+			}
+		}
+
+		// 如果不是 IResponse 格式，直接返回原始数据
+		return data as T;
 	},
 	async error => {
+		const config = error.config || {};
+		const showErrorMessage = config.showErrorMessage ?? true;
+
 		// 处理错误响应
 		if (error.response) {
 			// 服务器返回了错误状态码
@@ -58,25 +101,44 @@ axiosInstance.interceptors.response.use(
 					await sleep(2000);
 					window.location.href = `/landing/login?redirect=${redirectUrl}`;
 				}
+				// 401 错误已经处理，直接 reject
+				return Promise.reject({
+					code: 401,
+					message: "登录过期，请重新登录",
+					data: null,
+				});
 			}
 
-			// 如果后端返回的数据已经是统一格式（有 code 和 message），直接返回
+			// 如果后端返回的数据已经是统一格式（有 code 和 message）
 			if (data && typeof data === "object" && "code" in data && "message" in data) {
-				return Promise.reject(data);
+				const responseData = data as IResponse<any>;
+				// 如果配置允许显示，则显示错误提示
+				if (showErrorMessage && responseData.message) {
+					message.error(responseData.message);
+				}
+				return Promise.reject(responseData);
 			}
 
 			// 否则，构造统一格式的错误响应
+			const errorMessage = data?.message || error.message || "请求失败";
+			if (showErrorMessage) {
+				message.error(errorMessage);
+			}
 			return Promise.reject({
 				code: status,
-				message: data?.message || error.message || "请求失败",
+				message: errorMessage,
 				data: null,
 			});
 		}
 
 		// 网络错误或其他错误
+		const errorMessage = error.message || "网络错误";
+		if (showErrorMessage) {
+			message.error(errorMessage);
+		}
 		return Promise.reject({
 			code: 0,
-			message: error.message || "网络错误",
+			message: errorMessage,
 			data: null,
 		});
 	}

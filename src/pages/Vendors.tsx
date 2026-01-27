@@ -34,11 +34,13 @@ const columns: TableProps<IVendor>["columns"] = [
 	{
 		title: "操作",
 		key: "action",
+		fixed: "right",
+		width: 150,
 		dataIndex: "action",
 		render: (_, record) => (
 			<Space size="middle">
-				<Link to={`/vendor/${record.id}`}>编辑</Link>
-				{/* <Link to={`/product/${record.id}`}>查看</Link> */}
+				<Link to={`/vendor/update/${record.id}`}>编辑</Link>
+				<Link to={`/vendor/${record.id}`}>查看</Link>
 			</Space>
 		),
 	},
@@ -197,7 +199,7 @@ const Vendors: React.FC = () => {
 				size="small"
 				// rowSelection={{ type: "checkbox", ...rowSelection }}
 				columns={columns}
-				dataSource={products?.data.list}
+				dataSource={products?.list}
 				rowKey={"id"}
 				loading={isLoading}
 				pagination={false}
@@ -215,7 +217,7 @@ const Vendors: React.FC = () => {
 			</section> */}
 			<section className="flex justify-end">
 				<Pagination
-					total={products?.data.total}
+					total={products?.total}
 					showTotal={(total, range) => `${range[0]}-${range[1]} / ${total} 条`}
 					defaultPageSize={20}
 					defaultCurrent={page}

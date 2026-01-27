@@ -167,7 +167,7 @@ const Products: React.FC = () => {
 			<Table<IProduct>
 				size="small"
 				columns={columns}
-				dataSource={products?.data.list}
+				dataSource={products?.list}
 				rowKey={"id"}
 				loading={isLoading}
 				pagination={false}
@@ -180,7 +180,7 @@ const Products: React.FC = () => {
 			<br />
 			<section className="flex justify-end">
 				<Pagination
-					total={products?.data.total}
+					total={products?.total}
 					showTotal={(total, range) => `${range[0]}-${range[1]} of ${total} items`}
 					defaultPageSize={20}
 					defaultCurrent={page}

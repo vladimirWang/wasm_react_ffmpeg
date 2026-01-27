@@ -30,7 +30,7 @@ export interface IProduct {
 }
 
 // 定义登录响应类型
-export type IProductsQueryResponse = IResponse<IPaginationResp<IProduct>>;
+export type IProductsQueryResponse = IPaginationResp<IProduct>;
 
 // 定义注册响应类型
 export interface RegisterResponse {
@@ -61,8 +61,8 @@ export const getProducts = async (
 };
 
 // 根据ID获取产品详情
-export const getProductDetailById = (id: number): Promise<IResponse<IProduct>> => {
-	return request.get<IResponse<IProduct>>("/api/product/" + id);
+export const getProductDetailById = (id: number): Promise<IProduct> => {
+	return request.get<IProduct>("/api/product/" + id);
 };
 
 export type IProductUpdateParams = Partial<
@@ -74,13 +74,13 @@ export const patchProductById = (
 	id: number,
 	data: IProductUpdateParams
 ): Promise<IResponse<IProduct>> => {
-	return request.patch<IResponse<IProduct>>("/api/product/" + id, data);
+	return request.patch<IProduct>("/api/product/" + id, data);
 };
 
 export type IProductCreateParams = Omit<IProduct, "id" | "createdAt" | "updatedAt" | "isDel">;
 // 新增产品列表
-export const createProduct = async (data: IProductUpdateParams): Promise<IResponse<IProduct>> => {
-	return request.post<IResponse<IProduct>>("/api/product", data);
+export const createProduct = async (data: IProductUpdateParams): Promise<IProduct> => {
+	return request.post<IProduct>("/api/product", data);
 };
 
 // 根据供应商id查询产品

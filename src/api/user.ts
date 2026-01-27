@@ -25,8 +25,10 @@ export interface RegisterParams {
   password: string;
 }
 
-export const userLogin = (data: LoginParams): Promise<LoginResponse> => {
-  return request.post<LoginResponse>("/api/user/login", data);
+export const userLogin = (data: LoginParams, config?: { showSuccessMessage?: boolean }): Promise<string> => {
+  return request.post<LoginResponse>("/api/user/login", data, {
+    showSuccessMessage: config?.showSuccessMessage ?? true, // 登录成功默认显示提示
+  });
 };
 
 export const userRegister = (

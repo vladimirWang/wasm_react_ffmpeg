@@ -14,6 +14,7 @@ import Landing from "../pages/Landing";
 import { LayoutComponent } from "../layout";
 import VendorCreate from "../pages/Vendor/VendorCreate";
 import VendorUpdate from "../pages/Vendor/VendorUpdate";
+import VendorView from "../pages/Vendor/VendorView";
 import StockIns from "../pages/StockIns/StockIns";
 // import ProductCreate from "../pages/Product/ProductCreate";
 // import ProductUpdate from "../pages/Product/ProductUpdate";
@@ -312,6 +313,13 @@ export const routeConfig: ExtendedRouteObject[] = [
 			},
 			{
 				path: "vendor/:id",
+				Component: VendorView,
+				meta: {
+					hidden: true, // 详情页不在菜单中显示
+				},
+			},
+			{
+				path: "vendor/update/:id",
 				Component: VendorUpdate,
 				meta: {
 					hidden: true, // 详情页不在菜单中显示

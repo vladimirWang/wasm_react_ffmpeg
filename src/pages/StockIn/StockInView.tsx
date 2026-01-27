@@ -10,29 +10,30 @@ export default function StockInView() {
 	const { id } = useParams();
 
 	const fetcher = async (id: number) => {
-		try {
-			const res = await getStockInDetailById(Number(id));
-			if (res.code === 200) {
-				// setInitialValues(res.data);
-				return res.data;
-			}
-		} catch (e) {}
+		const res = await getStockInDetailById(Number(id));
+		console.log("------------fetcher-----data--------------: ", data);
+		return res;
 	};
 	const [completed, setCompleted] = useState(false);
-	const {
-		data: initialValues,
-		isLoading,
-		error,
-	} = useSWR(id, fetcher, { revalidateOnFocus: false });
+	const { data, isLoading, error } = useSWR(id, fetcher, { revalidateOnFocus: false });
+	const [stockInData, setStockInData] = useState<IStockIn>();
 
 	useEffect(() => {
-		if (!initialValues) return;
-		setCompleted(true);
-	}, [initialValues]);
+		if (data && !error) {
+			console.log("-----------------data--------------: ", data);
+			setStockInData(data);
+			setCompleted(true);
+		}
+	}, [data, error]);
+
+	useEffect(() => {
+		setCompleted(false);
+	}, []);
+
 	return (
 		<div>
 			<Spin spinning={isLoading}>
-				{completed && <StockInForm initialValues={initialValues} pageOperation="view" />}
+				{completed && <StockInForm initialValues={stockInData} pageOperation="view" />}
 			</Spin>
 		</div>
 	);

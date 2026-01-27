@@ -1,4 +1,15 @@
-import { Button, Card, Form, Input, InputNumber, Select, Table, Space, Divider } from "antd";
+import {
+	Button,
+	Card,
+	Form,
+	Input,
+	InputNumber,
+	Select,
+	Table,
+	Space,
+	Divider,
+	message,
+} from "antd";
 import type { TableProps } from "antd";
 import { IVendorUpdateParams } from "../../api/vendor";
 import { useEffect, useMemo, useState } from "react";
@@ -133,13 +144,9 @@ export default function StockInForm(props: StockInFormProps) {
 	const loadProducts = async () => {
 		try {
 			const res = await getProducts();
-			if (res.code === 200) {
-				setAllProducts(res.data.list);
-			} else {
-				alert(res.message);
-			}
+			setAllProducts(res.list);
 		} catch (e) {
-			alert((e as Error).message);
+			message.error((e as Error).message);
 		}
 	};
 
@@ -179,31 +186,31 @@ export default function StockInForm(props: StockInFormProps) {
 					}}
 					autoComplete="off"
 				>
-						<Form.List name="productJoinStockIn">
-							{(fields, { add, remove }) => (
-								<>
-									{props.pageOperation !== "view" && (
-										<div style={{ marginBottom: 16, textAlign: "right" }}>
-											<Button
-												type="primary"
-												icon={<PlusSquareOutlined />}
-												onClick={() => {
-													add({ productId: -1, cost: 1, count: 1 });
-												}}
-												disabled={!editable}
-											>
-												新增商品
-											</Button>
-										</div>
-									)}
-									<Table
-										size="middle"
-										rowKey="key"
-										dataSource={fields.map(f => ({ key: f.key, name: f.name }))}
-										columns={[
-											...columnsBase,
-											...(props.pageOperation !== "view"
-												? [
+					<Form.List name="productJoinStockIn">
+						{(fields, { add, remove }) => (
+							<>
+								{props.pageOperation !== "view" && (
+									<div style={{ marginBottom: 16, textAlign: "right" }}>
+										<Button
+											type="primary"
+											icon={<PlusSquareOutlined />}
+											onClick={() => {
+												add({ productId: -1, cost: 1, count: 1 });
+											}}
+											disabled={!editable}
+										>
+											新增商品
+										</Button>
+									</div>
+								)}
+								<Table
+									size="middle"
+									rowKey="key"
+									dataSource={fields.map(f => ({ key: f.key, name: f.name }))}
+									columns={[
+										...columnsBase,
+										...(props.pageOperation !== "view"
+											? [
 													{
 														title: "操作",
 														key: "action",
@@ -220,27 +227,23 @@ export default function StockInForm(props: StockInFormProps) {
 															</Button>
 														),
 													},
-													]
-												: []),
-										]}
-										pagination={false}
-										locale={{
-											emptyText: "暂无商品，请点击上方按钮添加",
-										}}
-										style={{
-											background: "#fff",
-										}}
-									/>
-								</>
-							)}
-						</Form.List>
+												]
+											: []),
+									]}
+									pagination={false}
+									locale={{
+										emptyText: "暂无商品，请点击上方按钮添加",
+									}}
+									style={{
+										background: "#fff",
+									}}
+								/>
+							</>
+						)}
+					</Form.List>
 					<Divider />
 
-					<Form.Item<IVendorUpdateParams>
-						label="备注"
-						name="remark"
-						style={{ marginBottom: 24 }}
-					>
+					<Form.Item<IVendorUpdateParams> label="备注" name="remark" style={{ marginBottom: 24 }}>
 						<Input.TextArea
 							showCount
 							maxLength={190}
@@ -262,11 +265,7 @@ export default function StockInForm(props: StockInFormProps) {
 								>
 									提交
 								</Button>
-								<Button
-									htmlType="reset"
-									size="large"
-									onClick={() => form.resetFields()}
-								>
+								<Button htmlType="reset" size="large" onClick={() => form.resetFields()}>
 									重置
 								</Button>
 							</Space>

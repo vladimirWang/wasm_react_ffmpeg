@@ -48,32 +48,29 @@ export default function VendorProductTree(props: VendorProductProps) {
 		try {
 			// setTreeData(mockTreeData);
 			const result = await getVendors({ pagination: false });
-			const { code, data } = result;
-			if (code === 200) {
-				const vendors: any[] = data.list.map(item => ({
-					value: item.id,
-					title: item.name,
-					// children: [],
-				}));
-				for (const vendor of vendors) {
-					const mockChild = {
-						value: vendor.name + "-child",
-						title: vendor.name + "-child",
-					};
-					vendor.children = [mockChild];
-					// const productsRes = await getProductsByVendorId(vendor.value as number);
-					// if (productsRes.code === 200) {
-					// 	vendor.children = productsRes.data.list.map(item2 => ({
-					// 		value: item2.id,
-					// 		title: item2.name,
-					// 	}));
-					// }
-					// vendor.children = products.map(item => ({}))
-				}
-				setTreeData(vendors);
+			const vendors: any[] = result.list.map(item => ({
+				value: item.id,
+				title: item.name,
+				// children: [],
+			}));
+			for (const vendor of vendors) {
+				const mockChild = {
+					value: vendor.name + "-child",
+					title: vendor.name + "-child",
+				};
+				vendor.children = [mockChild];
+				// const productsRes = await getProductsByVendorId(vendor.value as number);
+				// if (productsRes.code === 200) {
+				// 	vendor.children = productsRes.data.list.map(item2 => ({
+				// 		value: item2.id,
+				// 		title: item2.name,
+				// 	}));
+				// }
+				// vendor.children = products.map(item => ({}))
 			}
+			setTreeData(vendors);
 		} catch (e) {
-			alert("VendorProductTree加载异常: " + (e as Error).message);
+			// alert("VendorProductTree加载异常: " + (e as Error).message);
 		}
 	};
 	useEffect(() => {

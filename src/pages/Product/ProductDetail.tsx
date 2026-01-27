@@ -1,11 +1,7 @@
 import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import useSWR from "swr";
-import {
-	getProductDetailById,
-	IProductUpdateParams,
-	updateProductById,
-} from "../../api/product";
+import { getProductDetailById, IProductUpdateParams } from "../../api/product";
 import { Button, Form, Input, InputNumber, Spin, Upload } from "antd";
 import { RcFile } from "antd/es/upload";
 import { LoadingOutlined, PlusOutlined } from "@ant-design/icons";
@@ -21,12 +17,7 @@ export default function ProductDetail() {
 
 	const fetcher = async (id: string) => {
 		const res = await getProductDetailById(Number(id));
-		console.log("---res---: ", res);
-		if (res.code === 200) {
-			return res.data;
-		} else {
-			return null;
-		}
+		return res;
 	};
 	const { data, error, isLoading } = useSWR(
 		id, // SWR的key：参数变化则重新请求
@@ -38,34 +29,21 @@ export default function ProductDetail() {
 
 	const [completed, setCompleted] = useState(false);
 
-	const onFinish = async (values: IProductUpdateParams) => {
-		try {
-			const res = await updateProductById(Number(id), values);
-			if (res.code === 200) {
-				alert("更新成功");
-			} else {
-				alert(res.message);
-			}
-		} catch (error) {
-			console.error("<delete>  ");
-		}
-	};
-
 	useEffect(() => {
 		console.log("---data---: ", data);
-		if (data) {
+		if (data && !error) {
 			// 当数据加载完成后，设置表单值
 			// form.setFieldsValue(data);
 			setInitialValues(data);
 			setCompleted(true);
 		}
-	}, [data]);
+	}, [data, error]);
 
 	return (
 		<div>
 			{error && <div>Error loading vendor details.</div>}
 			<Spin spinning={isLoading}>
-				{completed && <ProductForm initialValues={initialValues} onFinishCallback={onFinish} />}
+				{completed && <ProductForm initialValues={initialValues} pageOperation="view" />}
 			</Spin>
 		</div>
 	);

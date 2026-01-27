@@ -9,13 +9,11 @@ export default function StockInCreate() {
 	const onFinishCallback = async (
 		formValue: IVendorUpdateParams & { productJoinStockIn: IProductJoinStockIn[] }
 	) => {
-		const res = await createStockIn(formValue);
-		if (res.code !== 200) {
-			message.warning(res.message);
-		} else {
-			message.success(res.message);
+		try {
+			await createStockIn(formValue);
+		} finally {
+			return Promise.resolve();
 		}
-		return Promise.resolve();
 	};
 	return (
 		<div>
