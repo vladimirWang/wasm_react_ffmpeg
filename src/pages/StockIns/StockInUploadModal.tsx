@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Button, message, Modal, Table, Upload, Steps, Select, Tooltip } from "antd";
+import { Button, message, Modal, Table, Upload, Steps, Select, Tooltip, Divider } from "antd";
 import { InboxOutlined, CheckCircleOutlined, CloseCircleOutlined } from "@ant-design/icons";
 import type { TableProps, UploadProps } from "antd";
 import { getProducts, IProduct } from "../../api/product";
@@ -30,11 +30,17 @@ interface ImportedRecordBatch {
 	[idx: number]: number[];
 }
 
+interface StockInRecordWithComplete extends StockInRecord {
+	success?: boolean;
+}
+
 const StockInUploadModal: React.FC<StockInUploadModalProps> = ({ open, onCancel, onSuccess }) => {
 	const [uploading, setUploading] = useState(false);
 	const [currentStep, setCurrentStep] = useState(0); // Steps 当前步骤
-	const [parsedRecords, setParsedRecords] = useState<StockInRecord[]>([]); // 打平后的数据
+	const [confirmBtnVisible, setConfirmBtnVisible] = useState(true);
+	const [parsedRecords, setParsedRecords] = useState<StockInRecordWithComplete[]>([]); // 打平后的数据
 	const [groupedRecords, setGroupedRecords] = useState<Array<StockInRecord[]>>([]); // 打平后的数据
+	const [importedRecordBatch, setImportedRecordBatch] = useState<ImportedRecordBatch>({});
 	const [uploadedFile, setUploadedFile] = useState<File | null>(null); // 上传的文件
 	const [products, setProducts] = useState<IProduct[]>([]); // 产品列表
 	const [vendors, setVendors] = useState<IVendor[]>([]); // 供应商列表
@@ -42,7 +48,7 @@ const StockInUploadModal: React.FC<StockInUploadModalProps> = ({ open, onCancel,
 	const [filterStatus, setFilterStatus] = useState<"all" | "success" | "failed">("all"); // 筛选状态
 	const [selectedRowKeys, setSelectedRowKeys] = useState<React.Key[]>([]); // 选中的行 key
 
-	const columns: TableProps<StockInRecord>["columns"] = [
+	const columns: TableProps<StockInRecordWithComplete>["columns"] = [
 		{
 			title: "行号",
 			key: "rowIndex",
@@ -125,14 +131,12 @@ const StockInUploadModal: React.FC<StockInUploadModalProps> = ({ open, onCancel,
 		},
 		{
 			title: "导入结果",
-			key: "matchResult",
+			key: "success",
 			fixed: "right",
 			width: 100,
 			render: (_, record) => {
-				const product = products.find(p => p.id === record.productId);
-				const vendor = vendors.find(v => v.id === record.vendorId);
-				const isMatched = product && vendor;
-				return isMatched ? (
+				if (record.success === undefined) return null;
+				return record.success ? (
 					<CheckCircleOutlined style={{ color: "#52c41a", fontSize: 18 }} />
 				) : (
 					<CloseCircleOutlined style={{ color: "#ff4d4f", fontSize: 18 }} />
@@ -142,7 +146,9 @@ const StockInUploadModal: React.FC<StockInUploadModalProps> = ({ open, onCancel,
 	];
 
 	// 解析 Excel 文件 - 第二行作为字段 key
-	const parseExcelFile = async (file: File): Promise<Array<StockInRecord[]>> => {
+	const parseExcelFile = async (
+		file: File
+	): Promise<{ group: StockInRecord[][]; flat: StockInRecord[] }> => {
 		return new Promise((resolve, reject) => {
 			const reader = new FileReader();
 			reader.onload = e => {
@@ -228,7 +234,7 @@ const StockInUploadModal: React.FC<StockInUploadModalProps> = ({ open, onCancel,
 					// 所以 Excel 行号 = 数组索引 + 1，数据行的 Excel 行号 = i + 1
 					const createdAtMap: Record<string, StockInRecord[]> = {};
 					// const groups: Array<StockInRecord[]> = [];
-					// const records: StockInRecord[] = [];
+					const flatRecords: StockInRecord[] = [];
 					for (let i = 2; i < jsonData.length; i++) {
 						const row = jsonData[i];
 						if (!row || row.length === 0) continue; // 跳过空行
@@ -251,14 +257,16 @@ const StockInUploadModal: React.FC<StockInUploadModalProps> = ({ open, onCancel,
 							!isNaN(cost) &&
 							!!formatCreatedAt
 						) {
-							createdAtMap[formatCreatedAt].push({
+							const recordItem: StockInRecord = {
 								productId,
 								vendorId,
 								count,
 								cost,
 								createdAt: formatCreatedAt,
 								rowIndex: i + 1, // Excel 中的行号（从 1 开始）
-							});
+							};
+							flatRecords.push(recordItem);
+							createdAtMap[formatCreatedAt].push(recordItem);
 						}
 					}
 
@@ -268,7 +276,10 @@ const StockInUploadModal: React.FC<StockInUploadModalProps> = ({ open, onCancel,
 						return;
 					}
 
-					resolve(values);
+					resolve({
+						group: values,
+						flat: flatRecords,
+					});
 				} catch (error) {
 					reject(error);
 				}
@@ -304,96 +315,92 @@ const StockInUploadModal: React.FC<StockInUploadModalProps> = ({ open, onCancel,
 			setUploading(true);
 
 			// // 前端解析 Excel 文件
-			const records: Array<StockInRecord[]> = await parseExcelFile(file as File);
-			const importedRecordBatch: ImportedRecordBatch = {};
-			setGroupedRecords(records);
-			records.forEach((record, index) => {
-				const previous = records.slice(0, index);
+			const records: { group: StockInRecord[][]; flat: StockInRecord[] } = await parseExcelFile(
+				file as File
+			);
+			const importedRecordBatchTmp: ImportedRecordBatch = {};
+			setGroupedRecords(records.group);
+			records.group.forEach((record, index) => {
+				const previous = records.group.slice(0, index);
 				const previousLength = previous.reduce((a, c) => {
 					return a + c.length;
 				}, 0);
-				importedRecordBatch[index] = [previousLength, previousLength + record.length];
+				importedRecordBatchTmp[index] = [previousLength, previousLength + record.length];
 			});
-			console.log("============records: ", records);
-			console.log("============importedRecordBatch: ", importedRecordBatch);
-			const flatRecords = records.flat(1);
+			setImportedRecordBatch(importedRecordBatchTmp);
 			// 加载产品和供应商数据
 			await loadProductsAndVendors();
 
 			// 保存解析结果和文件，切换到第二步
-			setParsedRecords(flatRecords);
+			setParsedRecords(records.flat);
+			// setSelectedRowKeys(records.flat.map(item => `record-${item.rowIndex}`));
 			setUploadedFile(file as File);
 			setCurrentStep(1);
-			onUploadSuccess?.(flatRecords, file);
-			message.success(`成功解析 ${flatRecords.length} 条记录`);
+			onUploadSuccess?.(records.flat, file);
+			message.success(`成功解析 ${records.flat.length} 条记录`);
 		} catch (error: any) {
 			onError?.(error);
-			message.error(error?.message || `${file.name} 解析失败`);
 		} finally {
 			setUploading(false);
+			setConfirmBtnVisible(true);
 		}
 	};
 
+	// 批量导入成功次数
+	const [createStockInSuccessCount, setCreateStockInSuccessCount] = useState(0);
 	// 确认导入（串行调用 createStockIn，避免并发过多）
 	const handleConfirmImport = async () => {
 		const tasks = groupedRecords.map(
-			record => () =>
+			(recordSet, recordSetIndex) => () =>
 				createStockIn({
-					productJoinStockIn: record.map(item => ({
+					productJoinStockIn: recordSet.map(item => ({
 						productId: item.productId,
 						count: item.count,
 						cost: item.cost,
 						createdAt: item.createdAt,
 					})),
 				})
+					// 处理成功与失败情况的导入结果展示
+					.then(res => {
+						setCreateStockInSuccessCount(prev => prev + 1);
+						// 这一批次是哪条到那条的
+						const [start, end] = importedRecordBatch[recordSetIndex];
+						setParsedRecords(prev =>
+							prev.map((item, index) => {
+								return index >= start && index < end ? { ...item, success: true } : item;
+							})
+						);
+						return res;
+					})
+					.catch(_ => {
+						const [start, end] = importedRecordBatch[recordSetIndex];
+						setParsedRecords(prev =>
+							prev.map((item, index) => {
+								return index >= start && index < end ? { ...item, success: false } : item;
+							})
+						);
+					})
 		);
 		try {
 			setUploading(true);
-			const res = await composePromise(...tasks);
-			console.log("============res: ", res);
-			// 将 StockInRecord[] 转换为 IProductJoinStockIn[] 格式
-
-			// // 调用创建进货记录接口
-			// await createStockIn({
-			// 	productJoinStockIn,
-			// });
-			// 上传成功后刷新列表
-			onSuccess();
-			// 重置状态并关闭弹窗
-			handleModalCancel();
+			await composePromise(...tasks);
 		} finally {
 			setUploading(false);
+			setConfirmBtnVisible(false);
 		}
 	};
 
 	// 重置 Modal 状态
 	const handleModalCancel = () => {
+		if (createStockInSuccessCount > 0) {
+			onSuccess?.();
+		}
 		setCurrentStep(0);
 		setParsedRecords([]);
 		setUploadedFile(null);
 		setSelectedRowKeys([]);
 		setFilterStatus("all");
 		onCancel();
-	};
-
-	// 删除选中的记录
-	const handleDeleteSelected = () => {
-		if (selectedRowKeys.length === 0) {
-			message.warning("请先选择要删除的记录");
-			return;
-		}
-
-		// 根据选中的 rowKey 删除记录
-		// rowKey 格式为 `record-${record.rowIndex || index}`
-		const keysToDelete = new Set(selectedRowKeys.map(key => String(key)));
-		const newRecords = parsedRecords.filter((record, index) => {
-			const rowKey = `record-${record.rowIndex ?? index}`;
-			return !keysToDelete.has(rowKey);
-		});
-
-		setParsedRecords(newRecords);
-		setSelectedRowKeys([]);
-		message.success(`已删除 ${selectedRowKeys.length} 条记录`);
 	};
 
 	const props: UploadProps = {
@@ -431,15 +438,17 @@ const StockInUploadModal: React.FC<StockInUploadModalProps> = ({ open, onCancel,
 				items={[
 					{
 						title: "上传文件",
-						description: "选择 Excel 文件并上传",
+						content: "选择 Excel 文件并上传",
 					},
 					{
 						title: "数据预览",
-						description: "确认解析后的数据",
+						content: "确认解析后的数据",
 					},
 				]}
 				className="mb-6"
 			/>
+
+			<Divider />
 
 			{currentStep === 0 && (
 				<Dragger {...props} disabled={uploading}>
@@ -505,16 +514,10 @@ const StockInUploadModal: React.FC<StockInUploadModalProps> = ({ open, onCancel,
 										/>
 									</div>
 								</div>
-								<Table<StockInRecord>
+								<Table<StockInRecordWithComplete>
 									size="small"
 									bordered
 									loading={loadingData}
-									rowSelection={{
-										selectedRowKeys,
-										onChange: selectedKeys => {
-											setSelectedRowKeys(selectedKeys);
-										},
-									}}
 									columns={columns}
 									dataSource={filteredRecords.sort((a, b) => (a.rowIndex || 0) - (b.rowIndex || 0))}
 									rowKey={(record, index) => `record-${record.rowIndex ?? index}`}
@@ -524,19 +527,14 @@ const StockInUploadModal: React.FC<StockInUploadModalProps> = ({ open, onCancel,
 									}}
 									scroll={{ y: 300, x: 800 }}
 								/>
-								<div className="mt-4 flex justify-between items-center">
-									<Button
-										danger
-										onClick={handleDeleteSelected}
-										disabled={selectedRowKeys.length === 0}
-									>
-										删除选中 ({selectedRowKeys.length})
-									</Button>
+								<div className="mt-4 flex justify-end items-center">
 									<div className="flex gap-2">
 										<Button onClick={() => setCurrentStep(0)}>返回</Button>
-										<Button type="primary" onClick={handleConfirmImport} loading={uploading}>
-											确认导入
-										</Button>
+										{confirmBtnVisible && (
+											<Button type="primary" onClick={handleConfirmImport} loading={uploading}>
+												确认导入
+											</Button>
+										)}
 									</div>
 								</div>
 							</>

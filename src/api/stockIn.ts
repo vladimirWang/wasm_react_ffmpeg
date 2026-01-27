@@ -45,7 +45,9 @@ export interface IStockInCreateParams {
 export const createStockIn = async (
 	data?: IStockInCreateParams
 ): Promise<IStockInsQueryResponse> => {
-	return request.post<IStockInsQueryResponse>("/api/stockin/multiple", data);
+	const res = await request.post<IStockInsQueryResponse>("/api/stockin/multiple", data);
+	// await sleep(2000);
+	return res;
 };
 
 // // 进货记录数据类型
