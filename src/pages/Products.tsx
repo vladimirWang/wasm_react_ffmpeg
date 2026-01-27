@@ -39,6 +39,11 @@ const Products: React.FC = () => {
 			},
 		},
 		{
+			title: "供应商",
+			key: "VendorName",
+			dataIndex: ["Vendor", "name"],
+		},
+		{
 			title: "最新售价",
 			key: "latestPrice",
 			dataIndex: "latestPrice",
@@ -52,6 +57,9 @@ const Products: React.FC = () => {
 			title: "库存数",
 			dataIndex: "balance",
 			key: "balance",
+			render: (text, record) => {
+				return text < 10 ? <span className="text-red-500">{text}</span> : text;
+			},
 		},
 		{
 			title: "待进库",
