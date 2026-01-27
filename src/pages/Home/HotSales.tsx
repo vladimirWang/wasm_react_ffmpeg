@@ -13,7 +13,7 @@ const HotSales = () => {
 	const [data, setData] = useState<HotSalesData[]>([]);
 
 	const startDate = dayjs().subtract(3, "month").toDate();
-	const endDate = dayjs().toDate();
+	const endDate = dayjs().subtract(1, "day").toDate();
 	const loadData = async () => {
 		try {
 			// // 2025-06-01&endDate=2026-01-26
@@ -45,7 +45,8 @@ const HotSales = () => {
 		colorField: "type",
 		// color: ["#FF6B6B", "#4ECDC4", "#FFD166", "#06D6A0"],
 		title: {
-			title: `${dayjs(startDate).format("YYYY-MM-DD")} 至 ${dayjs(endDate).format("YYYY-MM-DD")} 热销商品`,
+			title: `热销商品销售额(近3个月)`,
+			subtitle: `${dayjs(startDate).format("YYYY-MM-DD")} 至 ${dayjs(endDate).format("YYYY-MM-DD")}`,
 		},
 		label: {
 			text: "value",
