@@ -56,7 +56,9 @@ axiosInstance.interceptors.response.use(
 			// 判断是否成功（通常 code === 200 表示成功）
 			if (code === 200) {
 				// 成功：根据配置决定是否显示提示
-				const showSuccessMessage = config.showSuccessMessage ?? false;
+				const showSuccessMessage =
+					config.showSuccessMessage ??
+					(["post", "put", "patch", "delete"].includes(config.method) ? true : false);
 				if (showSuccessMessage && msg) {
 					message.success(msg);
 				}

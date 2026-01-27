@@ -93,8 +93,8 @@ const StockOuts: React.FC = () => {
 								<Button
 									onClick={async () => {
 										try {
-											const res = await confirmStockOutCompleted(record.id);
-											message.success(res.message);
+											await confirmStockOutCompleted(record.id);
+											// message.success(res.message);
 											mutate();
 										} catch (e) {
 											message.error((e as Error).message);
