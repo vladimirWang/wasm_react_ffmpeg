@@ -86,18 +86,15 @@ export function pickIncrementalFields<T extends {}>(newData: T, oldData: T): cha
 	};
 }
 
-export function composePromise<T = any>(...fns: Promise<T>[]) {
-	const last = fns.shift();
-	// console.log(last);
-	return (...args) => {
-		return fns.reduce(
-			(a, c) => {
-				return a.then(result => {
-					// console.log(result, c);
-					return c(result);
-				});
-			},
-			Promise.resolve(last(...args))
-		);
-	};
+/**
+ * 对「返回 Promise 的任务」做串行执行，上一个 resolve 后再执行下一个。
+ * @param tasks 无参且返回 Promise 的函数数组
+ * @returns 按顺序收集每个任务结果的 Promise
+ */
+export function composePromise<T = any>(...tasks: Array<() => Promise<T>>): Promise<T[]> {
+	if (tasks.length === 0) return Promise.resolve([]);
+	return tasks.reduce(
+		(acc, task) => acc.then(results => task().then(r => [...results, r])),
+		Promise.resolve([] as T[])
+	);
 }

@@ -4,7 +4,7 @@ import { InboxOutlined, CheckCircleOutlined, CloseCircleOutlined } from "@ant-de
 import type { TableProps, UploadProps } from "antd";
 import { getProducts, IProduct } from "../../api/product";
 import { getVendors, IVendor } from "../../api/vendor";
-import { createStockIn, StockInRecord, IStockInsQueryResponse } from "../../api/stockIn";
+import { createStockIn, StockInRecord } from "../../api/stockIn";
 import * as XLSX from "xlsx";
 import { composePromise, dateToMsSince1900, excelSerialToDate } from "../../utils/common";
 import dayjs from "dayjs";
@@ -334,27 +334,23 @@ const StockInUploadModal: React.FC<StockInUploadModalProps> = ({ open, onCancel,
 		}
 	};
 
-	const makeGroupBYBatchInfo = (data: Array<StockInRecord[]>) => {};
-
-	// 确认导入
+	// 确认导入（串行调用 createStockIn，避免并发过多）
 	const handleConfirmImport = async () => {
-		const promises = groupedRecords.map(record => {
-			return createStockIn({
-				productJoinStockIn: record.map(item => {
-					return {
+		const tasks = groupedRecords.map(
+			record => () =>
+				createStockIn({
+					productJoinStockIn: record.map(item => ({
 						productId: item.productId,
 						count: item.count,
 						cost: item.cost,
 						createdAt: item.createdAt,
-					};
-				}),
-			});
-		});
+					})),
+				})
+		);
 		try {
 			setUploading(true);
-			const res = await Promise.allSettled(promises);
-			// composePromise<IStockInsQueryResponse[]>(promises);
-			// console.log("============res: ");
+			const res = await composePromise(...tasks);
+			console.log("============res: ", res);
 			// 将 StockInRecord[] 转换为 IProductJoinStockIn[] 格式
 
 			// // 调用创建进货记录接口
