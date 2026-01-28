@@ -7,6 +7,7 @@ import useSWR from "swr";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import mockBarcode from "../assets/barcode.jpg";
 import { GlobalModal } from "../components/GlobalModal";
+import dayjs from "dayjs";
 
 const Products: React.FC = () => {
 	const [isModalOpen, setIsModalOpen] = useState(false);
@@ -85,6 +86,14 @@ const Products: React.FC = () => {
 			},
 		},
 		{
+			title: "更新时间",
+			dataIndex: "updatedAt",
+			key: "updatedAt",
+			render: (_, record) => {
+				return record.updatedAt ? dayjs(record.updatedAt).format("YYYY-MM-DD HH:mm:ss") : null;
+			},
+		},
+		{
 			title: "操作",
 			key: "action",
 			dataIndex: "action",
@@ -100,20 +109,20 @@ const Products: React.FC = () => {
 	const [queryParams, setQueryParams] = useState<IProductQueryParams>({
 		page: 1,
 		limit: 20,
-		name: "",
+		productName: "",
 	});
 
 	const swrKey = useMemo(
-		() => ["products", queryParams.page, queryParams.limit, queryParams.name ?? ""] as const,
-		[queryParams.page, queryParams.limit, queryParams.name]
+		() => ["products", queryParams.page, queryParams.limit, queryParams.productName ?? ""] as const,
+		[queryParams.page, queryParams.limit, queryParams.productName]
 	);
 
 	// 2. 定义SWR的fetcher函数：接收参数，调用getProducts
-	const fetcher = async ([_tag, page, limit, name]: typeof swrKey) => {
+	const fetcher = async ([_tag, page, limit, productName]: typeof swrKey) => {
 		const res = await getProducts({
 			page,
 			limit,
-			name: name === "" ? undefined : name,
+			productName: productName === "" ? undefined : productName,
 		});
 		return res; // 若你的getProducts返回的是响应体（如res.data），则这里取res.data
 	};
@@ -140,7 +149,7 @@ const Products: React.FC = () => {
 		mutate();
 	}, [location.key, mutate]);
 
-	const [keyword, setKeyword] = useState<string>(queryParams.name || "");
+	const [keyword, setKeyword] = useState<string>(queryParams.productName || "");
 	const [page, setPage] = useState(queryParams.page);
 
 	return (
@@ -149,14 +158,14 @@ const Products: React.FC = () => {
 				<Input
 					placeholder="Basic usage"
 					value={keyword}
-					onInput={e => setKeyword(e.currentTarget.value)}
+					onChange={e => setKeyword(e.currentTarget.value)}
 					allowClear
 				/>
 				<Button
 					icon={<SearchOutlined />}
 					onClick={() => {
 						setQueryParams({
-							name: keyword,
+							productName: keyword,
 							page: 1,
 							limit: 20,
 						});

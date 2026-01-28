@@ -99,7 +99,7 @@ export default function ProductForm({
 						>
 							<Input placeholder="请输入产品名称" />
 						</Form.Item>
-						<Flex gap={16} align="flex-start">
+						{/* <Flex gap={16} align="flex-start">
 							<Form.Item<IProductUpdateParams>
 								label="价格"
 								name="latestPrice"
@@ -130,7 +130,7 @@ export default function ProductForm({
 									placeholder="请输入成本"
 								/>
 							</Form.Item>
-						</Flex>
+						</Flex> */}
 						<Form.Item<IProductUpdateParams> label="备注" name="remark">
 							<Input.TextArea showCount maxLength={190} rows={4} placeholder="请输入备注信息" />
 						</Form.Item>

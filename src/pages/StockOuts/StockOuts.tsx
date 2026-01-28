@@ -15,7 +15,7 @@ const StockOuts: React.FC = () => {
 	const [queryParams, setQueryParams] = useState<IProductQueryParams>({
 		page: 1,
 		limit: 20,
-		name: "",
+		productName: "",
 	});
 	// 2. 定义SWR的fetcher函数：接收参数，调用getStockIns
 	const fetcher = async (_params: IProductQueryParams) => {
@@ -78,6 +78,14 @@ const StockOuts: React.FC = () => {
 			},
 		},
 		{
+			title: "更新时间",
+			dataIndex: "updatedAt",
+			key: "updatedAt",
+			render: (_, record) => {
+				return record.updatedAt ? dayjs(record.updatedAt).format("YYYY-MM-DD HH:mm:ss") : null;
+			},
+		},
+		{
 			title: "操作",
 			key: "action",
 			dataIndex: "action",
@@ -86,7 +94,7 @@ const StockOuts: React.FC = () => {
 			render: (_, record) => (
 				<Space size="middle">
 					{record.status === "COMPLETED" && <Link to={`/stockout/${record.id}`}>查看</Link>}
-					{record.status === "PENDING" && (
+					{record.status === "PENDING" && record.deletedAt === null && (
 						<>
 							<Link to={`/stockout/update/${record.id}`}>编辑</Link>
 							<Tooltip title="确认进货完成">
@@ -112,7 +120,7 @@ const StockOuts: React.FC = () => {
 		},
 	];
 
-	const [keyword, setKeyword] = useState<string>(queryParams.name || "");
+	const [keyword, setKeyword] = useState<string>(queryParams.productName || "");
 	const [page, setPage] = useState(queryParams.page);
 
 	return (
@@ -128,7 +136,7 @@ const StockOuts: React.FC = () => {
 					icon={<SearchOutlined />}
 					onClick={() => {
 						setQueryParams({
-							name: keyword,
+							productName: keyword,
 							page: 1,
 							limit: 20,
 						});

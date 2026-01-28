@@ -45,7 +45,14 @@ export interface RegisterResponse {
 }
 
 // 定义登录请求参数类型
-export type IProductQueryParams = IPagination & { name?: string };
+export type IProductQueryParams = IPagination & {
+	productName?: string;
+	deletedStart?: string;
+	deletedEnd?: string;
+	vendorName?: string;
+	completedStart?: string;
+	completedEnd?: string;
+};
 
 // 定义注册请求参数类型
 export interface RegisterParams {

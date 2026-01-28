@@ -25,10 +25,7 @@ export default function VendorForm(props: VendorFormProps) {
 				if (!props.onFinishCallback) return;
 				setLoading(true);
 				try {
-					const res = await props.onFinishCallback(values);
-					message.success(res.message);
-				} catch (e: unknown) {
-					message.error((e as Error).message);
+					await props.onFinishCallback(values);
 				} finally {
 					setLoading(false);
 				}

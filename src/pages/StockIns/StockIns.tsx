@@ -1,13 +1,18 @@
 import React, { useState } from "react";
-import { Button, Input, message, Pagination, Space, Table, Tooltip } from "antd";
-import { CheckCircleOutlined, PlusCircleOutlined, SearchOutlined } from "@ant-design/icons";
+import { Button, DatePicker, Input, message, Pagination, Space, Table, Tooltip } from "antd";
+import {
+	ArrowDownOutlined,
+	CheckCircleOutlined,
+	PlusCircleOutlined,
+	SearchOutlined,
+} from "@ant-design/icons";
 import type { TableProps } from "antd";
 import { IProductQueryParams } from "../../api/product";
 import { getStockIns, IStockIn, confirmStockInCompleted } from "../../api/stockIn";
 import useSWR, { mutate } from "swr";
 import { Link, useNavigate } from "react-router-dom";
 import StockInUploadModal from "./StockInUploadModal";
-import dayjs from "dayjs";
+import dayjs, { Dayjs } from "dayjs";
 
 const StockIns: React.FC = () => {
 	const [fileUploadModalOpen, setFileUploadModalOpen] = useState(false);
@@ -15,11 +20,16 @@ const StockIns: React.FC = () => {
 	const [queryParams, setQueryParams] = useState<IProductQueryParams>({
 		page: 1,
 		limit: 20,
-		name: "",
+		productName: "",
+		deletedStart: undefined,
+		deletedEnd: undefined,
+		vendorName: "",
+		completedStart: undefined,
+		completedEnd: undefined,
 	});
 	// 2. 定义SWR的fetcher函数：接收参数，调用getStockIns
-	const fetcher = async (_params: IProductQueryParams) => {
-		const res = await getStockIns();
+	const fetcher = async (params: IProductQueryParams) => {
+		const res = await getStockIns(params);
 		return res; // 若你的getProducts返回的是响应体（如res.data），则这里取res.data
 	};
 
@@ -106,28 +116,35 @@ const StockIns: React.FC = () => {
 		},
 	];
 
-	const [keyword, setKeyword] = useState<string>(queryParams.name || "");
+	const [productName, setProductName] = useState<string>(queryParams.productName || "");
+	const [vendorName, setVendorName] = useState<string>(queryParams.vendorName || "");
 	const [page, setPage] = useState(queryParams.page);
+	const [dateRange, setDateRange] = useState<[Dayjs | null, Dayjs | null] | null>(null);
+	const [completedDateRange, setCompletedDateRange] = useState<[Dayjs | null, Dayjs | null] | null>(
+		null
+	);
 
-	return (
-		<div className="py-2 px-3">
-			<section className="flex gap-5">
-				<Input
-					placeholder="Basic usage"
-					value={keyword}
-					onInput={e => setKeyword(e.currentTarget.value)}
-					allowClear
-				/>
-				<Button
-					icon={<SearchOutlined />}
-					onClick={() => {
-						setQueryParams({
-							name: keyword,
-							page: 1,
-							limit: 20,
-						});
-					}}
-				></Button>
+	const handleSetQueryParams = () => {
+		const params: IProductQueryParams = {
+			productName,
+			vendorName,
+			page: 1,
+			limit: 20,
+		};
+		if (Array.isArray(dateRange)) {
+			params.deletedStart = dateRange?.[0]?.format("YYYY-MM-DD");
+			params.deletedEnd = dateRange?.[1]?.format("YYYY-MM-DD");
+		}
+		if (Array.isArray(completedDateRange)) {
+			params.completedStart = completedDateRange?.[0]?.format("YYYY-MM-DD");
+			params.completedEnd = completedDateRange?.[1]?.format("YYYY-MM-DD");
+		}
+		setQueryParams(params);
+	};
+	const [moreVisible, setMoreVisible] = useState(false);
+	const toolBar = (
+		<div className="flex flex-col gap-2">
+			<section className="flex justify-end gap-5">
 				<Button
 					icon={<PlusCircleOutlined />}
 					onClick={() => {
@@ -144,6 +161,61 @@ const StockIns: React.FC = () => {
 					通过文件批量导入
 				</Button>
 			</section>
+			<section className="flex justify-between">
+				<div className="flex gap-5">
+					<Input
+						style={{ width: 300 }}
+						placeholder="产品名称"
+						value={productName}
+						onChange={e => setProductName(e.target.value)}
+						allowClear
+					/>
+					<Input
+						style={{ width: 200 }}
+						placeholder="供应商名称"
+						value={vendorName}
+						onChange={e => setVendorName(e.currentTarget.value)}
+						allowClear
+					/>
+					<DatePicker.RangePicker
+						className="w-[350px]"
+						placeholder={["完成开始日期", "完成结束日期"]}
+						value={completedDateRange}
+						onChange={setCompletedDateRange}
+					/>
+				</div>
+				<Button onClick={handleSetQueryParams} type="primary">
+					查询
+				</Button>
+			</section>
+			{!moreVisible && (
+				<div className="text-center">
+					<ArrowDownOutlined
+						className={`${moreVisible ? "rotate-180" : ""}`}
+						onClick={() => {
+							setMoreVisible(!moreVisible);
+						}}
+					/>
+				</div>
+			)}
+			{moreVisible && (
+				<div className="flex gap-5 items-center">
+					<DatePicker.RangePicker
+						placeholder={["删除开始日期", "删除结束日期"]}
+						value={dateRange}
+						onChange={setDateRange}
+					/>
+					<Button type="primary" size="small" onClick={() => setMoreVisible(false)}>
+						关闭高级查询
+					</Button>
+				</div>
+			)}
+		</div>
+	);
+	return (
+		<div className="py-2 px-3">
+			{toolBar}
+
 			{error && <div>Error loading products.</div>}
 			<Table<IStockIn>
 				size="small"

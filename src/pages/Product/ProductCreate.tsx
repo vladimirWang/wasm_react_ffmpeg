@@ -17,14 +17,7 @@ export default function ProductCreate() {
 		try {
 			setLoading(true);
 			// values.vendorId = 2;
-			const res = await createProduct(values);
-			if (res.code === 200) {
-				message.success(res.message);
-			} else {
-				message.warning(res.message);
-			}
-		} catch (error) {
-			message.error((error as Error).message);
+			await createProduct(values);
 		} finally {
 			setLoading(false);
 			return Promise.resolve();
@@ -34,7 +27,7 @@ export default function ProductCreate() {
 	return (
 		<div>
 			<Spin spinning={loading}>
-				<ProductForm onFinishCallback={onFinish} />
+				<ProductForm onFinishCallback={onFinish} pageOperation="create" />
 			</Spin>
 		</div>
 	);

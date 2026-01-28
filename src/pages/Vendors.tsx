@@ -10,17 +10,19 @@ import DateQuery, { DateQueryValue } from "../components/DateQuery";
 import dayjs from "dayjs";
 
 const columns: TableProps<IVendor>["columns"] = [
-	{},
 	{
 		title: "名称",
 		dataIndex: "name",
 		key: "name",
 	},
-	// {
-	//   title: 'cost',
-	//   dataIndex: 'cost',
-	//   key: 'cost',
-	// },
+	{
+		title: "更新时间",
+		dataIndex: "updatedAt",
+		key: "updatedAt",
+		render: (_, record) => {
+			return record.updatedAt ? dayjs(record.updatedAt).format("YYYY-MM-DD HH:mm:ss") : null;
+		},
+	},
 	// {
 	//   title: 'balance',
 	//   dataIndex: 'balance',
