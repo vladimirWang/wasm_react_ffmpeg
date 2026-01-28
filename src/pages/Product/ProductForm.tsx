@@ -4,10 +4,11 @@ import useSWR from "swr";
 import { IProductUpdateParams } from "../../api/product";
 import { Button, Card, Empty, Flex, Form, Input, InputNumber, message, Select, Upload } from "antd";
 import { RcFile } from "antd/es/upload";
-import { LoadingOutlined, PlusOutlined } from "@ant-design/icons";
+import { LoadingOutlined, PlusOutlined, QuestionCircleOutlined } from "@ant-design/icons";
 import { getVendors } from "../../api/vendor";
 import { CostHistoryDrawer } from "./CostHistoryDrawer";
 import { PageOperation } from "../../enum";
+import { PositiveInputNumber } from "../../components/PositiveInputNumber";
 
 export default function ProductForm({
 	initialValues,
@@ -99,38 +100,27 @@ export default function ProductForm({
 						>
 							<Input placeholder="请输入产品名称" />
 						</Form.Item>
-						{/* <Flex gap={16} align="flex-start">
-							<Form.Item<IProductUpdateParams>
-								label="价格"
-								name="latestPrice"
-								rules={[{ required: true, message: "请输入价格" }]}
-								labelCol={{ span: 8 }}
-								wrapperCol={{ span: 16 }}
-								style={{ flex: 1, marginBottom: 0 }}
-							>
-								<InputNumber
+						<Form.Item<IProductUpdateParams>
+							label="价格"
+							name="shelfPrice"
+							rules={[{ required: true, message: "请输入上架价格" }]}
+						>
+							<div className="flex items-center gap-2">
+								<PositiveInputNumber
 									min={0}
 									precision={0}
-									style={{ width: "100%" }}
 									placeholder="请输入价格"
-								/>
-							</Form.Item>
-							<Form.Item<IProductUpdateParams>
-								label="成本"
-								name="latestCost"
-								rules={[{ required: true, message: "请输入成本!" }]}
-								labelCol={{ span: 8 }}
-								wrapperCol={{ span: 16 }}
-								style={{ flex: 1, marginBottom: 0 }}
-							>
-								<InputNumber
-									min={0}
-									precision={0}
 									style={{ width: "100%" }}
-									placeholder="请输入成本"
 								/>
-							</Form.Item>
-						</Flex> */}
+								<QuestionCircleOutlined
+									style={{ color: "red" }}
+									onClick={() => {
+										setCostDrawerOpen(true);
+									}}
+									// icon={<ClippingOutlined style={{ color: "red" }} />}
+								/>
+							</div>
+						</Form.Item>
 						<Form.Item<IProductUpdateParams> label="备注" name="remark">
 							<Input.TextArea showCount maxLength={190} rows={4} placeholder="请输入备注信息" />
 						</Form.Item>
@@ -153,25 +143,6 @@ export default function ProductForm({
 								)}
 							</Upload>
 						</Form.Item>
-
-						<Card
-							size="small"
-							title="历史成本"
-							className="mt-4"
-							extra={
-								productId && (
-									<Button type="link" size="small" onClick={() => setCostDrawerOpen(true)}>
-										查看详情
-									</Button>
-								)
-							}
-						>
-							{!productId ? (
-								<Empty description="创建产品时暂无历史成本" image={Empty.PRESENTED_IMAGE_SIMPLE} />
-							) : (
-								<div className="text-gray-500 text-sm">点击右上角"查看详情"查看历史成本趋势</div>
-							)}
-						</Card>
 					</section>
 				</div>
 				<Form.Item label={null} className="mt-6">

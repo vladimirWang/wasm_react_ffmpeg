@@ -27,6 +27,7 @@ export interface IProduct {
 	historyCost?: IProductHistoryCostItem[];
 	stockInPending: number;
 	stockOutPending: number;
+	shelfPrice: number;
 }
 
 // 定义登录响应类型
