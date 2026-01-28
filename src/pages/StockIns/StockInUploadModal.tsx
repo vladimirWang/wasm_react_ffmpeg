@@ -384,6 +384,7 @@ const StockInUploadModal: React.FC<StockInUploadModalProps> = ({ open, onCancel,
 		try {
 			setUploading(true);
 			await composePromise(...tasks);
+			message.success(`导入结束`);
 		} finally {
 			setUploading(false);
 			setConfirmBtnVisible(false);
@@ -529,7 +530,7 @@ const StockInUploadModal: React.FC<StockInUploadModalProps> = ({ open, onCancel,
 								/>
 								<div className="mt-4 flex justify-end items-center">
 									<div className="flex gap-2">
-										<Button onClick={() => setCurrentStep(0)}>返回</Button>
+										<Button onClick={() => setCurrentStep(0)}>上一步</Button>
 										{confirmBtnVisible && (
 											<Button type="primary" onClick={handleConfirmImport} loading={uploading}>
 												确认导入

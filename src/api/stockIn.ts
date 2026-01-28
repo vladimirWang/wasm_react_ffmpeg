@@ -12,6 +12,7 @@ export interface IStockIn {
 	status: StockInStatus;
 	createdAt: Date;
 	completedAt?: Date;
+	deletedAt?: Date;
 }
 export type IStockInsQueryResponse = IPaginationResp<IStockIn>;
 
@@ -89,4 +90,13 @@ export const uploadStockInFile = async (file: File): Promise<IResponse<any>> => 
 // 进货单确认完成
 export const confirmStockInCompleted = async (id: number): Promise<IStockIn> => {
 	return request.patch<IStockIn>("/api/stockin/confirmCompleted/" + id);
+};
+
+// 进货单批量删除
+export const batchDeleteStockIn = async (ids: number[]): Promise<IStockIn[]> => {
+	const p = ids.reduce((a, c) => {
+		a.append("id", c);
+		return a;
+	}, new URLSearchParams());
+	return request.delete<IStockIn[]>("/api/stockin/batchDelete", { params: p });
 };

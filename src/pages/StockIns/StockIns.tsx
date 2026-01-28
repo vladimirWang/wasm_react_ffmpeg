@@ -8,7 +8,12 @@ import {
 } from "@ant-design/icons";
 import type { TableProps } from "antd";
 import { IProductQueryParams } from "../../api/product";
-import { getStockIns, IStockIn, confirmStockInCompleted } from "../../api/stockIn";
+import {
+	getStockIns,
+	IStockIn,
+	confirmStockInCompleted,
+	batchDeleteStockIn,
+} from "../../api/stockIn";
 import useSWR, { mutate } from "swr";
 import { Link, useNavigate } from "react-router-dom";
 import StockInUploadModal from "./StockInUploadModal";
@@ -96,13 +101,14 @@ const StockIns: React.FC = () => {
 			render: (_, record) => (
 				<Space size="middle">
 					{record.status === "COMPLETED" && <Link to={`/stockin/${record.id}`}>查看</Link>}
-					{record.status === "PENDING" && (
+					{record.status === "PENDING" && record.deletedAt === null && (
 						<>
 							<Link to={`/stockin/update/${record.id}`}>编辑</Link>
 							<Tooltip title="确认进货完成">
 								<Button
 									onClick={async () => {
 										await confirmStockInCompleted(record.id);
+										mutate();
 									}}
 									icon={<CheckCircleOutlined style={{ color: "#52c41a", fontSize: 18 }} />}
 								></Button>
@@ -123,6 +129,7 @@ const StockIns: React.FC = () => {
 	const [completedDateRange, setCompletedDateRange] = useState<[Dayjs | null, Dayjs | null] | null>(
 		null
 	);
+	const [selectedRowKeys, setSelectedRowKeys] = useState<React.Key[]>([]);
 
 	const handleSetQueryParams = () => {
 		const params: IProductQueryParams = {
@@ -132,12 +139,14 @@ const StockIns: React.FC = () => {
 			limit: 20,
 		};
 		if (Array.isArray(dateRange)) {
-			params.deletedStart = dateRange?.[0]?.format("YYYY-MM-DD");
-			params.deletedEnd = dateRange?.[1]?.format("YYYY-MM-DD");
+			const [start, end] = dateRange;
+			params.deletedStart = start?.startOf("day").millisecond(0).format("YYYY-MM-DD HH:mm:ss");
+			params.deletedEnd = end?.endOf("day").millisecond(0).format("YYYY-MM-DD HH:mm:ss");
 		}
 		if (Array.isArray(completedDateRange)) {
-			params.completedStart = completedDateRange?.[0]?.format("YYYY-MM-DD");
-			params.completedEnd = completedDateRange?.[1]?.format("YYYY-MM-DD");
+			const [start, end] = completedDateRange;
+			params.completedStart = start?.startOf("day").millisecond(0).format("YYYY-MM-DD HH:mm:ss");
+			params.completedEnd = end?.endOf("day").millisecond(0).format("YYYY-MM-DD HH:mm:ss");
 		}
 		setQueryParams(params);
 	};
@@ -223,6 +232,17 @@ const StockIns: React.FC = () => {
 				dataSource={stockIns?.list}
 				rowKey={"id"}
 				loading={isLoading}
+				rowSelection={{
+					selectedRowKeys,
+					getCheckboxProps: record => {
+						return {
+							disabled: record.status === "COMPLETED" || record.deletedAt !== null,
+						};
+					},
+					onChange: values => {
+						setSelectedRowKeys(values);
+					},
+				}}
 				pagination={false}
 				onRow={record => ({
 					onClick: () => {
@@ -231,8 +251,22 @@ const StockIns: React.FC = () => {
 				})}
 			/>
 			<br />
-			<section className="flex justify-end">
+			<section className="flex justify-between">
+				<Button
+					danger
+					size="small"
+					onClick={async () => {
+						try {
+							await batchDeleteStockIn(selectedRowKeys as number[]);
+						} finally {
+							mutate();
+						}
+					}}
+				>
+					删除选中 ({selectedRowKeys.length})
+				</Button>
 				<Pagination
+					size="small"
 					total={stockIns?.total}
 					showTotal={(total, range) => `${range[0]}-${range[1]} of ${total} items`}
 					defaultPageSize={20}
