@@ -100,13 +100,8 @@ const StockOuts: React.FC = () => {
 							<Tooltip title="确认进货完成">
 								<Button
 									onClick={async () => {
-										try {
-											await confirmStockOutCompleted(record.id);
-											// message.success(res.message);
-											mutate();
-										} catch (e) {
-											message.error((e as Error).message);
-										}
+										await confirmStockOutCompleted(record.id);
+										mutate();
 									}}
 									icon={<CheckCircleOutlined style={{ color: "#52c41a", fontSize: 18 }} />}
 								></Button>
