@@ -17,6 +17,8 @@ import { IProductJoinStockIn, IStockIn } from "../../api/stockIn";
 import { PlusSquareOutlined } from "@ant-design/icons";
 import { getProducts, IProduct } from "../../api/product";
 import { PageOperation } from "../../enum";
+import { PositiveInputNumber } from "../../components/PositiveInputNumber";
+import { useDistinctProducts } from "../../hooks/useDistinctProducts";
 // import VendorProductTree from "../../components/VendorProductTree";
 
 interface StockInFormProps {
@@ -55,6 +57,11 @@ export default function StockInForm(props: StockInFormProps) {
 
 	type JoinFieldRow = { key: number; name: number };
 
+	const productJoinStockInData: IProductJoinStockIn[] = Form.useWatch("productJoinStockIn", form);
+
+	// 剩下未选中过的商品
+	const restProducts = useDistinctProducts<IProduct>(allProducts, productJoinStockInData);
+
 	const columnsBase: TableProps<JoinFieldRow>["columns"] = [
 		{
 			title: "#",
@@ -85,7 +92,7 @@ export default function StockInForm(props: StockInFormProps) {
 							allowClear={true}
 							style={{ width: "100%" }}
 							placeholder="请选择商品"
-							options={allProducts.map(item => ({
+							options={restProducts.map(item => ({
 								value: item.id,
 								label: item.name,
 							}))}
@@ -105,7 +112,7 @@ export default function StockInForm(props: StockInFormProps) {
 						style={{ marginBottom: 0 }}
 						rules={[{ required: true, message: "请输入价格" }]}
 					>
-						<InputNumber
+						<PositiveInputNumber
 							disabled={!editable}
 							min={1}
 							precision={0}
@@ -128,13 +135,7 @@ export default function StockInForm(props: StockInFormProps) {
 						style={{ marginBottom: 0 }}
 						rules={[{ required: true, message: "请输入数量" }]}
 					>
-						<InputNumber
-							disabled={!editable}
-							min={1}
-							precision={0}
-							style={{ width: "100%" }}
-							placeholder="请输入数量"
-						/>
+						<PositiveInputNumber disabled={!editable} min={1} style={{ width: "100%" }} />
 					</Form.Item>
 				);
 			},
@@ -197,9 +198,9 @@ export default function StockInForm(props: StockInFormProps) {
 											onClick={() => {
 												add({ productId: -1, cost: 1, count: 1 });
 											}}
-											disabled={!editable}
+											disabled={!editable || restProducts.length === 0}
 										>
-											新增商品
+											新增商品(可选商品数: {restProducts.length > 99 ? "99+" : restProducts.length})
 										</Button>
 									</div>
 								)}

@@ -17,6 +17,8 @@ import { IProductJoinStockOut, IStockOut } from "../../api/stockOut";
 import { PlusSquareOutlined } from "@ant-design/icons";
 import { getProducts, IProduct } from "../../api/product";
 import { PageOperation } from "../../enum";
+import { PositiveInputNumber } from "../../components/PositiveInputNumber";
+import { useDistinctProducts } from "../../hooks/useDistinctProducts";
 // import VendorProductTree from "../../components/VendorProductTree";
 
 interface StockInFormProps {
@@ -85,7 +87,7 @@ export default function StockOutForm(props: StockInFormProps) {
 							allowClear={true}
 							style={{ width: "100%" }}
 							placeholder="请选择商品"
-							options={allProducts.map(item => ({
+							options={restProducts.map(item => ({
 								value: item.id,
 								label: item.name,
 							}))}
@@ -105,12 +107,10 @@ export default function StockOutForm(props: StockInFormProps) {
 						style={{ marginBottom: 0 }}
 						rules={[{ required: true, message: "请输入价格" }]}
 					>
-						<InputNumber
+						<PositiveInputNumber
 							disabled={!editable}
 							min={1}
-							precision={0}
 							style={{ width: "100%" }}
-							placeholder="请输入价格"
 							addonAfter="元"
 						/>
 					</Form.Item>
@@ -128,13 +128,7 @@ export default function StockOutForm(props: StockInFormProps) {
 						style={{ marginBottom: 0 }}
 						rules={[{ required: true, message: "请输入数量" }]}
 					>
-						<InputNumber
-							disabled={!editable}
-							min={1}
-							precision={0}
-							style={{ width: "100%" }}
-							placeholder="请输入数量"
-						/>
+						<PositiveInputNumber disabled={!editable} min={1} style={{ width: "100%" }} />
 					</Form.Item>
 				);
 			},
@@ -153,6 +147,14 @@ export default function StockOutForm(props: StockInFormProps) {
 	useEffect(() => {
 		loadProducts();
 	}, []);
+
+	const productJoinStockOutData: IProductJoinStockOut[] = Form.useWatch(
+		"productJoinStockOut",
+		form
+	);
+
+	// 剩下未选中过的商品
+	const restProducts = useDistinctProducts<IProduct>(allProducts, productJoinStockOutData);
 
 	return (
 		<div style={{ padding: "24px", background: "#f5f5f5", minHeight: "100vh" }}>
