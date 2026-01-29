@@ -283,6 +283,87 @@ const StockOperationUploadModal = <T extends StockOperationRecord>(
 		}
 	};
 
+	const publicColumns: TableProps<T>["columns"] = [
+		{
+			title: "行号",
+			key: "rowIndex",
+			width: 60,
+			render: (_, record) => record.rowIndex || "-",
+		},
+		{
+			title: "供应商名称",
+			key: "vendorName",
+			width: 90,
+			render: (_, record) => {
+				const vendor = vendors.find(v => v.id === record.vendorId);
+				return vendor ? vendor.name : "-";
+			},
+		},
+		{
+			title: "商品名称",
+			key: "productName",
+			width: 100,
+			ellipsis: {
+				showTitle: false,
+			},
+			render: (_, record) => {
+				const product = products.find(p => p.id === record.productId);
+				const productName = product ? product.name : "-";
+				return (
+					<Tooltip placement="topLeft" title={productName}>
+						<span className="block overflow-hidden text-ellipsis whitespace-nowrap">
+							{productName}
+						</span>
+					</Tooltip>
+				);
+			},
+		},
+		{
+			title: "创建日期",
+			dataIndex: "createdAt",
+			key: "createdAt",
+			width: 100,
+		},
+		{
+			title: "数量",
+			dataIndex: "count",
+			key: "count",
+			width: 80,
+		},
+	];
+	const resultColumns: TableProps<T>["columns"] = [
+		{
+			title: "匹配结果",
+			key: "matchResult",
+			fixed: "right",
+			width: 100,
+			render: (_, record) => {
+				const product = products.find(p => p.id === record.productId);
+				const vendor = vendors.find(v => v.id === record.vendorId);
+				const isMatched = product && vendor;
+				return isMatched ? (
+					<CheckCircleOutlined style={{ color: "#52c41a", fontSize: 18 }} />
+				) : (
+					<CloseCircleOutlined style={{ color: "#ff4d4f", fontSize: 18 }} />
+				);
+			},
+		},
+		{
+			title: "导入结果",
+			key: "success",
+			fixed: "right",
+			width: 100,
+			render: (_, record) => {
+				if (record.success === undefined) return null;
+				return record.success ? (
+					<CheckCircleOutlined style={{ color: "#52c41a", fontSize: 18 }} />
+				) : (
+					<CloseCircleOutlined style={{ color: "#ff4d4f", fontSize: 18 }} />
+				);
+			},
+		},
+	];
+
 	return (
 		<Modal
 			open={open}
@@ -377,7 +458,7 @@ const StockOperationUploadModal = <T extends StockOperationRecord>(
 									size="small"
 									bordered
 									loading={loadingData}
-									columns={columns ?? []}
+									columns={publicColumns.concat(columns ?? []).concat(resultColumns)}
 									dataSource={filteredRecords.sort((a, b) => (a.rowIndex || 0) - (b.rowIndex || 0))}
 									rowKey={(record, index) => `record-${record.rowIndex ?? index}`}
 									pagination={{

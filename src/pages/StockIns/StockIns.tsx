@@ -128,98 +128,10 @@ const StockIns: React.FC = () => {
 
 	const batchOperationColumns: TableProps<StockInRecord>["columns"] = [
 		{
-			title: "行号",
-			key: "rowIndex",
-			width: 60,
-			render: (_, record) => record.rowIndex || "-",
-		},
-		{
-			title: "创建日期",
-			dataIndex: "createdAt",
-			key: "createdAt",
-			width: 100,
-		},
-		{
-			title: "商品ID",
-			dataIndex: "productId",
-			key: "productId",
-			width: 80,
-		},
-		{
-			title: "商品名称",
-			key: "productName",
-			width: 100,
-			ellipsis: {
-				showTitle: false,
-			},
-			// render: (_, record) => {
-			// 	const product = products.find(p => p.id === record.productId);
-			// 	const productName = product ? product.name : "-";
-			// 	return (
-			// 		<Tooltip placement="topLeft" title={productName}>
-			// 			<span className="block overflow-hidden text-ellipsis whitespace-nowrap">
-			// 				{productName}
-			// 			</span>
-			// 		</Tooltip>
-			// 	);
-			// },
-		},
-		{
-			title: "供应商ID",
-			dataIndex: "vendorId",
-			key: "vendorId",
-			width: 80,
-		},
-		{
-			title: "供应商名称",
-			key: "vendorName",
-			width: 150,
-			// render: (_, record) => {
-			// 	const vendor = vendors.find(v => v.id === record.vendorId);
-			// 	return vendor ? vendor.name : "-";
-			// },
-		},
-		{
-			title: "数量",
-			dataIndex: "count",
-			key: "count",
-			width: 80,
-		},
-		{
 			title: "价格",
 			dataIndex: "cost",
 			key: "cost",
 			width: 100,
-		},
-		{
-			title: "匹配结果",
-			key: "matchResult",
-			fixed: "right",
-			width: 100,
-			// render: (_, record) => {
-			// 	const product = products.find(p => p.id === record.productId);
-			// 	const vendor = vendors.find(v => v.id === record.vendorId);
-			// 	const isMatched = product && vendor;
-			// 	return isMatched ? (
-			// 		<CheckCircleOutlined style={{ color: "#52c41a", fontSize: 18 }} />
-			// 	) : (
-			// 		<CloseCircleOutlined style={{ color: "#ff4d4f", fontSize: 18 }} />
-			// 	);
-			// },
-		},
-		{
-			title: "导入结果",
-			key: "success",
-			fixed: "right",
-			width: 100,
-			render: (_, record) => {
-				if (record.success === undefined) return null;
-				return record.success ? (
-					<CheckCircleOutlined style={{ color: "#52c41a", fontSize: 18 }} />
-				) : (
-					<CloseCircleOutlined style={{ color: "#ff4d4f", fontSize: 18 }} />
-				);
-			},
 		},
 	];
 
