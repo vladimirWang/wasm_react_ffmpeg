@@ -4,19 +4,20 @@ import { InboxOutlined, CheckCircleOutlined, CloseCircleOutlined } from "@ant-de
 import type { TableProps, UploadProps } from "antd";
 import { getProducts, IProduct } from "../api/product";
 import { getVendors, IVendor } from "../api/vendor";
-import { createStockIn, StockInRecord } from "../api/stockIn";
+import { StockInRecord } from "../api/stockIn";
 import * as XLSX from "xlsx";
-import { composePromise, dateToMsSince1900, excelSerialToDate } from "../utils/common";
+import { dateToMsSince1900, excelSerialToDate } from "../utils/common";
 import dayjs from "dayjs";
+import { StockOperationRecord } from "../api/commonDef";
 
 const { Dragger } = Upload;
 
-interface StockOperationUploadModalProps {
+interface StockOperationUploadModalProps<T> {
 	open: boolean;
 	onCancel: () => void;
 	onSuccess: () => void;
 	operationType: "stockIn" | "stockOut";
-	onConfirm: (records: StockInRecord[][]) => Promise<void>;
+	onConfirm: (records: T[][]) => Promise<void>;
 }
 
 /**
@@ -32,7 +33,7 @@ interface ImportedRecordBatch {
 	[idx: number]: number[];
 }
 
-interface StockInRecordWithComplete extends StockInRecord {
+interface StockOperationRecordWithComplete extends StockOperationRecord {
 	success?: boolean;
 }
 
@@ -40,24 +41,24 @@ export interface StockOperationUploadModalRefProps {
 	onItemFinish: (idx: number, success: boolean) => void;
 }
 
-const StockOperationUploadModal = (
-	{ open, onCancel, onSuccess, onConfirm }: StockOperationUploadModalProps,
+const StockOperationUploadModal = <T extends StockOperationRecord>(
+	{ open, onCancel, onSuccess, onConfirm }: StockOperationUploadModalProps<T>,
 	ref: React.Ref<StockOperationUploadModalRefProps>
 ) => {
 	const [uploading, setUploading] = useState(false);
 	const [currentStep, setCurrentStep] = useState(0); // Steps 当前步骤
 	const [confirmBtnVisible, setConfirmBtnVisible] = useState(true);
-	const [parsedRecords, setParsedRecords] = useState<StockInRecordWithComplete[]>([]); // 打平后的数据
-	const [groupedRecords, setGroupedRecords] = useState<Array<StockInRecord[]>>([]); // 打平后的数据
+	const [parsedRecords, setParsedRecords] = useState<(T & { success?: boolean })[]>([]); // 打平后的数据
+	const [groupedRecords, setGroupedRecords] = useState<T[][]>([]); // 打平后的数据
 	const [importedRecordBatch, setImportedRecordBatch] = useState<ImportedRecordBatch>({});
 	const [uploadedFile, setUploadedFile] = useState<File | null>(null); // 上传的文件
 	const [products, setProducts] = useState<IProduct[]>([]); // 产品列表
 	const [vendors, setVendors] = useState<IVendor[]>([]); // 供应商列表
 	const [loadingData, setLoadingData] = useState(false); // 加载产品和供应商数据的状态
 	const [filterStatus, setFilterStatus] = useState<"all" | "success" | "failed">("all"); // 筛选状态
-	const [selectedRowKeys, setSelectedRowKeys] = useState<React.Key[]>([]); // 选中的行 key
+	// const [, setSelectedRowKeys] = useState<React.Key[]>([]); // 选中的行 key
 
-	const columns: TableProps<StockInRecordWithComplete>["columns"] = [
+	const columns: TableProps<StockOperationRecordWithComplete>["columns"] = [
 		{
 			title: "行号",
 			key: "rowIndex",
@@ -348,7 +349,6 @@ const StockOperationUploadModal = (
 				file as File
 			);
 			const importedRecordBatchTmp: ImportedRecordBatch = {};
-			setGroupedRecords(records.group);
 			records.group.forEach((record, index) => {
 				const previous = records.group.slice(0, index);
 				const previousLength = previous.reduce((a, c) => {
@@ -357,12 +357,12 @@ const StockOperationUploadModal = (
 				importedRecordBatchTmp[index] = [previousLength, previousLength + record.length];
 			});
 			setImportedRecordBatch(importedRecordBatchTmp);
+			setGroupedRecords(records.group as unknown as T[][]);
 			// 加载产品和供应商数据
 			await loadProductsAndVendors();
 
-			// 保存解析结果和文件，切换到第二步
-			setParsedRecords(records.flat);
-			// setSelectedRowKeys(records.flat.map(item => `record-${item.rowIndex}`));
+			// 保存解析结果和文件，切换到第二步（解析实现为 StockInRecord，使用时 T=StockInRecord）
+			setParsedRecords(records.flat as unknown as (T & { success?: boolean })[]);
 			setUploadedFile(file as File);
 			setCurrentStep(1);
 			onUploadSuccess?.(records.flat, file);
@@ -383,7 +383,6 @@ const StockOperationUploadModal = (
 		setCurrentStep(0);
 		setParsedRecords([]);
 		setUploadedFile(null);
-		setSelectedRowKeys([]);
 		setFilterStatus("all");
 		onCancel();
 	};
@@ -509,7 +508,7 @@ const StockOperationUploadModal = (
 										/>
 									</div>
 								</div>
-								<Table<StockInRecordWithComplete>
+								<Table<StockOperationRecordWithComplete>
 									size="small"
 									bordered
 									loading={loadingData}
@@ -541,4 +540,10 @@ const StockOperationUploadModal = (
 	);
 };
 
-export default forwardRef(StockOperationUploadModal);
+type StockOperationUploadModalForwardRef = <T extends StockOperationRecord>(
+	props: StockOperationUploadModalProps<T> & React.RefAttributes<StockOperationUploadModalRefProps>
+) => React.ReactElement | null;
+
+export default forwardRef(
+	StockOperationUploadModal
+) as unknown as StockOperationUploadModalForwardRef;

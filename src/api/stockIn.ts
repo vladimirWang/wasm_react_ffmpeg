@@ -1,6 +1,6 @@
 import request from "../request";
 import { sleep } from "../utils/common";
-import { IPaginationResp, IPagination, IResponse } from "./commonDef";
+import { IPaginationResp, IPagination, IResponse, StockOperationRecord } from "./commonDef";
 
 // 进货单状态
 export type StockInStatus = "PENDING" | "COMPLETED";
@@ -28,13 +28,8 @@ export interface IProductJoinStockIn {
 }
 
 // Excel 解析后的数据格式
-export interface StockInRecord {
-	createdAt: string;
-	productId: number;
-	vendorId: number;
-	count: number;
+export interface StockInRecord extends StockOperationRecord {
 	cost: number;
-	rowIndex?: number; // Excel 中的原始行号（用于保持顺序）
 }
 
 export interface IStockInCreateParams {

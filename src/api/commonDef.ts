@@ -26,3 +26,12 @@ export type IPaginationOptional =
 export type AtLeastOne<T> = {
 	[K in keyof T]-?: Pick<T, K> & Partial<Omit<T, K>>;
 }[keyof T];
+
+// Excel 解析后的数据格式
+export interface StockOperationRecord {
+	createdAt: string;
+	productId: number;
+	vendorId: number;
+	count: number;
+	rowIndex?: number; // Excel 中的原始行号（用于保持顺序）
+}

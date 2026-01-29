@@ -21,9 +21,7 @@ export interface IProductJoinStockOut {
 	productId: number;
 }
 
-interface IStockOutRecord {
-	productId: number;
-	count: number;
+export interface StockInRecord extends StockOperationRecord {
 	price: number;
 }
 

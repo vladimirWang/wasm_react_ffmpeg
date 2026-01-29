@@ -1,11 +1,6 @@
 import React, { useRef, useState } from "react";
-import { Button, DatePicker, Input, message, Pagination, Space, Table, Tooltip } from "antd";
-import {
-	ArrowDownOutlined,
-	CheckCircleOutlined,
-	PlusCircleOutlined,
-	SearchOutlined,
-} from "@ant-design/icons";
+import { Button, DatePicker, Input, Pagination, Space, Table, Tooltip } from "antd";
+import { ArrowDownOutlined, CheckCircleOutlined, PlusCircleOutlined } from "@ant-design/icons";
 import type { TableProps } from "antd";
 import { IProductQueryParams } from "../../api/product";
 import {
@@ -16,9 +11,9 @@ import {
 	StockInRecord,
 	createStockIn,
 } from "../../api/stockIn";
-import useSWR, { mutate } from "swr";
+import useSWR from "swr";
 import { Link, useNavigate } from "react-router-dom";
-import StockInUploadModal, {
+import StockOperationUploadModal, {
 	StockOperationUploadModalRefProps,
 } from "../../components/StockOperationUploadModal";
 import dayjs, { Dayjs } from "dayjs";
@@ -320,7 +315,7 @@ const StockIns: React.FC = () => {
 					}}
 				/>
 			</section>
-			<StockInUploadModal
+			<StockOperationUploadModal<StockInRecord>
 				ref={stockOperationUploadModalRef}
 				operationType="stockIn"
 				open={fileUploadModalOpen}
