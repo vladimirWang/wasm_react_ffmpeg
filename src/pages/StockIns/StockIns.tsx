@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useRef, useState } from "react";
 import { Button, DatePicker, Input, message, Pagination, Space, Table, Tooltip } from "antd";
 import {
 	ArrowDownOutlined,
@@ -13,11 +13,16 @@ import {
 	IStockIn,
 	confirmStockInCompleted,
 	batchDeleteStockIn,
+	StockInRecord,
+	createStockIn,
 } from "../../api/stockIn";
 import useSWR, { mutate } from "swr";
 import { Link, useNavigate } from "react-router-dom";
-import StockInUploadModal from "./StockInUploadModal";
+import StockInUploadModal, {
+	StockOperationUploadModalRefProps,
+} from "../../components/StockOperationUploadModal";
 import dayjs, { Dayjs } from "dayjs";
+import { composePromise } from "../../utils/common";
 
 const StockIns: React.FC = () => {
 	const [fileUploadModalOpen, setFileUploadModalOpen] = useState(false);
@@ -115,13 +120,12 @@ const StockIns: React.FC = () => {
 							</Tooltip>
 						</>
 					)}
-
-					{/* <Link to={`/stockin/${record.id}`}>查看</Link> */}
 				</Space>
 			),
 		},
 	];
 
+	const stockOperationUploadModalRef = useRef<StockOperationUploadModalRefProps>(null);
 	const [productName, setProductName] = useState<string>(queryParams.productName || "");
 	const [vendorName, setVendorName] = useState<string>(queryParams.vendorName || "");
 	const [page, setPage] = useState(queryParams.page);
@@ -131,6 +135,35 @@ const StockIns: React.FC = () => {
 	);
 	const [selectedRowKeys, setSelectedRowKeys] = useState<React.Key[]>([]);
 
+	// 确认导入（串行调用 createStockIn，避免并发过多）
+	const handleConfirm = async (groupedRecords: StockInRecord[][]) => {
+		const tasks = groupedRecords.map((recordSet, recordSetIndex) => () => {
+			return (
+				createStockIn({
+					productJoinStockIn: recordSet.map(item => ({
+						productId: item.productId,
+						count: item.count,
+						cost: item.cost,
+						createdAt: item.createdAt,
+					})),
+				})
+					// 处理成功与失败情况的导入结果展示
+					.then(res => {
+						stockOperationUploadModalRef.current?.onItemFinish(recordSetIndex, true);
+						return res;
+					})
+					.catch(e => {
+						stockOperationUploadModalRef.current?.onItemFinish(recordSetIndex, false);
+						return Promise.reject(e);
+					})
+			);
+		});
+		try {
+			await composePromise(...tasks);
+		} finally {
+			return Promise.resolve();
+		}
+	};
 	const handleSetQueryParams = () => {
 		const params: IProductQueryParams = {
 			productName,
@@ -288,12 +321,15 @@ const StockIns: React.FC = () => {
 				/>
 			</section>
 			<StockInUploadModal
+				ref={stockOperationUploadModalRef}
+				operationType="stockIn"
 				open={fileUploadModalOpen}
 				onCancel={() => setFileUploadModalOpen(false)}
 				onSuccess={() => {
 					mutate();
 					setFileUploadModalOpen(false);
 				}}
+				onConfirm={handleConfirm}
 			/>
 		</div>
 	);

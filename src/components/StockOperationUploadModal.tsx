@@ -1,20 +1,22 @@
-import React, { useState } from "react";
+import React, { forwardRef, useState, useImperativeHandle } from "react";
 import { Button, message, Modal, Table, Upload, Steps, Select, Tooltip, Divider } from "antd";
 import { InboxOutlined, CheckCircleOutlined, CloseCircleOutlined } from "@ant-design/icons";
 import type { TableProps, UploadProps } from "antd";
-import { getProducts, IProduct } from "../../api/product";
-import { getVendors, IVendor } from "../../api/vendor";
-import { createStockIn, StockInRecord } from "../../api/stockIn";
+import { getProducts, IProduct } from "../api/product";
+import { getVendors, IVendor } from "../api/vendor";
+import { createStockIn, StockInRecord } from "../api/stockIn";
 import * as XLSX from "xlsx";
-import { composePromise, dateToMsSince1900, excelSerialToDate } from "../../utils/common";
+import { composePromise, dateToMsSince1900, excelSerialToDate } from "../utils/common";
 import dayjs from "dayjs";
 
 const { Dragger } = Upload;
 
-interface StockInUploadModalProps {
+interface StockOperationUploadModalProps {
 	open: boolean;
 	onCancel: () => void;
 	onSuccess: () => void;
+	operationType: "stockIn" | "stockOut";
+	onConfirm: (records: StockInRecord[][]) => Promise<void>;
 }
 
 /**
@@ -34,7 +36,14 @@ interface StockInRecordWithComplete extends StockInRecord {
 	success?: boolean;
 }
 
-const StockInUploadModal: React.FC<StockInUploadModalProps> = ({ open, onCancel, onSuccess }) => {
+export interface StockOperationUploadModalRefProps {
+	onItemFinish: (idx: number, success: boolean) => void;
+}
+
+const StockOperationUploadModal = (
+	{ open, onCancel, onSuccess, onConfirm }: StockOperationUploadModalProps,
+	ref: React.Ref<StockOperationUploadModalRefProps>
+) => {
 	const [uploading, setUploading] = useState(false);
 	const [currentStep, setCurrentStep] = useState(0); // Steps 当前步骤
 	const [confirmBtnVisible, setConfirmBtnVisible] = useState(true);
@@ -144,6 +153,26 @@ const StockInUploadModal: React.FC<StockInUploadModalProps> = ({ open, onCancel,
 			},
 		},
 	];
+
+	// 批量导入成功次数
+	const [createStockInSuccessCount, setCreateStockInSuccessCount] = useState(0);
+	useImperativeHandle(ref, () => {
+		return {
+			onItemFinish(idx, success) {
+				console.log("onItemFinish: ", idx, success);
+				if (success) {
+					setCreateStockInSuccessCount(prev => prev + 1);
+				}
+				// 这一批次是哪条到那条的
+				const [start, end] = importedRecordBatch[idx];
+				setParsedRecords(prev =>
+					prev.map((item, index) => {
+						return index >= start && index < end ? { ...item, success } : item;
+					})
+				);
+			},
+		};
+	});
 
 	// 解析 Excel 文件 - 第二行作为字段 key
 	const parseExcelFile = async (
@@ -346,51 +375,6 @@ const StockInUploadModal: React.FC<StockInUploadModalProps> = ({ open, onCancel,
 		}
 	};
 
-	// 批量导入成功次数
-	const [createStockInSuccessCount, setCreateStockInSuccessCount] = useState(0);
-	// 确认导入（串行调用 createStockIn，避免并发过多）
-	const handleConfirmImport = async () => {
-		const tasks = groupedRecords.map(
-			(recordSet, recordSetIndex) => () =>
-				createStockIn({
-					productJoinStockIn: recordSet.map(item => ({
-						productId: item.productId,
-						count: item.count,
-						cost: item.cost,
-						createdAt: item.createdAt,
-					})),
-				})
-					// 处理成功与失败情况的导入结果展示
-					.then(res => {
-						setCreateStockInSuccessCount(prev => prev + 1);
-						// 这一批次是哪条到那条的
-						const [start, end] = importedRecordBatch[recordSetIndex];
-						setParsedRecords(prev =>
-							prev.map((item, index) => {
-								return index >= start && index < end ? { ...item, success: true } : item;
-							})
-						);
-						return res;
-					})
-					.catch(_ => {
-						const [start, end] = importedRecordBatch[recordSetIndex];
-						setParsedRecords(prev =>
-							prev.map((item, index) => {
-								return index >= start && index < end ? { ...item, success: false } : item;
-							})
-						);
-					})
-		);
-		try {
-			setUploading(true);
-			await composePromise(...tasks);
-			message.success(`导入结束`);
-		} finally {
-			setUploading(false);
-			setConfirmBtnVisible(false);
-		}
-	};
-
 	// 重置 Modal 状态
 	const handleModalCancel = () => {
 		if (createStockInSuccessCount > 0) {
@@ -425,10 +409,20 @@ const StockInUploadModal: React.FC<StockInUploadModalProps> = ({ open, onCancel,
 		},
 	};
 
+	const handleOk = async () => {
+		try {
+			setUploading(true);
+			await onConfirm(groupedRecords);
+		} finally {
+			setUploading(false);
+			setConfirmBtnVisible(false);
+		}
+	};
+
 	return (
 		<Modal
 			open={open}
-			title="批量导入进货记录"
+			title="批量导入结果"
 			onCancel={handleModalCancel}
 			footer={null}
 			width={800}
@@ -532,7 +526,7 @@ const StockInUploadModal: React.FC<StockInUploadModalProps> = ({ open, onCancel,
 									<div className="flex gap-2">
 										<Button onClick={() => setCurrentStep(0)}>上一步</Button>
 										{confirmBtnVisible && (
-											<Button type="primary" onClick={handleConfirmImport} loading={uploading}>
+											<Button type="primary" onClick={handleOk} loading={uploading}>
 												确认导入
 											</Button>
 										)}
@@ -547,4 +541,4 @@ const StockInUploadModal: React.FC<StockInUploadModalProps> = ({ open, onCancel,
 	);
 };
 
-export default StockInUploadModal;
+export default forwardRef(StockOperationUploadModal);
