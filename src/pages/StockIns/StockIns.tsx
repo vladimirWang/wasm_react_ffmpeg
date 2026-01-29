@@ -214,7 +214,14 @@ const StockIns: React.FC = () => {
 						value={dateRange}
 						onChange={setDateRange}
 					/>
-					<Button type="primary" size="small" onClick={() => setMoreVisible(false)}>
+					<Button
+						type="primary"
+						size="small"
+						onClick={() => {
+							setMoreVisible(false);
+							setDateRange(null);
+						}}
+					>
 						关闭高级查询
 					</Button>
 				</div>
