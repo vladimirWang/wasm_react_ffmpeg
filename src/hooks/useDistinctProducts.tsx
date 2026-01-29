@@ -13,7 +13,7 @@ export const useDistinctProducts = <T extends { id: number }>(
 		return allProducts.filter(item => {
 			return !selectedProducts.some(p => p.productId === item.id);
 		});
-	}, [selectedProducts]);
+	}, [selectedProducts, allProducts]);
 
 	return restProducts;
 };

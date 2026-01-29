@@ -1,15 +1,4 @@
-import {
-	Button,
-	Card,
-	Form,
-	Input,
-	InputNumber,
-	Select,
-	Table,
-	Space,
-	Divider,
-	message,
-} from "antd";
+import { Button, Card, Form, Input, Select, Table, Space, Divider, message } from "antd";
 import type { TableProps } from "antd";
 import { IVendorUpdateParams } from "../../api/vendor";
 import { useEffect, useMemo, useState } from "react";
@@ -62,6 +51,21 @@ export default function StockInForm(props: StockInFormProps) {
 	// 剩下未选中过的商品
 	const restProducts = useDistinctProducts<IProduct>(allProducts, productJoinStockInData);
 
+	// 根据其他航的选项，加载本行产品数据
+	const getProductOptionsForRow = (rowIndex: number) => {
+		const usedByOtherRows = new Set<number>();
+		(productJoinStockInData || []).forEach((p, idx) => {
+			// 只排除“其它行”已选的商品；本行当前值必须保留，才能在编辑态正常显示 label
+			if (idx === rowIndex) return;
+			if (!p || typeof p.productId !== "number") return;
+			usedByOtherRows.add(p.productId);
+		});
+
+		return allProducts
+			.filter(item => !usedByOtherRows.has(item.id))
+			.map(item => ({ value: item.id, label: item.name }));
+	};
+
 	const columnsBase: TableProps<JoinFieldRow>["columns"] = [
 		{
 			title: "#",
@@ -92,10 +96,7 @@ export default function StockInForm(props: StockInFormProps) {
 							allowClear={true}
 							style={{ width: "100%" }}
 							placeholder="请选择商品"
-							options={restProducts.map(item => ({
-								value: item.id,
-								label: item.name,
-							}))}
+							options={getProductOptionsForRow(row.name)}
 						/>
 					</Form.Item>
 				);
@@ -196,7 +197,7 @@ export default function StockInForm(props: StockInFormProps) {
 											type="primary"
 											icon={<PlusSquareOutlined />}
 											onClick={() => {
-												add({ productId: -1, cost: 1, count: 1 });
+												add({ productId: undefined, cost: 1, count: 1 });
 											}}
 											disabled={!editable || restProducts.length === 0}
 										>
