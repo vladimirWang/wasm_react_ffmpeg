@@ -76,7 +76,10 @@ export default function ProductForm({
 					if (!onFinishCallback) return;
 					setSubmitting(true);
 					try {
-						await onFinishCallback(values);
+						await onFinishCallback({
+							...values,
+							shelfPrice: values.shelfPrice ? Number(values.shelfPrice) : undefined,
+						});
 					} catch (e) {
 					} finally {
 						setSubmitting(false);
