@@ -1,16 +1,27 @@
-import React, { useState } from "react";
-import { Button, Input, message, Pagination, Space, Table, Tooltip } from "antd";
+import React, { useRef, useState } from "react";
+import { Button, Input, Pagination, Space, Table, Tooltip } from "antd";
 import { CheckCircleOutlined, PlusCircleOutlined, SearchOutlined } from "@ant-design/icons";
 import type { TableProps } from "antd";
 import { IProductQueryParams } from "../../api/product";
-import { getStockOuts, IStockOut, confirmStockOutCompleted } from "../../api/stockOut";
+import {
+	getStockOuts,
+	IStockOut,
+	confirmStockOutCompleted,
+	createStockOut,
+} from "../../api/stockOut";
 import useSWR from "swr";
 import { Link, useNavigate } from "react-router-dom";
-import StockOutUploadModal from "./StockOutUploadModal";
+import { StockOutRecord } from "../../api/stockOut";
 import dayjs from "dayjs";
+import StockOperationUploadModal, {
+	StockOperationUploadModalRefProps,
+} from "../../components/StockOperationUploadModal";
+import { composePromise } from "../../utils/common";
 
 const StockOuts: React.FC = () => {
 	const [fileUploadModalOpen, setFileUploadModalOpen] = useState(false);
+
+	const stockOperationUploadModalRef = useRef<StockOperationUploadModalRefProps>(null);
 	const navigate = useNavigate();
 	const [queryParams, setQueryParams] = useState<IProductQueryParams>({
 		page: 1,
@@ -115,6 +126,30 @@ const StockOuts: React.FC = () => {
 		},
 	];
 
+	const handleConfirm = async (groupedRecords: StockOutRecord[][]) => {
+		const tasks = groupedRecords.map((recordSet, recordSetIndex) => () => {
+			return (
+				createStockOut({
+					productJoinStockOut: recordSet,
+				})
+					// 处理成功与失败情况的导入结果展示
+					.then(res => {
+						stockOperationUploadModalRef.current?.onItemFinish(recordSetIndex, true);
+						return res;
+					})
+					.catch(e => {
+						stockOperationUploadModalRef.current?.onItemFinish(recordSetIndex, false);
+						return Promise.reject(e);
+					})
+			);
+		});
+		try {
+			await composePromise(...tasks);
+		} finally {
+			return Promise.resolve();
+		}
+	};
+
 	const [keyword, setKeyword] = useState<string>(queryParams.productName || "");
 	const [page, setPage] = useState(queryParams.page);
 
@@ -183,13 +218,16 @@ const StockOuts: React.FC = () => {
 					}}
 				/>
 			</section>
-			<StockOutUploadModal
+			<StockOperationUploadModal<StockOutRecord>
+				ref={stockOperationUploadModalRef}
+				operationType="stockOut"
 				open={fileUploadModalOpen}
 				onCancel={() => setFileUploadModalOpen(false)}
 				onSuccess={() => {
 					mutate();
 					setFileUploadModalOpen(false);
 				}}
+				onConfirm={handleConfirm}
 			/>
 		</div>
 	);

@@ -135,12 +135,7 @@ const StockIns: React.FC = () => {
 		const tasks = groupedRecords.map((recordSet, recordSetIndex) => () => {
 			return (
 				createStockIn({
-					productJoinStockIn: recordSet.map(item => ({
-						productId: item.productId,
-						count: item.count,
-						cost: item.cost,
-						createdAt: item.createdAt,
-					})),
+					productJoinStockIn: recordSet,
 				})
 					// 处理成功与失败情况的导入结果展示
 					.then(res => {

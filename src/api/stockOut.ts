@@ -1,6 +1,6 @@
 import request from "../request";
 import { sleep } from "../utils/common";
-import { IPaginationResp, IPagination, IResponse } from "./commonDef";
+import { IPaginationResp, IPagination, IResponse, StockOperationRecord } from "./commonDef";
 import { StockInStatus } from "./stockIn";
 
 export interface IStockOut {
@@ -21,7 +21,8 @@ export interface IProductJoinStockOut {
 	productId: number;
 }
 
-export interface StockInRecord extends StockOperationRecord {
+// Excel 解析后的数据格式（如需复用可在页面/组件中引入）
+export interface StockOutRecord extends StockOperationRecord {
 	price: number;
 }
 
