@@ -288,6 +288,7 @@ const StockIns: React.FC = () => {
 					onClick={async () => {
 						try {
 							await batchDeleteStockIn(selectedRowKeys as number[]);
+							setSelectedRowKeys([]);
 						} finally {
 							mutate();
 						}
