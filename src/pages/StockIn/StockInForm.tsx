@@ -8,6 +8,7 @@ import { getProducts, IProduct } from "../../api/product";
 import { PageOperation } from "../../enum";
 import { PositiveInputNumber } from "../../components/PositiveInputNumber";
 import { useDistinctProducts } from "../../hooks/useDistinctProducts";
+import StockOperationTable, { JoinFieldRow } from "../../components/StockOperationTable";
 // import VendorProductTree from "../../components/VendorProductTree";
 
 interface StockInFormProps {
@@ -44,12 +45,7 @@ export default function StockInForm(props: StockInFormProps) {
 		productJoinStockIn: IProductJoinStockIn[];
 	};
 
-	type JoinFieldRow = { key: number; name: number };
-
 	const productJoinStockInData: IProductJoinStockIn[] = Form.useWatch("productJoinStockIn", form);
-
-	// 剩下未选中过的商品
-	const restProducts = useDistinctProducts<IProduct>(allProducts, productJoinStockInData);
 
 	// 根据其他航的选项，加载本行产品数据
 	const getProductOptionsForRow = (rowIndex: number) => {
@@ -191,53 +187,16 @@ export default function StockInForm(props: StockInFormProps) {
 					<Form.List name="productJoinStockIn">
 						{(fields, { add, remove }) => (
 							<>
-								{props.pageOperation !== "view" && (
-									<div style={{ marginBottom: 16, textAlign: "right" }}>
-										<Button
-											type="primary"
-											icon={<PlusSquareOutlined />}
-											onClick={() => {
-												add({ productId: undefined, cost: 1, count: 1 });
-											}}
-											disabled={!editable || restProducts.length === 0}
-										>
-											新增商品(可选商品数: {restProducts.length > 99 ? "99+" : restProducts.length})
-										</Button>
-									</div>
-								)}
-								<Table
-									size="middle"
-									rowKey="key"
-									dataSource={fields.map(f => ({ key: f.key, name: f.name }))}
-									columns={[
-										...columnsBase,
-										...(props.pageOperation !== "view"
-											? [
-													{
-														title: "操作",
-														key: "action",
-														width: 100,
-														align: "center" as const,
-														render: (_v: unknown, row: JoinFieldRow) => (
-															<Button
-																disabled={!editable}
-																type="link"
-																danger
-																onClick={() => remove(row.name)}
-															>
-																删除
-															</Button>
-														),
-													},
-												]
-											: []),
-									]}
-									pagination={false}
-									locale={{
-										emptyText: "暂无商品，请点击上方按钮添加",
-									}}
-									style={{
-										background: "#fff",
+								<StockOperationTable<IProductJoinStockIn>
+									editable={editable}
+									pageOperation={props.pageOperation}
+									columnsBase={columnsBase}
+									fields={fields}
+									remove={remove}
+									currentValues={productJoinStockInData}
+									allData={allProducts}
+									onAdd={() => {
+										add({ productId: undefined, cost: 1, count: 1 });
 									}}
 								/>
 							</>

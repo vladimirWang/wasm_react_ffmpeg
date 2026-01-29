@@ -1,15 +1,4 @@
-import {
-	Button,
-	Card,
-	Form,
-	Input,
-	InputNumber,
-	Select,
-	Table,
-	Space,
-	Divider,
-	message,
-} from "antd";
+import { Button, Card, Form, Input, Select, Space, Divider, message } from "antd";
 import type { TableProps } from "antd";
 import { IVendorUpdateParams } from "../../api/vendor";
 import { useEffect, useMemo, useState } from "react";
@@ -19,6 +8,7 @@ import { getProducts, IProduct } from "../../api/product";
 import { PageOperation } from "../../enum";
 import { PositiveInputNumber } from "../../components/PositiveInputNumber";
 import { useDistinctProducts } from "../../hooks/useDistinctProducts";
+import StockOperationTable from "../../components/StockOperationTable";
 // import VendorProductTree from "../../components/VendorProductTree";
 
 interface StockInFormProps {
@@ -154,7 +144,7 @@ export default function StockOutForm(props: StockInFormProps) {
 	);
 
 	// 剩下未选中过的商品
-	const restProducts = useDistinctProducts<IProduct>(allProducts, productJoinStockOutData);
+	const restProducts = useDistinctProducts<IProduct>(allProducts, productJoinStockOutData ?? []);
 
 	return (
 		<div style={{ padding: "24px", background: "#f5f5f5", minHeight: "100vh" }}>
@@ -180,7 +170,7 @@ export default function StockOutForm(props: StockInFormProps) {
 						if (!props.onFinishCallback) return;
 						setLoading(true);
 						try {
-							await props.onFinishCallback(values || []);
+							await props.onFinishCallback(values);
 						} catch (e: unknown) {
 						} finally {
 							setLoading(false);
@@ -190,57 +180,18 @@ export default function StockOutForm(props: StockInFormProps) {
 				>
 					<Form.List name="productJoinStockOut">
 						{(fields, { add, remove }) => (
-							<>
-								{props.pageOperation !== "view" && (
-									<div style={{ marginBottom: 16, textAlign: "right" }}>
-										<Button
-											type="primary"
-											icon={<PlusSquareOutlined />}
-											onClick={() => {
-												add({ productId: -1, price: 1, count: 1 });
-											}}
-											disabled={!editable}
-										>
-											新增商品
-										</Button>
-									</div>
-								)}
-								<Table
-									size="middle"
-									rowKey="key"
-									dataSource={fields.map(f => ({ key: f.key, name: f.name }))}
-									columns={[
-										...columnsBase,
-										...(props.pageOperation !== "view"
-											? [
-													{
-														title: "操作",
-														key: "action",
-														width: 100,
-														align: "center" as const,
-														render: (_v: unknown, row: JoinFieldRow) => (
-															<Button
-																disabled={!editable}
-																type="link"
-																danger
-																onClick={() => remove(row.name)}
-															>
-																删除
-															</Button>
-														),
-													},
-												]
-											: []),
-									]}
-									pagination={false}
-									locale={{
-										emptyText: "暂无商品，请点击上方按钮添加",
-									}}
-									style={{
-										background: "#fff",
-									}}
-								/>
-							</>
+							<StockOperationTable<IProductJoinStockOut>
+								editable={editable}
+								pageOperation={props.pageOperation}
+								columnsBase={columnsBase}
+								fields={fields}
+								remove={remove}
+								currentValues={productJoinStockOutData ?? []}
+								allData={allProducts}
+								onAdd={() => {
+									add({ productId: undefined, price: 1, count: 1 });
+								}}
+							/>
 						)}
 					</Form.List>
 					<Divider />

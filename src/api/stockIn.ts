@@ -1,6 +1,12 @@
 import request from "../request";
 import { sleep } from "../utils/common";
-import { IPaginationResp, IPagination, IResponse, StockOperationRecord } from "./commonDef";
+import {
+	IPaginationResp,
+	IPagination,
+	IResponse,
+	StockOperationRecord,
+	IProductJoinStockOperation,
+} from "./commonDef";
 
 // 进货单状态
 export type StockInStatus = "PENDING" | "COMPLETED";
@@ -21,10 +27,8 @@ export const getStockIns = async (data?: IPagination): Promise<IStockInsQueryRes
 	return request.get<IStockInsQueryResponse>("/api/stockin", { params: data });
 };
 
-export interface IProductJoinStockIn {
+export interface IProductJoinStockIn extends IProductJoinStockOperation {
 	cost: number;
-	count: number;
-	productId: number;
 }
 
 // Excel 解析后的数据格式

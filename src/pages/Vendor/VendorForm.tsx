@@ -1,4 +1,4 @@
-import { Button, Form, Input, message } from "antd";
+import { Button, Form, Input, message, Space } from "antd";
 import { IVendorCreateParams, IVendorUpdateParams, VendorDetailResponse } from "../../api/vendor";
 import { useState } from "react";
 import { GlobalModal } from "../../components/GlobalModal";
@@ -44,9 +44,15 @@ export default function VendorForm(props: VendorFormProps) {
 				<Input.TextArea showCount maxLength={190} />
 			</Form.Item>
 			<Form.Item label={null}>
-				<Button type="primary" htmlType="submit" loading={loading}>
-					提交
-				</Button>
+				<Space>
+					<Button type="primary" htmlType="submit" loading={loading}>
+						提交
+					</Button>
+
+					<Button htmlType="reset" size="large" onClick={() => form.resetFields()}>
+						重置
+					</Button>
+				</Space>
 			</Form.Item>
 		</Form>
 	);

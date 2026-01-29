@@ -35,3 +35,9 @@ export interface StockOperationRecord {
 	count: number;
 	rowIndex?: number; // Excel 中的原始行号（用于保持顺序）
 }
+
+// 进出库表单中的表格数据类型
+export interface IProductJoinStockOperation {
+	count: number;
+	productId: number;
+}

@@ -2,7 +2,19 @@ import { useState } from "react";
 import { useParams } from "react-router-dom";
 import useSWR from "swr";
 import { IProductUpdateParams } from "../../api/product";
-import { Button, Card, Empty, Flex, Form, Input, InputNumber, message, Select, Upload } from "antd";
+import {
+	Button,
+	Card,
+	Empty,
+	Flex,
+	Form,
+	Input,
+	InputNumber,
+	message,
+	Select,
+	Space,
+	Upload,
+} from "antd";
 import { RcFile } from "antd/es/upload";
 import { LoadingOutlined, PlusOutlined, QuestionCircleOutlined } from "@ant-design/icons";
 import { getVendors } from "../../api/vendor";
@@ -149,9 +161,14 @@ export default function ProductForm({
 					</section>
 				</div>
 				<Form.Item label={null} className="mt-6">
-					<Button type="primary" htmlType="submit" loading={submitting} size="large">
-						提交
-					</Button>
+					<Space>
+						<Button type="primary" htmlType="submit" loading={submitting} size="large">
+							提交
+						</Button>
+						<Button htmlType="reset" size="large" onClick={() => form.resetFields()}>
+							重置
+						</Button>
+					</Space>
 				</Form.Item>
 			</Form>
 			<CostHistoryDrawer
