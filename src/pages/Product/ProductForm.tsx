@@ -101,7 +101,7 @@ export default function ProductForm({
 							<Input placeholder="请输入产品名称" />
 						</Form.Item>
 						<Form.Item<IProductUpdateParams>
-							label="价格"
+							label="指导零售价"
 							name="shelfPrice"
 							rules={[{ required: true, message: "请输入上架价格" }]}
 						>
