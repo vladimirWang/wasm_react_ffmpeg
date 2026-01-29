@@ -16,6 +16,7 @@ import VendorCreate from "../pages/Vendor/VendorCreate";
 import VendorUpdate from "../pages/Vendor/VendorUpdate";
 import VendorView from "../pages/Vendor/VendorView";
 import StockIns from "../pages/StockIns/StockIns";
+import RouteErrorPage from "../pages/RouteErrorPage";
 // import ProductCreate from "../pages/Product/ProductCreate";
 // import ProductUpdate from "../pages/Product/ProductUpdate";
 const Products = lazy(() => import("../pages/Products"));
@@ -262,6 +263,7 @@ export const routeConfig: ExtendedRouteObject[] = [
 	{
 		path: "/",
 		Component: LayoutComponent,
+		errorElement: <RouteErrorPage />,
 		children: [
 			{
 				index: true,
@@ -399,6 +401,7 @@ export const routeConfig: ExtendedRouteObject[] = [
 	{
 		path: "/landing",
 		Component: Landing,
+		errorElement: <RouteErrorPage />,
 		meta: {
 			auth: "free", // 父路由也需要设置为 free，避免死循环
 		},

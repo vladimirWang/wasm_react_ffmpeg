@@ -3,6 +3,7 @@ import ReactDOM from "react-dom/client";
 import App from "./App.tsx";
 import "./index.css";
 import { ModalComponent } from "./components/GlobalModal.tsx";
+import { ErrorBoundary } from "./components/ErrorBoundary.tsx";
 import dayjs from "dayjs";
 import utc from "dayjs/plugin/utc";
 import timezone from "dayjs/plugin/timezone";
@@ -17,8 +18,10 @@ dayjs.tz.setDefault("Asia/Shanghai");
 
 // console.log('isconnected: ', mock, result);
 ReactDOM.createRoot(document.getElementById("root")!).render(
-	<>
-		<App />
-		<ModalComponent />
-	</>
+	<ErrorBoundary>
+		<>
+			<App />
+			<ModalComponent />
+		</>
+	</ErrorBoundary>
 );
