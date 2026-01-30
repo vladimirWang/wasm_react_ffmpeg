@@ -1,6 +1,17 @@
-import { Button, Card, Form, Input, Select, Table, Space, Divider, message } from "antd";
+import {
+	Button,
+	Card,
+	Form,
+	Input,
+	Select,
+	Table,
+	Space,
+	Divider,
+	message,
+	DatePicker,
+} from "antd";
 import type { TableProps } from "antd";
-import { IVendorUpdateParams } from "../../api/vendor";
+import { IVendor, IVendorUpdateParams } from "../../api/vendor";
 import { useEffect, useMemo, useState } from "react";
 import { IProductJoinStockIn, IStockIn } from "../../api/stockIn";
 import { PlusSquareOutlined } from "@ant-design/icons";
@@ -9,6 +20,7 @@ import { PageOperation } from "../../enum";
 import { PositiveInputNumber } from "../../components/PositiveInputNumber";
 import { useDistinctProducts } from "../../hooks/useDistinctProducts";
 import StockOperationTable, { JoinFieldRow } from "../../components/StockOperationTable";
+import dayjs from "dayjs";
 // import VendorProductTree from "../../components/VendorProductTree";
 
 interface StockInFormProps {
@@ -19,18 +31,8 @@ interface StockInFormProps {
 	initialValues?: IStockIn;
 }
 
-// const defaultJoinData: IProductJoinStockIn[] = [
-// 	// {
-// 	// 	productId: -1,
-// 	// 	cost: 4,
-// 	// 	count: 1,
-// 	// },
-// 	// {
-// 	// 	productId: 10,
-// 	// 	cost: 9,
-// 	// 	count: 10,
-// 	// },
-// ];
+// 产品id与供应商id的映射
+const productVendorMap: Partial<Record<number, number>> = {};
 
 export default function StockInForm(props: StockInFormProps) {
 	const [loading, setLoading] = useState(false);
@@ -59,7 +61,29 @@ export default function StockInForm(props: StockInFormProps) {
 
 		return allProducts
 			.filter(item => !usedByOtherRows.has(item.id))
-			.map(item => ({ value: item.id, label: item.name }));
+			.map(item => {
+				const vendorInfo = item.Vendor;
+				if (!vendorInfo) {
+					return { value: item.id, label: item.name };
+				}
+				const withVendorName =
+					vendorInfo.name.length > 5 ? vendorInfo.name.slice(0, 5) + "..." : vendorInfo.name;
+				return { value: item.id, label: withVendorName + "/" + item.name };
+			});
+	};
+
+	// 缓存产品id和供应商的映射关系
+	const makeCacheProductVendorMap = (val: number) => {
+		if (productVendorMap[val]) {
+			return;
+		}
+		const productFound = allProducts.find(item => {
+			return item.id === val;
+		});
+		if (!productFound || !productFound.Vendor) {
+			return;
+		}
+		productVendorMap[val] = productFound.Vendor.id;
 	};
 
 	const columnsBase: TableProps<JoinFieldRow>["columns"] = [
@@ -77,11 +101,6 @@ export default function StockInForm(props: StockInFormProps) {
 			width: 200,
 			render: (_v, row) => {
 				return (
-					// <VendorProductTree
-					// 	onChange={(vendorId: number, productId: number) => {
-					// 		console.log("vendorId: ", vendorId, "; productId: ", productId);
-					// 	}}
-					// />
 					<Form.Item
 						name={[row.name, "productId"]}
 						style={{ marginBottom: 0 }}
@@ -93,6 +112,7 @@ export default function StockInForm(props: StockInFormProps) {
 							style={{ width: "100%" }}
 							placeholder="请选择商品"
 							options={getProductOptionsForRow(row.name)}
+							onChange={makeCacheProductVendorMap}
 						/>
 					</Form.Item>
 				);
@@ -168,6 +188,7 @@ export default function StockInForm(props: StockInFormProps) {
 					form={form}
 					name="basic"
 					initialValues={{
+						createdAt: dayjs(),
 						...props.initialValues,
 					}}
 					labelCol={{ span: 2 }}
@@ -176,8 +197,18 @@ export default function StockInForm(props: StockInFormProps) {
 						if (!props.onFinishCallback) return;
 						setLoading(true);
 						try {
+							let { productJoinStockIn } = values;
+							// 找出产品对应的供应商信息
+							for (const item of productJoinStockIn) {
+								let vendorId = productVendorMap[item.productId];
+								if (!vendorId) {
+									throw new Error(`商品id: ${item.productId} 没有找到对应的供应商信息`);
+								}
+								item.vendorId = vendorId;
+							}
 							await props.onFinishCallback(values || []);
 						} catch (e: unknown) {
+							message.error((e as Error).message);
 						} finally {
 							setLoading(false);
 						}
@@ -203,7 +234,9 @@ export default function StockInForm(props: StockInFormProps) {
 						)}
 					</Form.List>
 					<Divider />
-
+					<Form.Item name="createdAt" label="创建日期">
+						<DatePicker />
+					</Form.Item>
 					<Form.Item<IVendorUpdateParams> label="备注" name="remark" style={{ marginBottom: 24 }}>
 						<Input.TextArea
 							showCount

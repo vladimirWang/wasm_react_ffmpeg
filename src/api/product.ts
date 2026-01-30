@@ -1,5 +1,6 @@
 import request from "../request";
 import { IPaginationResp, IPagination, IResponse } from "./commonDef";
+import { IVendor } from "./vendor";
 
 // 产品类型定义
 export interface IProductHistoryCostItem {
@@ -28,6 +29,7 @@ export interface IProduct {
 	stockInPending: number;
 	stockOutPending: number;
 	shelfPrice: number;
+	Vendor?: IVendor;
 }
 
 // 定义登录响应类型

@@ -41,4 +41,5 @@ export interface StockOperationRecord {
 export interface IProductJoinStockOperation {
 	count: number;
 	productId: number;
+	vendorId: number;
 }
