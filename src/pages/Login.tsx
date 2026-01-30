@@ -1,11 +1,7 @@
-import React from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { LockOutlined, MailOutlined } from "@ant-design/icons";
-import { Button, Flex, Form, Input } from "antd";
-import {
-	userLogin,
-	type LoginParams,
-	type LoginResponse,
-} from "../api/user";
+import { Button, Flex, Form, Input, message } from "antd";
+import { getCaptcha, userLogin, type LoginParams, type LoginResponse } from "../api/user";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import Box from "../components/Box";
 import { clearUserCache } from "../routes";
@@ -21,11 +17,18 @@ const Login: React.FC = () => {
 	const navigate = useNavigate();
 	const [searchParams] = useSearchParams();
 
+	const [captchaSrc, setCaptchaSrc] = useState<string>();
+	const [captchaId, setCaptchaId] = useState<string>();
+
 	const onFinish = async (values: LoginParams) => {
 		try {
 			// 响应拦截器已经处理了 IResponse 格式，直接返回 token (string)
+			if (!captchaId) {
+				message.error("验证码获取异常");
+				return;
+			}
+			values.captchaId = captchaId;
 			const token = await userLogin(values);
-			console.log("token: ", token, typeof token);
 			localStorage.setItem("access_token", token);
 			// 清除旧的用户缓存，让 authLoader 重新获取用户信息
 			clearUserCache();
@@ -47,6 +50,15 @@ const Login: React.FC = () => {
 			}
 		}
 	};
+	const loadCaptcha = async () => {
+		const src = await getCaptcha();
+		console.log("captcha src: ", typeof src, src);
+		setCaptchaSrc(src.image);
+		setCaptchaId(src.captchaId);
+	};
+	useEffect(() => {
+		loadCaptcha();
+	}, []);
 
 	return (
 		<div
@@ -86,36 +98,37 @@ const Login: React.FC = () => {
 					padding: 20,
 					borderRadius: 14,
 					border: "1px solid rgba(255,255,255,0.10)",
-					background: "rgba(255,255,255,0.06)",
+					background: "rgba(255,102,0,0.6)",
 					boxShadow: "0 20px 60px rgba(0,0,0,0.45)",
 					backdropFilter: "blur(10px)",
 					WebkitBackdropFilter: "blur(10px)",
 				}}
 				onFinish={onFinish}
 			>
-				<Form.Item name="email" rules={[{ required: true, message: "Please input your email!" }]}>
+				<Form.Item name="email" rules={[{ required: true, message: "请输入邮箱" }]}>
 					<Input prefix={<MailOutlined />} placeholder="email" />
 				</Form.Item>
-				<Form.Item
-					name="password"
-					rules={[{ required: true, message: "Please input your Password!" }]}
-				>
+				<Form.Item name="password" rules={[{ required: true, message: "请输入密码" }]}>
 					<Input prefix={<LockOutlined />} type="password" placeholder="Password" />
 				</Form.Item>
+				<Form.Item name="captchaText" rules={[{ required: true, message: "请输入验证码" }]}>
+					<Flex gap={10}>
+						<Input placeholder="请输入验证码" />
+						<img src={captchaSrc} onClick={loadCaptcha} style={{ background: "white" }} />
+					</Flex>
+				</Form.Item>
 				<Form.Item>
+					<Button block type="primary" htmlType="submit">
+						登录
+					</Button>
+
 					<Flex justify="space-between" align="center">
 						{/* <Form.Item name="remember" valuePropName="checked" noStyle>
 							<Checkbox>Remember me</Checkbox>
 						</Form.Item> */}
 						<a href="">忘记密码</a>
+						<Link to="/landing/register">去注册!</Link>
 					</Flex>
-				</Form.Item>
-
-				<Form.Item>
-					<Button block type="primary" htmlType="submit">
-						登录
-					</Button>
-					<Link to="/landing/register">去注册!</Link>
 				</Form.Item>
 			</Form>
 		</div>

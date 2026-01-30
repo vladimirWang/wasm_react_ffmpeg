@@ -9,35 +9,47 @@ export type IUser = {
 	email: string;
 	username?: string;
 	createdAt: string;
-}
+};
 // 定义注册响应类型
 export type RegisterResponse = IResponse<IUser>;
 
 // 定义登录请求参数类型
 export interface LoginParams {
-  email: string;
-  password: string;
+	email: string;
+	password: string;
+	captchaText: string;
+	captchaId: string;
 }
 
 // 定义注册请求参数类型
 export interface RegisterParams {
-  email: string;
-  password: string;
+	email: string;
+	password: string;
 }
 
-export const userLogin = (data: LoginParams, config?: { showSuccessMessage?: boolean }): Promise<string> => {
-  return request.post<LoginResponse>("/api/user/login", data, {
-    showSuccessMessage: config?.showSuccessMessage ?? true, // 登录成功默认显示提示
-  });
+export const userLogin = (
+	data: LoginParams,
+	config?: { showSuccessMessage?: boolean }
+): Promise<string> => {
+	return request.post<LoginResponse>("/api/user/login", data, {
+		showSuccessMessage: config?.showSuccessMessage ?? true, // 登录成功默认显示提示
+	});
 };
 
-export const userRegister = (
-  data: RegisterParams
-): Promise<RegisterResponse> => {
-  return request.post<RegisterResponse>("/api/user/register", data);
+export const userRegister = (data: RegisterParams): Promise<RegisterResponse> => {
+	return request.post<RegisterResponse>("/api/user/register", data);
 };
-
 
 export const getCurrentUser = (): Promise<RegisterResponse> => {
-  return request.get<RegisterResponse>("/api/user/current");
+	return request.get<RegisterResponse>("/api/user/current");
+};
+
+export interface ICaptcha {
+	image: string;
+	captchaId: string;
+}
+export const getCaptcha = (): Promise<ICaptcha> => {
+	const rnd = Math.random();
+	const rndStr = (rnd + "").slice(2);
+	return request.get<ICaptcha>("/api/user/captcha?q=" + rndStr);
 };
