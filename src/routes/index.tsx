@@ -446,3 +446,72 @@ export const routeConfig: ExtendedRouteObject[] = [
 
 // 创建路由（应用 auth loader）
 export const router = createBrowserRouter(addAuthLoader(routeConfig));
+
+// 主布局下的子路由（用于面包屑）
+const layoutChildren = routeConfig[0].children ?? [];
+
+export type BreadcrumbItem = { key?: string; title: ReactNode; href?: string };
+
+/** 将 pathname 拆成层级路径，如 "/product/123" -> ["/", "/product", "/product/123"] */
+function pathnameToHierarchy(pathname: string): string[] {
+	const segments = pathname.replace(/^\/+|\/+$/g, "").split("/").filter(Boolean);
+	const list: string[] = ["/"];
+	for (let i = 0; i < segments.length; i++) {
+		list.push("/" + segments.slice(0, i + 1).join("/"));
+	}
+	return list;
+}
+
+/** 判断 pathname 是否匹配 route 的完整路径模式（支持 :id 等动态段） */
+function pathnameMatchesRoute(path: string | undefined, index: boolean, pathname: string): boolean {
+	if (index) return pathname === "/" || pathname === "";
+	const normalized = pathname.replace(/^\/+/, "") || "";
+	const pathSegs = (path ?? "").split("/").filter(Boolean);
+	const nameSegs = normalized.split("/").filter(Boolean);
+	if (pathSegs.length !== nameSegs.length) return false;
+	return pathSegs.every((seg, i) => seg.startsWith(":") || seg === nameSegs[i]);
+}
+
+/** 在扁平子路由中查找匹配 pathname 的路由（优先更长、更具体的 path） */
+function findMatchingRoute(routes: ExtendedRouteObject[], pathname: string): ExtendedRouteObject | null {
+	const candidates = routes.filter(r => {
+		if (r.index) return pathname === "/" || pathname === "";
+		return pathnameMatchesRoute(r.path, false, pathname);
+	});
+	if (candidates.length === 0) return null;
+	// 优先匹配 path 更长的（更具体）
+	candidates.sort((a, b) => (b.path ?? "").length - (a.path ?? "").length);
+	return candidates[0];
+}
+
+/** 根据 route 的 path 得到面包屑标题（无 meta.title 时的回退） */
+function getRouteBreadcrumbTitle(route: ExtendedRouteObject): string {
+	if (route.meta?.title) return route.meta.title;
+	const p = (route.path ?? "").toLowerCase();
+	if (p.includes("create")) return "新建";
+	if (p.includes("update")) return "编辑";
+	if (p.includes(":id") && p.split("/").filter(Boolean).length <= 2) return "详情";
+	// 如 stockin/update/:id 仍显示「编辑」
+	return "详情";
+}
+
+/**
+ * 根据当前 pathname 和主布局子路由配置生成面包屑项
+ */
+export function getBreadcrumbItems(pathname: string): BreadcrumbItem[] {
+	const hierarchy = pathnameToHierarchy(pathname);
+	const items: BreadcrumbItem[] = [];
+	for (let i = 0; i < hierarchy.length; i++) {
+		const path = hierarchy[i];
+		const route = findMatchingRoute(layoutChildren, path);
+		if (!route) continue;
+		const title = getRouteBreadcrumbTitle(route);
+		const isLast = i === hierarchy.length - 1;
+		items.push({
+			key: path,
+			title,
+			href: isLast ? undefined : path,
+		});
+	}
+	return items.length > 0 ? items : [{ title: "首页", key: "/" }];
+}

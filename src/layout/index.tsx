@@ -1,7 +1,8 @@
 import React from "react";
 import { CalendarTwoTone } from "@ant-design/icons";
 import { Breadcrumb, Layout, Skeleton, theme } from "antd";
-import { Outlet, useNavigation } from "react-router-dom";
+import { Link, Outlet, useLocation, useNavigation } from "react-router-dom";
+import { getBreadcrumbItems } from "../routes";
 import Drop from "./Drop";
 import SideBar from "./Sidebar";
 
@@ -13,7 +14,13 @@ const LayoutComponent: React.FC = () => {
 	} = theme.useToken();
 
 	const navigation = useNavigation();
+	const location = useLocation();
 	const isPageSwitching = navigation.state === "loading" || navigation.state === "submitting";
+
+	const breadcrumbItems = getBreadcrumbItems(location.pathname).map((item, i) => ({
+		...item,
+		title: item.href ? <Link to={item.href}>{item.title}</Link> : item.title,
+	}));
 
 	return (
 		<Layout style={{ minHeight: "100vh" }}>
@@ -24,7 +31,7 @@ const LayoutComponent: React.FC = () => {
 					<Drop />
 				</Header>
 				<Content style={{ margin: "0 16px" }}>
-					<Breadcrumb style={{ margin: "16px 0" }} items={[{ title: "User" }, { title: "Bill" }]} />
+					<Breadcrumb style={{ margin: "16px 0" }} items={breadcrumbItems} />
 					{isPageSwitching ? (
 						<div style={{ paddingTop: 12 }}>
 							<Skeleton active title={false} paragraph={{ rows: 2 }} />
