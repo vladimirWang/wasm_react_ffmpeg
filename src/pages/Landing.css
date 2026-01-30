@@ -1,0 +1,175 @@
+/* AI 光晕背景 - 浅色底，黑色文字清晰可读 */
+.landing-bg {
+  /* 背景色 */
+  --landing-bg-start: #e8eef5;
+  --landing-bg-mid: #dfe8f2;
+  --landing-bg-mid2: #e2eaf5;
+  --landing-bg-end: #dde6f0;
+  /* 光晕色 - 蓝与黄（与蓝相配的暖黄） */
+  --glow-inner: rgba(70, 150, 220, 0.78);
+  --glow-mid: rgba(50, 130, 200, 0.52);
+  --glow-soft: rgba(90, 160, 225, 0.68);
+  --glow-top: rgba(80, 155, 218, 0.65);
+  --glow-yellow-inner: rgba(255, 210, 100, 0.58);
+  --glow-yellow-mid: rgba(255, 185, 70, 0.38);
+  --glow-yellow-soft: rgba(255, 225, 140, 0.48);
+  /* 光晕尺寸与效果 - 略减模糊让光心更集中 */
+  --glow-blur: 70px;
+  --glow-opacity: 0.88;
+  --glow-size-1: 420px;
+  --glow-size-2: 380px;
+  --glow-size-3: 360px;
+  --glow-size-4: 320px;
+  --glow-fade-stop: 65%;
+  /* 动画 - 缓慢移动（比原速快约 35%） */
+  --glow-duration: 13.89s;
+  --glow-duration-2: 16.67s;
+  --glow-duration-3: 15.28s;
+  --glow-duration-4: 18.06s;
+  --glow-timing: ease-in-out;
+
+  position: relative;
+  min-height: 100vh;
+  width: 100%;
+  overflow: hidden;
+  background: linear-gradient(
+    135deg,
+    var(--landing-bg-start) 0%,
+    var(--landing-bg-mid) 30%,
+    var(--landing-bg-mid2) 70%,
+    var(--landing-bg-end) 100%
+  );
+}
+
+.landing-bg::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(
+      ellipse 100% 60% at 50% -15%,
+      var(--glow-top) 0%,
+      rgba(100, 170, 230, 0.25) 35%,
+      transparent 60%
+    ),
+    radial-gradient(
+      ellipse 70% 40% at 85% 20%,
+      var(--glow-yellow-soft) 0%,
+      transparent 50%
+    );
+  pointer-events: none;
+}
+
+.landing-glow {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(var(--glow-blur));
+  opacity: var(--glow-opacity);
+  animation: glow-float var(--glow-duration) var(--glow-timing) infinite;
+  pointer-events: none;
+}
+
+.landing-glow-1 {
+  width: var(--glow-size-1);
+  height: var(--glow-size-1);
+  background: radial-gradient(
+    circle,
+    var(--glow-inner) 0%,
+    var(--glow-mid) 40%,
+    transparent var(--glow-fade-stop)
+  );
+  /* 位置由 JS 随机注入 */
+  animation-delay: 0s;
+}
+
+.landing-glow-2 {
+  width: var(--glow-size-2);
+  height: var(--glow-size-2);
+  background: radial-gradient(
+    circle,
+    var(--glow-yellow-inner) 0%,
+    var(--glow-yellow-mid) 40%,
+    transparent var(--glow-fade-stop)
+  );
+  animation-delay: -4s;
+  animation-duration: var(--glow-duration-2);
+}
+
+.landing-glow-3 {
+  width: var(--glow-size-3);
+  height: var(--glow-size-3);
+  background: radial-gradient(
+    circle,
+    var(--glow-inner) 0%,
+    var(--glow-mid) 40%,
+    transparent var(--glow-fade-stop)
+  );
+  animation-delay: -8s;
+  animation-duration: var(--glow-duration-3);
+}
+
+.landing-glow-4 {
+  width: var(--glow-size-4);
+  height: var(--glow-size-4);
+  background: radial-gradient(
+    circle,
+    var(--glow-soft) 0%,
+    var(--glow-yellow-soft) 35%,
+    var(--glow-mid) 55%,
+    transparent var(--glow-fade-stop)
+  );
+  transform: translate(-50%, -50%);
+  animation-delay: -2s;
+  animation-duration: var(--glow-duration-4);
+  animation-name: glow-float-center;
+}
+
+/* 光晕缓慢漂移 - 位移加大 20%、多关键帧更顺滑 */
+@keyframes glow-float {
+  0%,
+  100% {
+    transform: translate(0, 0) scale(1);
+  }
+  20% {
+    transform: translate(14.55%, -12.13%) scale(1.04);
+  }
+  40% {
+    transform: translate(-12.13%, 16.98%) scale(0.97);
+  }
+  60% {
+    transform: translate(16.98%, 9.7%) scale(1.03);
+  }
+  80% {
+    transform: translate(-9.7%, -14.55%) scale(0.98);
+  }
+}
+
+@keyframes glow-float-center {
+  0%,
+  100% {
+    transform: translate(-50%, -50%) translate(0, 0) scale(1);
+  }
+  20% {
+    transform: translate(-50%, -50%) translate(14.55%, -12.13%) scale(1.04);
+  }
+  40% {
+    transform: translate(-50%, -50%) translate(-12.13%, 16.98%) scale(0.97);
+  }
+  60% {
+    transform: translate(-50%, -50%) translate(16.98%, 9.7%) scale(1.03);
+  }
+  80% {
+    transform: translate(-50%, -50%) translate(-9.7%, -14.55%) scale(0.98);
+  }
+}
+
+/* 内容层置于光晕之上 */
+.landing-content {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+  width: 100%;
+}
