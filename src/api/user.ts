@@ -25,6 +25,8 @@ export interface LoginParams {
 export interface RegisterParams {
 	email: string;
 	password: string;
+	username?: string;
+	verifyCode?: string;
 }
 
 export const userLogin = (
