@@ -22,6 +22,7 @@ import StockOperationUploadModal, {
 	StockOperationUploadModalRefProps,
 } from "../../components/StockOperationUploadModal";
 import { composePromise } from "../../utils/common";
+import SearchBox from "../../components/SearchBox";
 
 const StockOuts: React.FC = () => {
 	const [fileUploadModalOpen, setFileUploadModalOpen] = useState(false);
@@ -32,10 +33,15 @@ const StockOuts: React.FC = () => {
 		page: 1,
 		limit: 20,
 		productName: "",
+		deletedStart: undefined,
+		deletedEnd: undefined,
+		vendorName: "",
+		completedStart: undefined,
+		completedEnd: undefined,
 	});
 	// 2. 定义SWR的fetcher函数：接收参数，调用getStockIns
-	const fetcher = async (_params: IProductQueryParams) => {
-		const res = await getStockOuts();
+	const fetcher = async (params: IProductQueryParams) => {
+		const res = await getStockOuts(params);
 		return res; // 若你的getProducts返回的是响应体（如res.data），则这里取res.data
 	};
 
@@ -167,25 +173,9 @@ const StockOuts: React.FC = () => {
 	const [keyword, setKeyword] = useState<string>(queryParams.productName || "");
 	const [page, setPage] = useState(queryParams.page);
 
-	return (
-		<div className="py-2 px-3">
-			<section className="flex gap-5">
-				<Input
-					placeholder="Basic usage"
-					value={keyword}
-					onInput={e => setKeyword(e.currentTarget.value)}
-					allowClear
-				/>
-				<Button
-					icon={<SearchOutlined />}
-					onClick={() => {
-						setQueryParams({
-							productName: keyword,
-							page: 1,
-							limit: 20,
-						});
-					}}
-				></Button>
+	const toolBar = (
+		<div className="flex flex-col gap-2">
+			<section className="flex justify-end gap-5">
 				<Button
 					icon={<PlusCircleOutlined />}
 					onClick={() => {
@@ -202,6 +192,12 @@ const StockOuts: React.FC = () => {
 					通过文件批量导入
 				</Button>
 			</section>
+			<SearchBox queryParams={queryParams} onSetQueryParams={setQueryParams} />
+		</div>
+	);
+	return (
+		<div className="py-2 px-3">
+			{toolBar}
 			{error && <div>Error loading products.</div>}
 			<Table<IStockOut>
 				size="small"

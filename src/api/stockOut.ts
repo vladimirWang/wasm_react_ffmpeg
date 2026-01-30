@@ -38,8 +38,8 @@ export interface ICreateStockOutParams {
 type IStockOutsQueryResponse = IPaginationResp<IStockOut>;
 // type IStockOutResponse = IResponse<IStockOut>;
 
-export const getStockOuts = (): Promise<IStockOutsQueryResponse> => {
-	return request.get<IStockOutsQueryResponse>("/api/stockout");
+export const getStockOuts = (params: IProductQueryParams): Promise<IStockOutsQueryResponse> => {
+	return request.get<IStockOutsQueryResponse>("/api/stockout", { params });
 };
 
 // 获取出货详情
