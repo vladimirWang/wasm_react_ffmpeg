@@ -144,10 +144,12 @@ const StockIns: React.FC = () => {
 	// 确认导入（串行调用 createStockIn，避免并发过多）
 	const handleConfirm = async (groupedRecords: StockInRecord[][]) => {
 		const tasks = groupedRecords.map((recordSet, recordSetIndex) => () => {
+			const params = {
+				createdAt: recordSet[0].createdAt,
+				productJoinStockIn: recordSet,
+			};
 			return (
-				createStockIn({
-					productJoinStockIn: recordSet,
-				})
+				createStockIn(params)
 					// 处理成功与失败情况的导入结果展示
 					.then(res => {
 						stockOperationUploadModalRef.current?.onItemFinish(recordSetIndex, true);

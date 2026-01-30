@@ -33,6 +33,7 @@ export interface StockOutRecord extends StockOperationRecord {
 export interface ICreateStockOutParams {
 	remark?: string;
 	productJoinStockOut: IProductJoinStockOut[];
+	createdAt: string;
 }
 
 type IStockOutsQueryResponse = IPaginationResp<IStockOut>;
