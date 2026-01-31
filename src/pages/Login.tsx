@@ -109,7 +109,7 @@ const Login: React.FC = () => {
 					<Input prefix={<MailOutlined />} placeholder="email" />
 				</Form.Item>
 				<Form.Item name="password" rules={[{ required: true, message: "请输入密码" }]}>
-					<Input prefix={<LockOutlined />} type="password" placeholder="Password" />
+					<Input.Password prefix={<LockOutlined />} type="password" placeholder="Password" />
 				</Form.Item>
 				<Form.Item name="captchaText" rules={[{ required: true, message: "请输入验证码" }]}>
 					<Flex gap={10}>

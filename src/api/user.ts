@@ -55,3 +55,16 @@ export const getCaptcha = (): Promise<ICaptcha> => {
 	const rndStr = (rnd + "").slice(2);
 	return request.get<ICaptcha>("/api/user/captcha?q=" + rndStr);
 };
+
+// 发送邮箱验证码
+export const sendEmailVerificationCode = (email: string): Promise<void> => {
+	return request.post<void>("/api/util/sendEmailVerificationCode", { email });
+};
+
+// 验证邮箱
+export const checkEmailVerificationCode = (data: {
+	email: string;
+	verifyCode: string;
+}): Promise<void> => {
+	return request.post<void>("/api/util/checkEmailValidation", data);
+};
