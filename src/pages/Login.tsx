@@ -48,11 +48,12 @@ const Login: React.FC = () => {
 			} else {
 				console.error("Unknown error: ", error);
 			}
+			// 登录失败刷新验证码
+			loadCaptcha();
 		}
 	};
 	const loadCaptcha = async () => {
 		const src = await getCaptcha();
-		console.log("captcha src: ", typeof src, src);
 		setCaptchaSrc(src.image);
 		setCaptchaId(src.captchaId);
 	};
