@@ -11,6 +11,11 @@ import dayjs from "dayjs";
 
 const columns: TableProps<IVendor>["columns"] = [
 	{
+		title: "供应商id",
+		dataIndex: "id",
+		key: "id",
+	},
+	{
 		title: "名称",
 		dataIndex: "name",
 		key: "name",

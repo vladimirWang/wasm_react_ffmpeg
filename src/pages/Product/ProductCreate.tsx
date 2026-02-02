@@ -27,7 +27,15 @@ export default function ProductCreate() {
 	return (
 		<div>
 			<Spin spinning={loading}>
-				<ProductForm onFinishCallback={onFinish} pageOperation="create" />
+				<ProductForm
+					onFinishCallback={onFinish}
+					pageOperation="create"
+					// initialValues={{
+					// 	vendorId: 2,
+					// 	name: "puma 裤子",
+					// 	shelfPrice: 100,
+					// }}
+				/>
 			</Spin>
 		</div>
 	);

@@ -25,6 +25,12 @@ const Products: React.FC = () => {
 	};
 	const columns: TableProps<IProduct>["columns"] = [
 		{
+			title: "id",
+			dataIndex: "id",
+			key: "id",
+			width: 50,
+		},
+		{
 			title: "名称",
 			dataIndex: "name",
 			key: "name",
@@ -42,7 +48,7 @@ const Products: React.FC = () => {
 		{
 			title: "供应商",
 			key: "VendorName",
-			dataIndex: ["Vendor", "name"],
+			dataIndex: ["vendor", "name"],
 		},
 		{
 			title: "最新售价",

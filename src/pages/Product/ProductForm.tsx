@@ -92,7 +92,6 @@ export default function ProductForm({
 							...values,
 							shelfPrice: values.shelfPrice ? Number(values.shelfPrice) : undefined,
 						});
-					} catch (e) {
 					} finally {
 						setSubmitting(false);
 					}
@@ -118,7 +117,10 @@ export default function ProductForm({
 						<Form.Item<IProductUpdateParams>
 							label="指导零售价"
 							name="shelfPrice"
-							rules={[{ required: true, message: "请输入上架价格" }]}
+							rules={[
+								// { required: true, message: "请输入上架价格" },
+								{ max: 9999, message: "价格不能超过9999元" },
+							]}
 						>
 							<div className="flex items-center gap-2">
 								<PositiveInputNumber
@@ -126,13 +128,13 @@ export default function ProductForm({
 									precision={0}
 									placeholder="请输入价格"
 									style={{ width: "100%" }}
+									value={initialValues?.shelfPrice}
 								/>
 								<QuestionCircleOutlined
 									style={{ color: "red" }}
 									onClick={() => {
 										setCostDrawerOpen(true);
 									}}
-									// icon={<ClippingOutlined style={{ color: "red" }} />}
 								/>
 							</div>
 						</Form.Item>

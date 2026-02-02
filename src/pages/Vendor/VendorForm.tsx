@@ -35,7 +35,10 @@ export default function VendorForm(props: VendorFormProps) {
 			<Form.Item<IVendorUpdateParams>
 				label="名称"
 				name="name"
-				rules={[{ required: true, message: "Please input your username!" }]}
+				rules={[
+					{ required: true, message: "请输入供应商名称" },
+					{ max: 10, message: "供应商名称最多10个字符" },
+				]}
 			>
 				<Input />
 			</Form.Item>
