@@ -287,6 +287,7 @@ export const routeConfig: ExtendedRouteObject[] = [
 				path: "product/:id",
 				Component: ProductUpdate,
 				meta: {
+					title: "编辑产品",
 					hidden: true, // 详情页不在菜单中显示
 				},
 			},
@@ -294,6 +295,7 @@ export const routeConfig: ExtendedRouteObject[] = [
 				path: "product/create",
 				Component: ProductCreate,
 				meta: {
+					title: "新建产品",
 					hidden: true, // 详情页不在菜单中显示
 				},
 			},
@@ -317,6 +319,7 @@ export const routeConfig: ExtendedRouteObject[] = [
 				path: "vendor/:id",
 				Component: VendorView,
 				meta: {
+					title: "供应商详情",
 					hidden: true, // 详情页不在菜单中显示
 				},
 			},
@@ -324,6 +327,7 @@ export const routeConfig: ExtendedRouteObject[] = [
 				path: "vendor/update/:id",
 				Component: VendorUpdate,
 				meta: {
+					title: "编辑供应商",
 					hidden: true, // 详情页不在菜单中显示
 				},
 			},
@@ -340,6 +344,7 @@ export const routeConfig: ExtendedRouteObject[] = [
 				path: "stockin/create",
 				Component: StockInsCreate,
 				meta: {
+					title: "新建进货记录",
 					icon: <DesktopOutlined />,
 					order: 4,
 				},
@@ -348,6 +353,7 @@ export const routeConfig: ExtendedRouteObject[] = [
 				path: "stockin/update/:id",
 				Component: StockInsUpdate,
 				meta: {
+					title: "编辑进货记录",
 					icon: <DesktopOutlined />,
 					order: 4,
 				},
@@ -356,6 +362,7 @@ export const routeConfig: ExtendedRouteObject[] = [
 				path: "stockin/:id",
 				Component: StockInsView,
 				meta: {
+					title: "进货记录详情",
 					icon: <DesktopOutlined />,
 					order: 4,
 				},
@@ -376,6 +383,7 @@ export const routeConfig: ExtendedRouteObject[] = [
 					hidden: true,
 					icon: <DesktopOutlined />,
 					order: 4,
+					title: "新建出货记录",
 				},
 			},
 			{
@@ -385,6 +393,7 @@ export const routeConfig: ExtendedRouteObject[] = [
 					hidden: true,
 					icon: <DesktopOutlined />,
 					order: 4,
+					title: "编辑出货记录",
 				},
 			},
 			{
@@ -394,6 +403,7 @@ export const routeConfig: ExtendedRouteObject[] = [
 					hidden: true,
 					icon: <DesktopOutlined />,
 					order: 4,
+					title: "出货记录详情",
 				},
 			},
 		],
@@ -454,7 +464,10 @@ export type BreadcrumbItem = { key?: string; title: ReactNode; href?: string };
 
 /** 将 pathname 拆成层级路径，如 "/product/123" -> ["/", "/product", "/product/123"] */
 function pathnameToHierarchy(pathname: string): string[] {
-	const segments = pathname.replace(/^\/+|\/+$/g, "").split("/").filter(Boolean);
+	const segments = pathname
+		.replace(/^\/+|\/+$/g, "")
+		.split("/")
+		.filter(Boolean);
 	const list: string[] = ["/"];
 	for (let i = 0; i < segments.length; i++) {
 		list.push("/" + segments.slice(0, i + 1).join("/"));
@@ -473,7 +486,10 @@ function pathnameMatchesRoute(path: string | undefined, index: boolean, pathname
 }
 
 /** 在扁平子路由中查找匹配 pathname 的路由（优先更长、更具体的 path） */
-function findMatchingRoute(routes: ExtendedRouteObject[], pathname: string): ExtendedRouteObject | null {
+function findMatchingRoute(
+	routes: ExtendedRouteObject[],
+	pathname: string
+): ExtendedRouteObject | null {
 	const candidates = routes.filter(r => {
 		if (r.index) return pathname === "/" || pathname === "";
 		return pathnameMatchesRoute(r.path, false, pathname);
