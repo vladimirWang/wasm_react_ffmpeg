@@ -18,7 +18,7 @@ interface StockOperationUploadModalProps<T> {
 	onCancel: () => void;
 	onSuccess: () => void;
 	operationType: "stockIn" | "stockOut";
-	onConfirm: (records: T[][]) => Promise<void>;
+	onConfirm: (records: { group: T[][]; flat: T[] }) => Promise<void>;
 	requiredFields: (keyof T)[];
 }
 
@@ -276,7 +276,7 @@ const StockOperationUploadModal = <T extends StockOperationRecord>(
 	const handleOk = async () => {
 		try {
 			setUploading(true);
-			await onConfirm(groupedRecords);
+			await onConfirm({ group: groupedRecords, flat: parsedRecords });
 		} finally {
 			setUploading(false);
 			setConfirmBtnVisible(false);
@@ -459,7 +459,7 @@ const StockOperationUploadModal = <T extends StockOperationRecord>(
 									bordered
 									loading={loadingData}
 									columns={publicColumns.concat(columns ?? []).concat(resultColumns)}
-									dataSource={filteredRecords.sort((a, b) => (a.rowIndex || 0) - (b.rowIndex || 0))}
+									dataSource={filteredRecords}
 									rowKey={(record, index) => `record-${record.rowIndex ?? index}`}
 									pagination={{
 										pageSize: 10,
@@ -471,7 +471,12 @@ const StockOperationUploadModal = <T extends StockOperationRecord>(
 									<div className="flex gap-2">
 										<Button onClick={() => setCurrentStep(0)}>上一步</Button>
 										{confirmBtnVisible && (
-											<Button type="primary" onClick={handleOk} loading={uploading}>
+											<Button
+												type="primary"
+												onClick={handleOk}
+												loading={uploading}
+												disabled={filteredRecords.length === 0}
+											>
 												确认导入
 											</Button>
 										)}

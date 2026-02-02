@@ -43,9 +43,12 @@ export interface IStockInCreateParams {
 
 // 获取进货记录
 export const createStockIn = async (
-	data?: IStockInCreateParams
+	data?: IStockInCreateParams,
+	config?: { showSuccessMessage: boolean; showErrorMessage?: boolean }
 ): Promise<IStockInsQueryResponse> => {
-	const res = await request.post<IStockInsQueryResponse>("/api/stockin/multiple", data);
+	const res = await request.post<IStockInsQueryResponse>("/api/stockin/multiple", data, {
+		showSuccessMessage: config?.showSuccessMessage ?? false, // 登录成功默认显示提示
+	});
 	// await sleep(2000);
 	return res;
 };

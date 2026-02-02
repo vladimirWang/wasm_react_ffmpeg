@@ -194,6 +194,11 @@ export default function StockInForm(props: StockInFormProps) {
 					labelCol={{ span: 2 }}
 					wrapperCol={{ span: 18 }}
 					onFinish={async (values: StockInFormValues) => {
+						const productJoinStockInValue = form.getFieldValue("productJoinStockIn");
+						if (!Array.isArray(productJoinStockInValue) || productJoinStockInValue.length === 0) {
+							message.error("进货明细数据必填");
+							return;
+						}
 						if (!props.onFinishCallback) return;
 						setLoading(true);
 						try {

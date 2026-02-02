@@ -1,5 +1,5 @@
 import React, { useRef, useState } from "react";
-import { Button, DatePicker, Input, Pagination, Space, Table, Tooltip } from "antd";
+import { Button, DatePicker, Input, message, Pagination, Space, Table, Tooltip } from "antd";
 import {
 	ArrowDownOutlined,
 	CheckCircleOutlined,
@@ -142,14 +142,14 @@ const StockIns: React.FC = () => {
 	const [selectedRowKeys, setSelectedRowKeys] = useState<React.Key[]>([]);
 
 	// 确认导入（串行调用 createStockIn，避免并发过多）
-	const handleConfirm = async (groupedRecords: StockInRecord[][]) => {
-		const tasks = groupedRecords.map((recordSet, recordSetIndex) => () => {
+	const handleConfirm = async (data: { group: StockInRecord[][]; flat: StockInRecord[] }) => {
+		const tasks = data.group.map((recordSet, recordSetIndex) => () => {
 			const params = {
 				createdAt: recordSet[0].createdAt,
 				productJoinStockIn: recordSet,
 			};
 			return (
-				createStockIn(params)
+				createStockIn(params, { showSuccessMessage: false })
 					// 处理成功与失败情况的导入结果展示
 					.then(res => {
 						stockOperationUploadModalRef.current?.onItemFinish(recordSetIndex, true);
@@ -163,6 +163,7 @@ const StockIns: React.FC = () => {
 		});
 		try {
 			await composePromise(...tasks);
+			message.success(`成功导入进货单${data.group.length}笔，包含商品${data.flat.length}件`);
 		} finally {
 			return Promise.resolve();
 		}
