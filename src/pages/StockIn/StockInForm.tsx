@@ -62,7 +62,7 @@ export default function StockInForm(props: StockInFormProps) {
 		return allProducts
 			.filter(item => !usedByOtherRows.has(item.id))
 			.map(item => {
-				const vendorInfo = item.Vendor;
+				const vendorInfo = item.vendor;
 				if (!vendorInfo) {
 					return { value: item.id, label: item.name };
 				}
@@ -80,10 +80,10 @@ export default function StockInForm(props: StockInFormProps) {
 		const productFound = allProducts.find(item => {
 			return item.id === val;
 		});
-		if (!productFound || !productFound.Vendor) {
+		if (!productFound || !productFound.vendor) {
 			return;
 		}
-		productVendorMap[val] = productFound.Vendor.id;
+		productVendorMap[val] = productFound.vendor.id;
 	};
 
 	const columnsBase: TableProps<JoinFieldRow>["columns"] = [
@@ -119,13 +119,36 @@ export default function StockInForm(props: StockInFormProps) {
 			},
 		},
 		{
-			title: "价格",
+			title: "成本价",
 			key: "cost",
 			width: 150,
 			render: (_v, row) => {
 				return (
 					<Form.Item
 						name={[row.name, "cost"]}
+						style={{ marginBottom: 0 }}
+						rules={[{ required: true, message: "请输入价格" }]}
+					>
+						<PositiveInputNumber
+							disabled={!editable}
+							min={1}
+							precision={0}
+							style={{ width: "100%" }}
+							placeholder="请输入价格"
+							addonAfter="元"
+						/>
+					</Form.Item>
+				);
+			},
+		},
+		{
+			title: "推荐零售价",
+			key: "shelfPrice",
+			width: 200,
+			render: (_v, row) => {
+				return (
+					<Form.Item
+						name={[row.name, "shelfPrice"]}
 						style={{ marginBottom: 0 }}
 						rules={[{ required: true, message: "请输入价格" }]}
 					>
@@ -232,7 +255,7 @@ export default function StockInForm(props: StockInFormProps) {
 									currentValues={productJoinStockInData}
 									allData={allProducts}
 									onAdd={() => {
-										add({ productId: undefined, cost: 1, count: 1 });
+										add({ productId: undefined, cost: 1, count: 1, shelfPrice: 1 });
 									}}
 								/>
 							</>

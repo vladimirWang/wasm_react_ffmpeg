@@ -10,7 +10,7 @@ export default function StockInCreate() {
 		formValue: IVendorUpdateParams & { productJoinStockIn: IProductJoinStockIn[] }
 	) => {
 		try {
-			await createStockIn(formValue);
+			await createStockIn(formValue, { showSuccessMessage: true });
 		} finally {
 			return Promise.resolve();
 		}

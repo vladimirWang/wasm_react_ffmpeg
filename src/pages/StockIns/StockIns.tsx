@@ -15,6 +15,7 @@ import {
 	batchDeleteStockIn,
 	StockInRecord,
 	createStockIn,
+	IStockInCreateParams,
 } from "../../api/stockIn";
 import useSWR from "swr";
 import { Link, useNavigate } from "react-router-dom";
@@ -149,7 +150,7 @@ const StockIns: React.FC = () => {
 				productJoinStockIn: recordSet,
 			};
 			return (
-				createStockIn(params, { showSuccessMessage: false })
+				createStockIn(params as IStockInCreateParams, { showSuccessMessage: false })
 					// 处理成功与失败情况的导入结果展示
 					.then(res => {
 						stockOperationUploadModalRef.current?.onItemFinish(recordSetIndex, true);

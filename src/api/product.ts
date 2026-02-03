@@ -29,7 +29,7 @@ export interface IProduct {
 	stockInPending: number;
 	stockOutPending: number;
 	shelfPrice: number;
-	Vendor?: IVendor;
+	vendor?: IVendor;
 }
 
 // 定义登录响应类型

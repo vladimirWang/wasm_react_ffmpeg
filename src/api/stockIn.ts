@@ -29,11 +29,13 @@ export const getStockIns = async (data?: IPagination): Promise<IStockInsQueryRes
 
 export interface IProductJoinStockIn extends IProductJoinStockOperation {
 	cost: number;
+	shelfPrice: number;
 }
 
 // Excel 解析后的数据格式
 export interface StockInRecord extends StockOperationRecord {
 	cost: number;
+	shelfPrice?: number;
 }
 
 export interface IStockInCreateParams {
