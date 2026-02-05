@@ -42,8 +42,8 @@ export const userRegister = (data: RegisterParams): Promise<RegisterResponse> =>
 	return request.post<RegisterResponse>("/api/user/register", data);
 };
 
-export const getCurrentUser = (): Promise<RegisterResponse> => {
-	return request.get<RegisterResponse>("/api/user/current");
+export const getCurrentUser = (): Promise<IUser> => {
+	return request.get<IUser>("/api/user/current");
 };
 
 export interface ICaptcha {

@@ -55,7 +55,7 @@ export default function Drop() {
 				<Space>
 					<section>
 						<Avatar icon={<UserOutlined />} />
-						<span className="mx-2">{user?.email || "未登录"}</span>
+						<span className="mx-2">{user?.username || "未登录"}</span>
 					</section>
 					<DownOutlined className={rotate ? "rotate-180" : ""} />
 				</Space>

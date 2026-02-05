@@ -112,44 +112,18 @@ const fetchCurrentUser = async (): Promise<IUser | null> => {
 		userPromise = getCurrentUser()
 			.then(res => {
 				console.log("fetchCurrentUser res: ", res);
-
-				// 检查是否是 IResponse 格式（有 code 和 data）
-				if (res && typeof res === "object" && "code" in res && "data" in res) {
-					// IResponse 格式
-					if (res.code === 200 && res.data) {
-						console.log("fetchCurrentUser res.data: ", res.data);
-						saveCachedUser(res.data);
-						// 更新 zustand store
-						useUserStore.getState().setUser(res.data);
-						return res.data;
-					}
-					// 如果 code 不是 200，抛出错误
-					const error = new Error(res.message || "Failed to get user");
-					(error as any).code = res.code;
-					throw error;
-				}
-
 				// 检查是否是直接的 user 对象（有 userId 或 email 等用户属性）
-				if (res && typeof res === "object" && ("userId" in res || "email" in res || "id" in res)) {
-					// 直接的 user 对象
-					console.log("fetchCurrentUser direct user object: ", res);
-					// 处理字段映射：如果 API 返回的是 userId，需要映射到 id
-					const user: IUser = {
-						id: (res as any).userId?.toString() || (res as any).id || "",
-						email: (res as any).email || "",
-						username: (res as any).username,
-						createdAt: (res as any).createdAt || new Date().toISOString(),
-					};
-					saveCachedUser(user);
-					// 更新 zustand store
-					useUserStore.getState().setUser(user);
-					return user;
-				}
-
-				// 格式不符合预期
-				const error = new Error("Invalid response format");
-				(error as any).code = 0;
-				throw error;
+				// 处理字段映射：如果 API 返回的是 userId，需要映射到 id
+				const user: IUser = {
+					id: res.id,
+					email: res.email,
+					username: res.username,
+					createdAt: res.createdAt,
+				};
+				saveCachedUser(user);
+				// 更新 zustand store
+				useUserStore.getState().setUser(user);
+				return user;
 			})
 			.catch(error => {
 				// 处理被 reject 的 Promise（来自响应拦截器）
