@@ -9,13 +9,15 @@ import {
 	Divider,
 	message,
 	DatePicker,
+	Flex,
+	Tooltip,
 } from "antd";
 import type { TableProps } from "antd";
 import { IVendor, IVendorUpdateParams } from "../../api/vendor";
 import { useEffect, useMemo, useState } from "react";
 import { IProductJoinStockIn, IStockIn } from "../../api/stockIn";
-import { PlusSquareOutlined } from "@ant-design/icons";
-import { getProducts, IProduct } from "../../api/product";
+import { PlusSquareOutlined, QuestionCircleOutlined } from "@ant-design/icons";
+import { getProducts, IProduct, getLatestShelfPriceByProductId } from "../../api/product";
 import { PageOperation } from "../../enum";
 import { PositiveInputNumber } from "../../components/PositiveInputNumber";
 import { useDistinctProducts } from "../../hooks/useDistinctProducts";
@@ -73,7 +75,7 @@ export default function StockInForm(props: StockInFormProps) {
 	};
 
 	// 缓存产品id和供应商的映射关系
-	const makeCacheProductVendorMap = (val: number) => {
+	const makeCacheProductVendorMap = async (val: number) => {
 		if (productVendorMap[val]) {
 			return;
 		}
@@ -84,6 +86,21 @@ export default function StockInForm(props: StockInFormProps) {
 			return;
 		}
 		productVendorMap[val] = productFound.vendor.id;
+	};
+
+	const [shelfPriceMap, setShelfPriceMap] = useState<Partial<Record<number, number>>>({});
+
+	const makeCacheProductShelfPriceMap = async (val: number): Promise<number> => {
+		if (shelfPriceMap[val]) {
+			return shelfPriceMap[val];
+		}
+		const latestShelfPrice = await getLatestShelfPriceByProductId(val);
+
+		if (latestShelfPrice.shelfPrice) {
+			// productShelfPriceMap[val] = latestShelfPrice.shelfPrice as number;
+			setShelfPriceMap(prev => ({ ...prev, [val]: latestShelfPrice.shelfPrice as number }));
+		}
+		return latestShelfPrice.shelfPrice as number;
 	};
 
 	const columnsBase: TableProps<JoinFieldRow>["columns"] = [
@@ -112,7 +129,11 @@ export default function StockInForm(props: StockInFormProps) {
 							style={{ width: "100%" }}
 							placeholder="请选择商品"
 							options={getProductOptionsForRow(row.name)}
-							onChange={makeCacheProductVendorMap}
+							onSelect={async val => {
+								makeCacheProductVendorMap(val);
+								const shelfPrice = await makeCacheProductShelfPriceMap(val);
+								form.setFieldValue(["productJoinStockIn", row.name, "shelfPrice"], shelfPrice);
+							}}
 						/>
 					</Form.Item>
 				);
@@ -142,7 +163,14 @@ export default function StockInForm(props: StockInFormProps) {
 			},
 		},
 		{
-			title: "推荐零售价",
+			title: (
+				<Flex gap={10}>
+					<span>推荐零售价</span>
+					<Tooltip title="推荐零售价是根据商品的历史价格计算得出的，用于指导零售价的设置。第一次进货的商品须手动设置">
+						<QuestionCircleOutlined />
+					</Tooltip>
+				</Flex>
+			),
 			key: "shelfPrice",
 			width: 200,
 			render: (_v, row) => {

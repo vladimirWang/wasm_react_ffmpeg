@@ -102,3 +102,11 @@ export const getProductsByVendorId = async (
 		params,
 	});
 };
+
+export interface ILatestShelfPrice {
+	shelfPrice: number | null;
+}
+// 根据产品id获取最近一次的建议零售价
+export const getLatestShelfPriceByProductId = (productId: number): Promise<ILatestShelfPrice> => {
+	return request.get<ILatestShelfPrice>("/api/product/getLatestShelfPriceByProductId/" + productId);
+};
