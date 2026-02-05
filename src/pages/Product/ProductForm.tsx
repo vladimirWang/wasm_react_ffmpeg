@@ -1,6 +1,7 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useParams } from "react-router-dom";
 import useSWR from "swr";
+import debounce from "lodash/debounce";
 import { IProductUpdateParams, checkProductNameExistedInVendor } from "../../api/product";
 import {
 	Button,
@@ -75,6 +76,17 @@ export default function ProductForm({
 
 	const productId = id ? Number(id) : undefined;
 
+	// 防抖：停止输入 500ms 后再请求，仅用于输入过程中的即时反馈（失焦/提交时校验器会直接请求）
+	const debouncedCheckName = useMemo(
+		() =>
+			debounce((vendorId: number, productName: string) => {
+				checkProductNameExistedInVendor(vendorId, { productName }).then(existed =>
+					form.setFields([{ name: "name", errors: existed ? ["商品名称已存在"] : [] }])
+				);
+			}, 500),
+		[form]
+	);
+
 	return (
 		<div className="p-6">
 			<Form
@@ -110,27 +122,31 @@ export default function ProductForm({
 						<Form.Item<IProductUpdateParams>
 							label="名称"
 							name="name"
+							validateTrigger={["onBlur", "onSubmit"]}
 							rules={[
 								{ required: true, message: "请输入名称" },
 								{
 									validator: async (_, value) => {
-										// checkProductNameExistedInVendor
 										const vendorId = form.getFieldValue("vendorId");
-										if (!vendorId) {
-											return Promise.resolve();
-										}
-										const existedProduct = await checkProductNameExistedInVendor(vendorId, {
+										if (!vendorId) return Promise.resolve();
+										const existed = await checkProductNameExistedInVendor(vendorId, {
 											productName: value,
 										});
-										console.log("validate productName: ", value, existedProduct);
-										return existedProduct
+										return existed
 											? Promise.reject(new Error("商品名称已存在"))
 											: Promise.resolve();
 									},
 								},
 							]}
 						>
-							<Input placeholder="请输入产品名称" />
+							<Input
+								placeholder="请输入产品名称"
+								onChange={e => {
+									const vendorId = form.getFieldValue("vendorId");
+									const value = e.target.value?.trim();
+									if (vendorId && value) debouncedCheckName(vendorId, value);
+								}}
+							/>
 						</Form.Item>
 						<Form.Item<IProductUpdateParams>
 							label="指导零售价"
