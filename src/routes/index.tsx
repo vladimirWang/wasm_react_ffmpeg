@@ -347,6 +347,7 @@ export const routeConfig: ExtendedRouteObject[] = [
 					title: "新建进货记录",
 					icon: <DesktopOutlined />,
 					order: 4,
+					hidden: true,
 				},
 			},
 			{
@@ -356,6 +357,7 @@ export const routeConfig: ExtendedRouteObject[] = [
 					title: "编辑进货记录",
 					icon: <DesktopOutlined />,
 					order: 4,
+					hidden: true,
 				},
 			},
 			{
@@ -365,6 +367,7 @@ export const routeConfig: ExtendedRouteObject[] = [
 					title: "进货记录详情",
 					icon: <DesktopOutlined />,
 					order: 4,
+					hidden: true,
 				},
 			},
 			{
