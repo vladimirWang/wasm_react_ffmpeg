@@ -110,3 +110,12 @@ export interface ILatestShelfPrice {
 export const getLatestShelfPriceByProductId = (productId: number): Promise<ILatestShelfPrice> => {
 	return request.get<ILatestShelfPrice>("/api/product/getLatestShelfPriceByProductId/" + productId);
 };
+
+export const checkProductNameExistedInVendor = (
+	vendorId: number,
+	params: { productName: string }
+) => {
+	return request.get<IProduct>("/api/product/checkProductNameExistedInVendor/" + vendorId, {
+		params,
+	});
+};

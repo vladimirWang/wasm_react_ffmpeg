@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useParams } from "react-router-dom";
 import useSWR from "swr";
-import { IProductUpdateParams } from "../../api/product";
+import { IProductUpdateParams, checkProductNameExistedInVendor } from "../../api/product";
 import {
 	Button,
 	Card,
@@ -110,7 +110,25 @@ export default function ProductForm({
 						<Form.Item<IProductUpdateParams>
 							label="名称"
 							name="name"
-							rules={[{ required: true, message: "请输入名称" }]}
+							rules={[
+								{ required: true, message: "请输入名称" },
+								{
+									validator: async (_, value) => {
+										// checkProductNameExistedInVendor
+										const vendorId = form.getFieldValue("vendorId");
+										if (!vendorId) {
+											return Promise.resolve();
+										}
+										const existedProduct = await checkProductNameExistedInVendor(vendorId, {
+											productName: value,
+										});
+										console.log("validate productName: ", value, existedProduct);
+										return existedProduct
+											? Promise.reject(new Error("商品名称已存在"))
+											: Promise.resolve();
+									},
+								},
+							]}
 						>
 							<Input placeholder="请输入产品名称" />
 						</Form.Item>
