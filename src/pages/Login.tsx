@@ -115,7 +115,14 @@ const Login: React.FC = () => {
 				<Form.Item name="captchaText" rules={[{ required: true, message: "请输入验证码" }]}>
 					<Flex gap={10}>
 						<Input placeholder="请输入验证码" />
-						<img src={captchaSrc} onClick={loadCaptcha} style={{ background: "white" }} />
+						<img
+							src={captchaSrc}
+							width={100}
+							height={40}
+							alt="验证码"
+							onClick={loadCaptcha}
+							style={{ background: "white" }}
+						/>
 					</Flex>
 				</Form.Item>
 				<Form.Item>
