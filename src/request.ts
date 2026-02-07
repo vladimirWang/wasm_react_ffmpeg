@@ -25,7 +25,7 @@ interface CustomAxiosInstance {
 
 // 1. 先封装全局 axios 实例（带拦截器、超时等配置）
 const axiosInstance: AxiosInstance = axios.create({
-	baseURL: import.meta.env.VITE_API_BASE_URL,
+	baseURL: import.meta.env.VITE_API_BASE_URL || "/nodejs_api",
 	timeout: 10000,
 	headers: { "Content-Type": "application/json" },
 });

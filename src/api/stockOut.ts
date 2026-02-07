@@ -40,12 +40,12 @@ type IStockOutsQueryResponse = IPaginationResp<IStockOut>;
 // type IStockOutResponse = IResponse<IStockOut>;
 
 export const getStockOuts = (params: IProductQueryParams): Promise<IStockOutsQueryResponse> => {
-	return request.get<IStockOutsQueryResponse>("/api/stockout", { params });
+	return request.get<IStockOutsQueryResponse>("/stockout", { params });
 };
 
 // 获取出货详情
 export const getStockOutDetailById = async (id: number): Promise<IStockOut> => {
-	return request.get<IStockOut>("/api/stockout/" + id);
+	return request.get<IStockOut>("/stockout/" + id);
 };
 
 // 更新出货记录
@@ -53,14 +53,14 @@ export const updateStockOut = async (
 	id: number,
 	data?: ICreateStockOutParams
 ): Promise<IStockOutsQueryResponse> => {
-	return request.put<IStockOut>("/api/stockout/" + id, data);
+	return request.put<IStockOut>("/stockout/" + id, data);
 };
 
 // 新建出货
 export const createStockOut = (data: ICreateStockOutParams) => {
-	return request.post("/api/stockout/multiple", data);
+	return request.post("/stockout/multiple", data);
 };
 
 export const confirmStockOutCompleted = (id: number) => {
-	return request.patch("/api/stockout/confirmCompleted/" + id);
+	return request.patch("/stockout/confirmCompleted/" + id);
 };

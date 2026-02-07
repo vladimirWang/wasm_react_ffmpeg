@@ -112,7 +112,7 @@ const Vendors: React.FC = () => {
 	// const [products, setProducts] = React.useState<IProduct[]>(data);
 
 	// const loadProducts = async () => {
-	//   // const res = await fetch('/api/product?limit=10&page=1&name=');
+	//   // const res = await fetch('/product?limit=10&page=1&name=');
 	//   // const json = await res.json();
 	//   // setProducts(json.data.list);
 	//   const res = await getProducts({ limit: 10, page: 1, name: '' });

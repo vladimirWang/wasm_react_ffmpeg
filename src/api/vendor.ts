@@ -44,12 +44,12 @@ export interface RegisterParams {
 
 // 获取供应商列表
 export const getVendors = async (data?: IVendorQueryParams): Promise<IVendorsQueryResponse> => {
-	return request.get<IVendorsQueryResponse>("/api/vendor", { params: data });
+	return request.get<IVendorsQueryResponse>("/vendor", { params: data });
 };
 
 // 根据ID获取供应商详情
 export const getVendorDetailById = async (id: number): Promise<IVendor> => {
-	return request.get<IVendor>("/api/vendor/" + id);
+	return request.get<IVendor>("/vendor/" + id);
 	// return Promise.reject({
 	// 	code: 1009,
 	// 	message: "test error",
@@ -66,16 +66,16 @@ export const updateVendorDetailById = (
 	id: number,
 	data: IVendorUpdateParams
 ): Promise<VendorDetailResponse> => {
-	return request.put<VendorDetailResponse>("/api/vendor/" + id, data);
+	return request.put<VendorDetailResponse>("/vendor/" + id, data);
 };
 
 export type IVendorCreateParams = Omit<IVendor, "id" | "createdAt" | "updatedAt" | "isDel">;
 // 创建供应商
 export const createVendor = async (data: IVendorUpdateParams): Promise<VendorDetailResponse> => {
-	return request.post<VendorDetailResponse>("/api/vendor/", data);
+	return request.post<VendorDetailResponse>("/vendor/", data);
 };
 
 export type batchDeleteVendorSchema = { id: number[] };
 export const batchDeleteVendor = async (data: batchDeleteVendorSchema) => {
-	return request.delete("/api/vendor/batch", { data });
+	return request.delete("/vendor/batch", { data });
 };

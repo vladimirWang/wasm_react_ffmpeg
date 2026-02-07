@@ -24,7 +24,7 @@ export type IStockInsQueryResponse = IPaginationResp<IStockIn>;
 
 // 获取进货记录
 export const getStockIns = async (data?: IPagination): Promise<IStockInsQueryResponse> => {
-	return request.get<IStockInsQueryResponse>("/api/stockin", { params: data });
+	return request.get<IStockInsQueryResponse>("/stockin", { params: data });
 };
 
 export interface IProductJoinStockIn extends IProductJoinStockOperation {
@@ -48,7 +48,7 @@ export const createStockIn = async (
 	data?: IStockInCreateParams,
 	config?: { showSuccessMessage: boolean; showErrorMessage?: boolean }
 ): Promise<IStockInsQueryResponse> => {
-	const res = await request.post<IStockInsQueryResponse>("/api/stockin/multiple", data, {
+	const res = await request.post<IStockInsQueryResponse>("/stockin/multiple", data, {
 		showSuccessMessage: config?.showSuccessMessage ?? false, // 登录成功默认显示提示
 	});
 	// await sleep(2000);
@@ -60,7 +60,7 @@ export const createStockIn = async (
 
 // 获取进货记录
 export const getStockInDetailById = async (id: number): Promise<IStockIn> => {
-	return request.get<IStockIn>("/api/stockin/" + id);
+	return request.get<IStockIn>("/stockin/" + id);
 };
 
 // 获取进货记录
@@ -68,7 +68,7 @@ export const updateStockIn = async (
 	id: number,
 	data?: IStockInCreateParams
 ): Promise<IStockInsQueryResponse> => {
-	return request.put<IStockInsQueryResponse>("/api/stockin/" + id, data);
+	return request.put<IStockInsQueryResponse>("/stockin/" + id, data);
 };
 
 // 文件上传接口
@@ -81,7 +81,7 @@ export const uploadStockInFile = async (file: File): Promise<IResponse<any>> => 
 	const token = localStorage.getItem("access_token");
 	const baseURL = import.meta.env.VITE_API_BASE_URL || "";
 
-	const response = await axios.post(`${baseURL}/api/upload/excel`, formData, {
+	const response = await axios.post(`${baseURL}/upload/excel`, formData, {
 		headers: {
 			"Content-Type": "multipart/form-data",
 			...(token && { Authorization: token }),
@@ -93,7 +93,7 @@ export const uploadStockInFile = async (file: File): Promise<IResponse<any>> => 
 
 // 进货单确认完成
 export const confirmStockInCompleted = async (id: number): Promise<IStockIn> => {
-	return request.patch<IStockIn>("/api/stockin/confirmCompleted/" + id);
+	return request.patch<IStockIn>("/stockin/confirmCompleted/" + id);
 };
 
 // 进货单批量删除
@@ -102,5 +102,5 @@ export const batchDeleteStockIn = async (ids: number[]): Promise<IStockIn[]> => 
 		a.append("id", c);
 		return a;
 	}, new URLSearchParams());
-	return request.delete<IStockIn[]>("/api/stockin/batchDelete", { params: p });
+	return request.delete<IStockIn[]>("/stockin/batchDelete", { params: p });
 };

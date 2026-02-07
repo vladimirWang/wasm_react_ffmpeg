@@ -67,12 +67,12 @@ export interface RegisterParams {
 export const getProducts = async (
 	data?: IProductQueryParams | { pagination: false }
 ): Promise<IProductsQueryResponse> => {
-	return request.get<IProductsQueryResponse>("/api/product", { params: data });
+	return request.get<IProductsQueryResponse>("/product", { params: data });
 };
 
 // 根据ID获取产品详情
 export const getProductDetailById = (id: number): Promise<IProduct> => {
-	return request.get<IProduct>("/api/product/" + id);
+	return request.get<IProduct>("/product/" + id);
 };
 
 export type IProductUpdateParams = Partial<
@@ -84,13 +84,13 @@ export const patchProductById = (
 	id: number,
 	data: IProductUpdateParams
 ): Promise<IResponse<IProduct>> => {
-	return request.patch<IProduct>("/api/product/" + id, data);
+	return request.patch<IProduct>("/product/" + id, data);
 };
 
 export type IProductCreateParams = Omit<IProduct, "id" | "createdAt" | "updatedAt" | "isDel">;
 // 新增产品列表
 export const createProduct = async (data: IProductUpdateParams): Promise<IProduct> => {
-	return request.post<IProduct>("/api/product", data);
+	return request.post<IProduct>("/product", data);
 };
 
 // 根据供应商id查询产品
@@ -98,7 +98,7 @@ export const getProductsByVendorId = async (
 	vendorId: number,
 	params?: IProductQueryParams
 ): Promise<IProductsQueryResponse> => {
-	return request.get<IProductsQueryResponse>("/api/product/getProductsByVendorId/" + vendorId, {
+	return request.get<IProductsQueryResponse>("/product/getProductsByVendorId/" + vendorId, {
 		params,
 	});
 };
@@ -108,14 +108,14 @@ export interface ILatestShelfPrice {
 }
 // 根据产品id获取最近一次的建议零售价
 export const getLatestShelfPriceByProductId = (productId: number): Promise<ILatestShelfPrice> => {
-	return request.get<ILatestShelfPrice>("/api/product/getLatestShelfPriceByProductId/" + productId);
+	return request.get<ILatestShelfPrice>("/product/getLatestShelfPriceByProductId/" + productId);
 };
 
 export const checkProductNameExistedInVendor = (
 	vendorId: number,
 	params: { productName: string }
 ) => {
-	return request.get<IProduct>("/api/product/checkProductNameExistedInVendor/" + vendorId, {
+	return request.get<IProduct>("/product/checkProductNameExistedInVendor/" + vendorId, {
 		params,
 	});
 };

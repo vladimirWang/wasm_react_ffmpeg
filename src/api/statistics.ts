@@ -29,7 +29,7 @@ type HotSalesItem = {
 export const getHotSales = (params: getHotSalesParams): Promise<HotSalesItem[]> => {
 	const startDate = dayjs(params.startDate).format("YYYY-MM-DD");
 	const endDate = dayjs(params.endDate).format("YYYY-MM-DD");
-	return request.get<HotSalesItem[]>("/api/statistics/hot-sales", {
+	return request.get<HotSalesItem[]>("/statistics/hot-sales", {
 		params: { startDate, endDate },
 	});
 };
