@@ -36,7 +36,7 @@ export default function ProductForm({
 	const [form] = Form.useForm();
 	const { id } = useParams();
 
-	const [imageUrl, setImageUrl] = useState<string>();
+	const [imageUrl, setImageUrl] = useState<string>(initialValues?.img || "");
 	const [uploading, setUploading] = useState(false);
 	const [submitting, setSubmitting] = useState(false);
 	const [costDrawerOpen, setCostDrawerOpen] = useState(false);
@@ -81,9 +81,11 @@ export default function ProductForm({
 	const debouncedCheckName = useMemo(
 		() =>
 			debounce((vendorId: number, productName: string) => {
-				checkProductNameExistedInVendor(vendorId, { productName }).then(existed =>
-					form.setFields([{ name: "name", errors: existed ? ["商品名称已存在"] : [] }])
-				);
+				if (pageOperation !== "update" || initialValues?.name !== productName) {
+					checkProductNameExistedInVendor(vendorId, { productName }).then(existed =>
+						form.setFields([{ name: "name", errors: existed ? ["商品名称已存在"] : [] }])
+					);
+				}
 			}, 500),
 		[form]
 	);
@@ -141,6 +143,9 @@ export default function ProductForm({
 								{ required: true, message: "请输入名称" },
 								{
 									validator: async (_, value) => {
+										if (pageOperation === "update" && initialValues?.name === value) {
+											return Promise.resolve();
+										}
 										const vendorId = form.getFieldValue("vendorId");
 										if (!vendorId) return Promise.resolve();
 										const existed = await checkProductNameExistedInVendor(vendorId, {
@@ -203,7 +208,14 @@ export default function ProductForm({
 								onChange={handleChange}
 							>
 								{imageUrl ? (
-									<img draggable={false} src={imageUrl} alt="avatar" style={{ width: "100%" }} />
+									<div className="w-[100px] h-[100px] overflow-hidden flex justify-center items-center">
+										<img
+											draggable={false}
+											src={imageUrl}
+											alt="avatar"
+											style={{ width: "100%", objectFit: "cover" }}
+										/>
+									</div>
 								) : (
 									uploadButton
 								)}
