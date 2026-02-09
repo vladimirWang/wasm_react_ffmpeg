@@ -1,4 +1,4 @@
-import request from "../request";
+import { nodejsRequest } from "../request";
 import { sleep } from "../utils/common";
 import { IPaginationResp, IPagination, IResponse } from "./commonDef";
 import dayjs from "dayjs";
@@ -29,7 +29,7 @@ type HotSalesItem = {
 export const getHotSales = (params: getHotSalesParams): Promise<HotSalesItem[]> => {
 	const startDate = dayjs(params.startDate).format("YYYY-MM-DD");
 	const endDate = dayjs(params.endDate).format("YYYY-MM-DD");
-	return request.get<HotSalesItem[]>("/statistics/hot-sales", {
+	return nodejsRequest.get<HotSalesItem[]>("/statistics/hot-sales", {
 		params: { startDate, endDate },
 	});
 };

@@ -1,4 +1,4 @@
-import request from "../request";
+import { nodejsRequest } from "../request";
 import { IPaginationResp, IPagination, IResponse } from "./commonDef";
 import { IVendor } from "./vendor";
 
@@ -67,12 +67,12 @@ export interface RegisterParams {
 export const getProducts = async (
 	data?: IProductQueryParams | { pagination: false }
 ): Promise<IProductsQueryResponse> => {
-	return request.get<IProductsQueryResponse>("/product", { params: data });
+	return nodejsRequest.get<IProductsQueryResponse>("/product", { params: data });
 };
 
 // 根据ID获取产品详情
 export const getProductDetailById = (id: number): Promise<IProduct> => {
-	return request.get<IProduct>("/product/" + id);
+	return nodejsRequest.get<IProduct>("/product/" + id);
 };
 
 export type IProductUpdateParams = Partial<
@@ -84,13 +84,13 @@ export const patchProductById = (
 	id: number,
 	data: IProductUpdateParams
 ): Promise<IResponse<IProduct>> => {
-	return request.patch<IProduct>("/product/" + id, data);
+	return nodejsRequest.patch<IProduct>("/product/" + id, data);
 };
 
 export type IProductCreateParams = Omit<IProduct, "id" | "createdAt" | "updatedAt" | "isDel">;
 // 新增产品列表
 export const createProduct = async (data: IProductUpdateParams): Promise<IProduct> => {
-	return request.post<IProduct>("/product", data);
+	return nodejsRequest.post<IProduct>("/product", data);
 };
 
 // 根据供应商id查询产品
@@ -98,7 +98,7 @@ export const getProductsByVendorId = async (
 	vendorId: number,
 	params?: IProductQueryParams
 ): Promise<IProductsQueryResponse> => {
-	return request.get<IProductsQueryResponse>("/product/getProductsByVendorId/" + vendorId, {
+	return nodejsRequest.get<IProductsQueryResponse>("/product/getProductsByVendorId/" + vendorId, {
 		params,
 	});
 };
@@ -108,14 +108,16 @@ export interface ILatestShelfPrice {
 }
 // 根据产品id获取最近一次的建议零售价
 export const getLatestShelfPriceByProductId = (productId: number): Promise<ILatestShelfPrice> => {
-	return request.get<ILatestShelfPrice>("/product/getLatestShelfPriceByProductId/" + productId);
+	return nodejsRequest.get<ILatestShelfPrice>(
+		"/product/getLatestShelfPriceByProductId/" + productId
+	);
 };
 
 export const checkProductNameExistedInVendor = (
 	vendorId: number,
 	params: { productName: string }
 ) => {
-	return request.get<IProduct>("/product/checkProductNameExistedInVendor/" + vendorId, {
+	return nodejsRequest.get<IProduct>("/product/checkProductNameExistedInVendor/" + vendorId, {
 		params,
 	});
 };

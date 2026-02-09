@@ -1,4 +1,4 @@
-import request from "../request";
+import { nodejsRequest } from "../request";
 import { sleep } from "../utils/common";
 import {
 	IPaginationResp,
@@ -24,7 +24,7 @@ export type IStockInsQueryResponse = IPaginationResp<IStockIn>;
 
 // 获取进货记录
 export const getStockIns = async (data?: IPagination): Promise<IStockInsQueryResponse> => {
-	return request.get<IStockInsQueryResponse>("/stockin", { params: data });
+	return nodejsRequest.get<IStockInsQueryResponse>("/stockin", { params: data });
 };
 
 export interface IProductJoinStockIn extends IProductJoinStockOperation {
@@ -48,7 +48,7 @@ export const createStockIn = async (
 	data?: IStockInCreateParams,
 	config?: { showSuccessMessage: boolean; showErrorMessage?: boolean }
 ): Promise<IStockInsQueryResponse> => {
-	const res = await request.post<IStockInsQueryResponse>("/stockin/multiple", data, {
+	const res = await nodejsRequest.post<IStockInsQueryResponse>("/stockin/multiple", data, {
 		showSuccessMessage: config?.showSuccessMessage ?? false, // 登录成功默认显示提示
 	});
 	// await sleep(2000);
@@ -60,7 +60,7 @@ export const createStockIn = async (
 
 // 获取进货记录
 export const getStockInDetailById = async (id: number): Promise<IStockIn> => {
-	return request.get<IStockIn>("/stockin/" + id);
+	return nodejsRequest.get<IStockIn>("/stockin/" + id);
 };
 
 // 获取进货记录
@@ -68,7 +68,7 @@ export const updateStockIn = async (
 	id: number,
 	data?: IStockInCreateParams
 ): Promise<IStockInsQueryResponse> => {
-	return request.put<IStockInsQueryResponse>("/stockin/" + id, data);
+	return nodejsRequest.put<IStockInsQueryResponse>("/stockin/" + id, data);
 };
 
 // 文件上传接口
@@ -93,7 +93,7 @@ export const uploadStockInFile = async (file: File): Promise<IResponse<any>> => 
 
 // 进货单确认完成
 export const confirmStockInCompleted = async (id: number): Promise<IStockIn> => {
-	return request.patch<IStockIn>("/stockin/confirmCompleted/" + id);
+	return nodejsRequest.patch<IStockIn>("/stockin/confirmCompleted/" + id);
 };
 
 // 进货单批量删除
@@ -102,5 +102,5 @@ export const batchDeleteStockIn = async (ids: number[]): Promise<IStockIn[]> => 
 		a.append("id", c);
 		return a;
 	}, new URLSearchParams());
-	return request.delete<IStockIn[]>("/stockin/batchDelete", { params: p });
+	return nodejsRequest.delete<IStockIn[]>("/stockin/batchDelete", { params: p });
 };

@@ -1,4 +1,4 @@
-import request from "../request";
+import { nodejsRequest } from "../request";
 import { IResponse } from "./commonDef";
 
 // 定义登录响应类型
@@ -33,17 +33,17 @@ export const userLogin = (
 	data: LoginParams,
 	config?: { showSuccessMessage?: boolean }
 ): Promise<string> => {
-	return request.post<LoginResponse>("/user/login", data, {
+	return nodejsRequest.post<LoginResponse>("/user/login", data, {
 		showSuccessMessage: config?.showSuccessMessage ?? true, // 登录成功默认显示提示
 	});
 };
 
 export const userRegister = (data: RegisterParams): Promise<RegisterResponse> => {
-	return request.post<RegisterResponse>("/user/register", data);
+	return nodejsRequest.post<RegisterResponse>("/user/register", data);
 };
 
 export const getCurrentUser = (): Promise<IUser> => {
-	return request.get<IUser>("/user/current");
+	return nodejsRequest.get<IUser>("/user/current");
 };
 
 export interface ICaptcha {
@@ -53,12 +53,12 @@ export interface ICaptcha {
 export const getCaptcha = (): Promise<ICaptcha> => {
 	const rnd = Math.random();
 	const rndStr = (rnd + "").slice(2);
-	return request.get<ICaptcha>("/user/captcha?q=" + rndStr);
+	return nodejsRequest.get<ICaptcha>("/user/captcha?q=" + rndStr);
 };
 
 // 发送邮箱验证码
 export const sendEmailVerificationCode = (email: string): Promise<void> => {
-	return request.post<void>("/util/sendEmailVerificationCode", { email });
+	return nodejsRequest.post<void>("/util/sendEmailVerificationCode", { email });
 };
 
 // 验证邮箱
@@ -66,5 +66,5 @@ export const checkEmailVerificationCode = (data: {
 	email: string;
 	verifyCode: string;
 }): Promise<void> => {
-	return request.post<void>("/util/checkEmailValidation", data);
+	return nodejsRequest.post<void>("/util/checkEmailValidation", data);
 };

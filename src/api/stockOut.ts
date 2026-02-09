@@ -1,4 +1,4 @@
-import request from "../request";
+import { nodejsRequest } from "../request";
 import { sleep } from "../utils/common";
 import {
 	IPaginationResp,
@@ -40,12 +40,12 @@ type IStockOutsQueryResponse = IPaginationResp<IStockOut>;
 // type IStockOutResponse = IResponse<IStockOut>;
 
 export const getStockOuts = (params: IProductQueryParams): Promise<IStockOutsQueryResponse> => {
-	return request.get<IStockOutsQueryResponse>("/stockout", { params });
+	return nodejsRequest.get<IStockOutsQueryResponse>("/stockout", { params });
 };
 
 // 获取出货详情
 export const getStockOutDetailById = async (id: number): Promise<IStockOut> => {
-	return request.get<IStockOut>("/stockout/" + id);
+	return nodejsRequest.get<IStockOut>("/stockout/" + id);
 };
 
 // 更新出货记录
@@ -53,14 +53,14 @@ export const updateStockOut = async (
 	id: number,
 	data?: ICreateStockOutParams
 ): Promise<IStockOutsQueryResponse> => {
-	return request.put<IStockOut>("/stockout/" + id, data);
+	return nodejsRequest.put<IStockOut>("/stockout/" + id, data);
 };
 
 // 新建出货
 export const createStockOut = (data: ICreateStockOutParams) => {
-	return request.post("/stockout/multiple", data);
+	return nodejsRequest.post("/stockout/multiple", data);
 };
 
 export const confirmStockOutCompleted = (id: number) => {
-	return request.patch("/stockout/confirmCompleted/" + id);
+	return nodejsRequest.patch("/stockout/confirmCompleted/" + id);
 };
