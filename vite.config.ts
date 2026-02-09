@@ -11,7 +11,7 @@ export default defineConfig({
 				changeOrigin: true,
 			},
 			"/go_api": {
-				target: "http://localhost:3000",
+				target: "http://localhost:8888",
 				changeOrigin: true,
 			},
 		},

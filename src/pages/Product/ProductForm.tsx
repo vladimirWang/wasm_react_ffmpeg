@@ -22,6 +22,7 @@ import { getVendors } from "../../api/vendor";
 import { CostHistoryDrawer } from "./CostHistoryDrawer";
 import { PageOperation } from "../../enum";
 import { PositiveInputNumber } from "../../components/PositiveInputNumber";
+import { uploadFile } from "../../api/util";
 
 export default function ProductForm({
 	initialValues,
@@ -87,6 +88,19 @@ export default function ProductForm({
 		[form]
 	);
 
+	const handleUpload = async (options: any) => {
+		const { file } = options;
+		try {
+			const res = await uploadFile(file);
+			console.log("---res---: ", res);
+			form.setFieldsValue({
+				img: `${res.filePath}`,
+			});
+		} catch (e) {
+			// message.error("上传失败");
+		}
+	};
+
 	return (
 		<div className="p-6">
 			<Form
@@ -148,7 +162,7 @@ export default function ProductForm({
 								}}
 							/>
 						</Form.Item>
-						<Form.Item<IProductUpdateParams>
+						{/* <Form.Item<IProductUpdateParams>
 							label="指导零售价"
 							name="shelfPrice"
 							rules={[
@@ -171,7 +185,7 @@ export default function ProductForm({
 									}}
 								/>
 							</div>
-						</Form.Item>
+						</Form.Item> */}
 						<Form.Item<IProductUpdateParams> label="备注" name="remark">
 							<Input.TextArea showCount maxLength={190} rows={4} placeholder="请输入备注信息" />
 						</Form.Item>
@@ -179,11 +193,12 @@ export default function ProductForm({
 					<section className="flex-1 space-y-4">
 						<Form.Item<IProductUpdateParams> label="产品图片" name="img">
 							<Upload
-								name="avatar"
+								accept={".jpg,.jpeg,.png,.gif,.bmp,.webp"}
+								name="file"
 								listType="picture-card"
 								className="avatar-uploader"
 								showUploadList={false}
-								action="https://660d2bd96ddfa2943b33731c.mockapi.io/api/upload"
+								customRequest={handleUpload}
 								beforeUpload={beforeUpload}
 								onChange={handleChange}
 							>
