@@ -68,3 +68,7 @@ export const checkEmailVerificationCode = (data: {
 }): Promise<void> => {
 	return nodejsRequest.post<void>("/util/checkEmailValidation", data);
 };
+
+export const logout = (): Promise<void> => {
+	return nodejsRequest.post<void>("/user/logout");
+};

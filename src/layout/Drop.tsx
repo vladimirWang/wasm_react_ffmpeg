@@ -4,13 +4,17 @@ import React from "react";
 import { useNavigate } from "react-router-dom";
 import { useUserStore } from "../store/userStore";
 import { clearUserCache } from "../routes";
+import { logout } from "../api/user";
+import { sleep } from "../utils/common";
 
 export default function Drop() {
 	const [rotate, setRotate] = React.useState(false);
 	const navigate = useNavigate();
 	const { user, clearUser } = useUserStore();
 
-	const handleLogout = () => {
+	const handleLogout = async () => {
+		await logout();
+		await sleep(500);
 		// 清除 token
 		localStorage.removeItem("access_token");
 		// 清除用户缓存

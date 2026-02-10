@@ -30,6 +30,7 @@ const stepItems = [
 
 const registerFormInitialValues = {
 	// email: "aachen2012@outlook.com",
+	// email: "184594923@qq.com",
 	// verifyCode: "",
 	// username: "",
 	// password: "123456",
