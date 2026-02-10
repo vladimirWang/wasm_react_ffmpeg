@@ -36,7 +36,7 @@ export default function ProductForm({
 	const [form] = Form.useForm();
 	const { id } = useParams();
 
-	const [imageUrl, setImageUrl] = useState<string>(initialValues?.img || "");
+	const [imageUrl, setImageUrl] = useState<string | undefined>(initialValues?.img);
 	const [uploading, setUploading] = useState(false);
 	const [submitting, setSubmitting] = useState(false);
 	const [costDrawerOpen, setCostDrawerOpen] = useState(false);
