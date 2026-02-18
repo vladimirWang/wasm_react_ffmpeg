@@ -1,4 +1,4 @@
-import React, { useRef, useState } from "react";
+import React, { useMemo, useRef, useState } from "react";
 import { Button, DatePicker, Input, message, Pagination, Space, Table, Tooltip } from "antd";
 import {
 	ArrowDownOutlined,
@@ -43,9 +43,53 @@ const StockIns: React.FC = () => {
 		completedEnd: searchParams.get("completedEnd") || undefined,
 	});
 
+	const swrKey = useMemo(
+		() =>
+			[
+				"stockins",
+				queryParams.page,
+				queryParams.limit,
+				queryParams.productName,
+				queryParams.deletedStart,
+				queryParams.deletedEnd,
+				queryParams.vendorName,
+				queryParams.completedStart,
+				queryParams.completedEnd,
+			] as const,
+		[
+			queryParams.page,
+			queryParams.limit,
+			queryParams.productName,
+			queryParams.deletedStart,
+			queryParams.deletedEnd,
+			queryParams.vendorName,
+			queryParams.completedStart,
+			queryParams.completedEnd,
+		]
+	);
+
 	// 2. 定义SWR的fetcher函数：接收参数，调用getStockIns
-	const fetcher = async (params: IProductQueryParams) => {
-		const res = await getStockIns(params);
+	const fetcher = async ([
+		_tag,
+		page,
+		limit,
+		productName,
+		deletedStart,
+		deletedEnd,
+		vendorName,
+		completedStart,
+		completedEnd,
+	]: typeof swrKey) => {
+		const res = await getStockIns({
+			page,
+			limit,
+			productName: productName ? productName : undefined,
+			deletedStart: deletedStart ? dayjs(deletedStart).format("YYYY-MM-DD") : undefined,
+			deletedEnd: deletedEnd ? dayjs(deletedEnd).format("YYYY-MM-DD") : undefined,
+			vendorName: vendorName ? vendorName : undefined,
+			completedStart: completedStart ? dayjs(completedStart).format("YYYY-MM-DD") : undefined,
+			completedEnd: completedEnd ? dayjs(completedEnd).format("YYYY-MM-DD") : undefined,
+		});
 		return res; // 若你的getProducts返回的是响应体（如res.data），则这里取res.data
 	};
 
@@ -55,7 +99,8 @@ const StockIns: React.FC = () => {
 		isLoading, // 加载状态
 		mutate, // 用于手动刷新数据
 	} = useSWR(
-		queryParams, // SWR的key：参数变化则重新请求
+		swrKey, // SWR的key：参数变化则重新请求
+		// queryParams,
 		fetcher,
 		{
 			// 可选配置：比如页面聚焦时重新验证、禁用自动重试等

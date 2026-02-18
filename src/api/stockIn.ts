@@ -34,7 +34,16 @@ export interface IStockInWithProducts {
 export type IStockInsQueryResponse = IPaginationResp<IStockInWithProducts>;
 
 // 获取进货记录
-export const getStockIns = async (data?: IPagination): Promise<IStockInsQueryResponse> => {
+export const getStockIns = async (
+	data?: {
+		productName?: string;
+		deletedStart?: string;
+		deletedEnd?: string;
+		vendorName?: string;
+		completedStart?: string;
+		completedEnd?: string;
+	} & IPagination
+): Promise<IStockInsQueryResponse> => {
 	return nodejsRequest.get<IStockInsQueryResponse>("/stockin", { params: data });
 };
 

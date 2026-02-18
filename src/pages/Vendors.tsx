@@ -3,11 +3,12 @@ import { Button, Input, message, Modal, Pagination, Space, Table } from "antd";
 import { PlusCircleOutlined, SearchOutlined } from "@ant-design/icons";
 import type { TableProps } from "antd";
 import useSWR from "swr";
-import { Link, useLocation, useNavigate } from "react-router-dom";
+import { Link, useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import { batchDeleteVendor, getVendors, IVendor, IVendorQueryParams } from "../api/vendor";
 import { GlobalModal } from "../components/GlobalModal";
 import DateQuery, { DateQueryValue } from "../components/DateQuery";
 import dayjs from "dayjs";
+import { paramsToSearchParams } from "../utils/common";
 
 const columns: TableProps<IVendor>["columns"] = [
 	{
@@ -59,11 +60,12 @@ const Vendors: React.FC = () => {
 		enabled: false,
 		date: null,
 	});
+	const [searchParams, setSearchParams] = useSearchParams();
 	const [queryParams, setQueryParams] = useState<IVendorQueryParams>({
-		page: 1,
-		limit: 20,
-		name: "",
-		deletedAt: false,
+		page: Number(searchParams.get("page")) || 1,
+		limit: Number(searchParams.get("limit")) || 20,
+		name: searchParams.get("name") || "",
+		// deletedAt: false,
 	});
 
 	const swrKey = useMemo(
@@ -72,7 +74,7 @@ const Vendors: React.FC = () => {
 				"vendors",
 				queryParams.page,
 				queryParams.limit,
-				queryParams.name ?? "",
+				queryParams.name,
 				queryParams.deletedAt,
 			] as const,
 		[queryParams.page, queryParams.limit, queryParams.name, queryParams.deletedAt]
@@ -84,7 +86,7 @@ const Vendors: React.FC = () => {
 			page,
 			limit,
 			name: name === "" ? undefined : name,
-			deletedAt: deletedAt,
+			deletedAt,
 		});
 		return res; // 若你的getProducts返回的是响应体（如res.data），则这里取res.data
 	};
@@ -157,9 +159,11 @@ const Vendors: React.FC = () => {
 		<div className="py-2 px-3">
 			<section className="flex gap-5 mb-5">
 				<Input
-					placeholder="Basic usage"
+					placeholder="供应商名称"
 					value={keyword}
-					onInput={e => setKeyword(e.currentTarget.value)}
+					onChange={e => {
+						setKeyword(e.currentTarget.value);
+					}}
 					allowClear
 				/>
 				{/* <Switch checkedChildren="不查已删除" unCheckedChildren="查已删除"></Switch> */}
@@ -174,24 +178,25 @@ const Vendors: React.FC = () => {
 						{ value: 0, label: "否" },
 					]}
 				></Select> */}
-				<DateQuery value={deletedAtQuery} onChange={setDeletedAtQuery} />
+				{/* <DateQuery value={deletedAtQuery} onChange={setDeletedAtQuery} /> */}
 				<Button
 					icon={<SearchOutlined />}
 					onClick={() => {
-						let deletedAt: boolean | Date = false;
-						if (deletedAtQuery.enabled) {
-							if (deletedAtQuery.date) {
-								deletedAt = deletedAtQuery.date.toDate();
-							} else {
-								deletedAt = true;
-							}
-						}
-						setQueryParams({
+						// let deletedAt: boolean | Date = false;
+						// if (deletedAtQuery.enabled) {
+						// 	if (deletedAtQuery.date) {
+						// 		deletedAt = deletedAtQuery.date.toDate();
+						// 	} else {
+						// 		deletedAt = true;
+						// 	}
+						// }
+						const params = {
 							name: keyword,
 							page: 1,
 							limit: 20,
-							deletedAt,
-						});
+						};
+						setQueryParams(params);
+						setSearchParams(paramsToSearchParams(params));
 					}}
 				></Button>
 				<Button
@@ -230,10 +235,12 @@ const Vendors: React.FC = () => {
 					defaultCurrent={page}
 					onChange={page => {
 						setPage(page);
-						setQueryParams({
+						const params = {
 							...queryParams,
 							page,
-						});
+						};
+						setQueryParams(params);
+						setSearchParams(paramsToSearchParams(params));
 					}}
 				/>
 			</section>

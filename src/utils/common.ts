@@ -101,7 +101,7 @@ export function composePromise<T = any>(...tasks: Array<() => Promise<T>>): Prom
 
 // 参数对象转SearchParams对象
 export function paramsToSearchParams(
-	params: Record<string, string | number | boolean | undefined>
+	params: Record<string, string | number | boolean | undefined | Date>
 ) {
 	// return new URLSearchParams(params).toString();
 	const searchParams = new URLSearchParams();

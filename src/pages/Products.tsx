@@ -4,10 +4,11 @@ import { PlusCircleOutlined, SearchOutlined } from "@ant-design/icons";
 import type { TableProps } from "antd";
 import { IProduct, IProductQueryParams, getProducts } from "../api/product";
 import useSWR from "swr";
-import { Link, useLocation, useNavigate } from "react-router-dom";
+import { Link, useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import mockBarcode from "../assets/barcode.jpg";
 import { GlobalModal } from "../components/GlobalModal";
 import dayjs from "dayjs";
+import { paramsToSearchParams } from "../utils/common";
 
 const Products: React.FC = () => {
 	const [isModalOpen, setIsModalOpen] = useState(false);
@@ -112,10 +113,12 @@ const Products: React.FC = () => {
 		},
 	];
 	const navigate = useNavigate();
+	const [searchParams, setSearchParams] = useSearchParams();
 	const [queryParams, setQueryParams] = useState<IProductQueryParams>({
-		page: 1,
-		limit: 20,
-		productName: "",
+		page: Number(searchParams.get("page")) || 1,
+		limit: Number(searchParams.get("limit")) || 20,
+		productName: searchParams.get("productName") || "",
+		// productName: "",
 	});
 
 	const swrKey = useMemo(
@@ -162,7 +165,7 @@ const Products: React.FC = () => {
 		<div className="py-2 px-3">
 			<section className="flex gap-5">
 				<Input
-					placeholder="Basic usage"
+					placeholder="产品名称"
 					value={keyword}
 					onChange={e => setKeyword(e.currentTarget.value)}
 					allowClear
@@ -170,11 +173,13 @@ const Products: React.FC = () => {
 				<Button
 					icon={<SearchOutlined />}
 					onClick={() => {
-						setQueryParams({
+						const params = {
 							productName: keyword,
 							page: 1,
 							limit: 20,
-						});
+						};
+						setQueryParams(params);
+						setSearchParams(paramsToSearchParams(params));
 					}}
 				></Button>
 				<Button
