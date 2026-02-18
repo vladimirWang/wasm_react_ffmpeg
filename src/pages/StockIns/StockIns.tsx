@@ -19,28 +19,30 @@ import {
 	IStockInWithProducts,
 } from "../../api/stockIn";
 import useSWR from "swr";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import StockOperationUploadModal, {
 	// StockOperationRecordWithComplete,
 	StockOperationUploadModalRefProps,
 } from "../../components/StockOperationUploadModal";
 import dayjs, { Dayjs } from "dayjs";
-import { composePromise } from "../../utils/common";
+import { composePromise, paramsToSearchParams } from "../../utils/common";
 import SearchBox from "../../components/SearchBox";
 
 const StockIns: React.FC = () => {
 	const [fileUploadModalOpen, setFileUploadModalOpen] = useState(false);
 	const navigate = useNavigate();
+	const [searchParams, setSearchParams] = useSearchParams();
 	const [queryParams, setQueryParams] = useState<IProductQueryParams>({
-		page: 1,
-		limit: 20,
-		productName: "",
-		deletedStart: undefined,
-		deletedEnd: undefined,
-		vendorName: "",
-		completedStart: undefined,
-		completedEnd: undefined,
+		page: Number(searchParams.get("page")) || 1,
+		limit: Number(searchParams.get("limit")) || 20,
+		productName: searchParams.get("productName") || "",
+		deletedStart: searchParams.get("deletedStart") || undefined,
+		deletedEnd: searchParams.get("deletedEnd") || undefined,
+		vendorName: searchParams.get("vendorName") || undefined,
+		completedStart: searchParams.get("completedStart") || undefined,
+		completedEnd: searchParams.get("completedEnd") || undefined,
 	});
+
 	// 2. 定义SWR的fetcher函数：接收参数，调用getStockIns
 	const fetcher = async (params: IProductQueryParams) => {
 		const res = await getStockIns(params);
@@ -210,7 +212,14 @@ const StockIns: React.FC = () => {
 					通过文件批量导入
 				</Button>
 			</section>
-			<SearchBox queryParams={queryParams} onSetQueryParams={setQueryParams} />
+			<SearchBox
+				queryParams={queryParams}
+				onSetQueryParams={val => {
+					setQueryParams(val);
+					const sp = paramsToSearchParams(val as any);
+					setSearchParams(sp);
+				}}
+			/>
 		</div>
 	);
 	return (

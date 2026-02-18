@@ -98,3 +98,18 @@ export function composePromise<T = any>(...tasks: Array<() => Promise<T>>): Prom
 		Promise.resolve([] as T[])
 	);
 }
+
+// 参数对象转SearchParams对象
+export function paramsToSearchParams(
+	params: Record<string, string | number | boolean | undefined>
+) {
+	// return new URLSearchParams(params).toString();
+	const searchParams = new URLSearchParams();
+
+	for (const [key, value] of Object.entries(params)) {
+		if (value !== undefined && value.toString() !== "") {
+			searchParams.set(key, encodeURIComponent(value.toString()));
+		}
+	}
+	return searchParams;
+}
