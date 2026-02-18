@@ -11,7 +11,7 @@ import {
 // 进货单状态
 export type StockInStatus = "PENDING" | "COMPLETED";
 export interface IStockIn {
-	totalPrice: number;
+	totalCost: number;
 	remark?: string;
 	readonly id: number;
 	productsJoinStock: [];
@@ -20,7 +20,18 @@ export interface IStockIn {
 	completedAt?: Date;
 	deletedAt?: Date;
 }
-export type IStockInsQueryResponse = IPaginationResp<IStockIn>;
+
+export interface IStockInWithProducts {
+	totalCost: number;
+	remark?: string;
+	readonly id: number;
+	products: IProduct[];
+	status: StockInStatus;
+	createdAt: Date;
+	completedAt?: Date;
+	deletedAt?: Date;
+}
+export type IStockInsQueryResponse = IPaginationResp<IStockInWithProducts>;
 
 // 获取进货记录
 export const getStockIns = async (data?: IPagination): Promise<IStockInsQueryResponse> => {

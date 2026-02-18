@@ -16,6 +16,7 @@ import {
 	StockInRecord,
 	createStockIn,
 	IStockInCreateParams,
+	IStockInWithProducts,
 } from "../../api/stockIn";
 import useSWR from "swr";
 import { Link, useNavigate } from "react-router-dom";
@@ -60,7 +61,7 @@ const StockIns: React.FC = () => {
 		}
 	);
 
-	const columns: TableProps<IStockIn>["columns"] = [
+	const columns: TableProps<IStockInWithProducts>["columns"] = [
 		// {
 		// 	title: "name",
 		// 	dataIndex: "name",
@@ -75,6 +76,27 @@ const StockIns: React.FC = () => {
 			title: "进货单总金额",
 			dataIndex: "totalCost",
 			key: "totalCost",
+		},
+		{
+			title: "产品名称",
+			key: "productNames",
+			render: (_, record) => {
+				const len = record.products.length;
+				if (len === 0) {
+					return "-";
+				}
+
+				const productNames = record.products.map(p => p.productName);
+				return (
+					<Tooltip title={productNames.join(",")}>
+						<span>
+							{len > 1
+								? `${productNames.slice(0, 5).join(",")}...`
+								: record.products[0].productName}
+						</span>
+					</Tooltip>
+				);
+			},
 		},
 		{
 			title: "状态",
@@ -196,7 +218,7 @@ const StockIns: React.FC = () => {
 			{toolBar}
 
 			{error && <div>Error loading products.</div>}
-			<Table<IStockIn>
+			<Table<IStockInWithProducts>
 				size="small"
 				columns={columns}
 				dataSource={stockIns?.list}
