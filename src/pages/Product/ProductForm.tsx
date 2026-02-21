@@ -22,7 +22,8 @@ import { getVendors } from "../../api/vendor";
 import { CostHistoryDrawer } from "./CostHistoryDrawer";
 import { PageOperation } from "../../enum";
 import { PositiveInputNumber } from "../../components/PositiveInputNumber";
-import { uploadFile } from "../../api/util";
+import { checkFileExistedByHash, uploadFile } from "../../api/util";
+import { md5File } from "../../utils/file";
 
 export default function ProductForm({
 	initialValues,
@@ -93,13 +94,24 @@ export default function ProductForm({
 	const handleUpload = async (options: any) => {
 		const { file } = options;
 		try {
-			const res = await uploadFile(file);
+			const md5 = await md5File(file);
+			// const existedRes = await checkFileExistedByHash(md5);
+			// if (existedRes.existed) {
+			// 	form.setFieldsValue({
+			// 		img: `${existedRes.filePath}`,
+			// 	});
+			// 	return;
+			// }
+			const formData = new FormData();
+			formData.append("file", file);
+			formData.append("hash", md5);
+			const res = await uploadFile(formData);
 			console.log("---res---: ", res);
 			form.setFieldsValue({
 				img: `${res.filePath}`,
 			});
 		} catch (e) {
-			// message.error("上传失败");
+			message.error("上传失败: " + (e as Error).message);
 		}
 	};
 

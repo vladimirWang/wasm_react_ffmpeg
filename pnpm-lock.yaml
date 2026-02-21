@@ -62,6 +62,9 @@ importers:
       react-use:
         specifier: ^17.6.0
         version: 17.6.0(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
+      spark-md5:
+        specifier: ^3.0.2
+        version: 3.0.2
       swr:
         specifier: ^2.3.8
         version: 2.3.8(react@19.2.4)
@@ -2688,6 +2691,9 @@ packages:
   source-map@0.6.1:
     resolution: {integrity: sha512-UjgapumWlbMhkBgzT7Ykc5YXUT46F0iKu8SGXq0bcwP5dz/h0Plj6enJqjz1Zbq2l5WaqYnrVbwWOWMyF3F47g==}
     engines: {node: '>=0.10.0'}
+
+  spark-md5@3.0.2:
+    resolution: {integrity: sha512-wcFzz9cDfbuqe0FZzfi2or1sgyIrsDwmPwfZC4hiNidPdPINjeUwNfv5kldczoEAcjl9Y1L3SM7Uz2PUEQzxQw==}
 
   spawn-command@0.0.2:
     resolution: {integrity: sha512-zC8zGoGkmc8J9ndvml8Xksr1Amk9qBujgbF0JAIWO7kXr43w0h/0GJNM/Vustixu+YE8N/MTrQ7N31FvHUACxQ==}
@@ -5724,6 +5730,8 @@ snapshots:
   source-map@0.5.6: {}
 
   source-map@0.6.1: {}
+
+  spark-md5@3.0.2: {}
 
   spawn-command@0.0.2: {}
 

@@ -8,12 +8,21 @@ interface IUploadFileResponse {
 	filePath: string;
 	baseUrl: string;
 }
-export const uploadFile = (file: File): Promise<IUploadFileResponse> => {
-	const formData = new FormData();
-	formData.append("file", file);
-	return goRequest.post<IUploadFileResponse>("/user/upload", formData, {
+export const uploadFile = (fd: FormData): Promise<IUploadFileResponse> => {
+	// const formData = new FormData();
+	return goRequest.post<IUploadFileResponse>("/user/upload", fd, {
 		headers: {
 			"Content-Type": "multipart/form-data",
 		},
 	});
+};
+
+interface IFileExisted {
+	existed: boolean;
+	filePath: string;
+	baseUrl: string;
+}
+
+export const checkFileExistedByHash = (hash: string): Promise<IFileExisted> => {
+	return goRequest.get<IFileExisted>("/user/checkFileExisted/" + hash);
 };
