@@ -95,13 +95,6 @@ export default function ProductForm({
 		const { file } = options;
 		try {
 			const md5 = await md5File(file);
-			// const existedRes = await checkFileExistedByHash(md5);
-			// if (existedRes.existed) {
-			// 	form.setFieldsValue({
-			// 		img: `${existedRes.filePath}`,
-			// 	});
-			// 	return;
-			// }
 			const formData = new FormData();
 			formData.append("file", file);
 			formData.append("hash", md5);
