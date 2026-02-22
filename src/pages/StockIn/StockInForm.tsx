@@ -10,7 +10,7 @@ import {
 	Flex,
 	Tooltip,
 } from "antd";
-import type { TableProps } from "antd";
+import type { DatePickerProps, TableProps } from "antd";
 import { IVendor, IVendorUpdateParams } from "../../api/vendor";
 import { useEffect, useMemo, useState } from "react";
 import { IProductJoinStockIn, IStockIn } from "../../api/stockIn";
@@ -220,6 +220,9 @@ export default function StockInForm(props: StockInFormProps) {
 	useEffect(() => {
 		loadProducts();
 	}, []);
+	const disabledDate: DatePickerProps["disabledDate"] = current => {
+		return current && current > dayjs().endOf("day");
+	};
 	return (
 		<Form
 			disabled={!editable}
@@ -280,7 +283,7 @@ export default function StockInForm(props: StockInFormProps) {
 			</Form.List>
 			<Divider />
 			<Form.Item name="createdAt" label="创建日期">
-				<DatePicker />
+				<DatePicker placeholder="请选择创建日期" disabledDate={disabledDate} />
 			</Form.Item>
 			<Form.Item<IVendorUpdateParams> label="备注" name="remark" style={{ marginBottom: 24 }}>
 				<Input.TextArea
