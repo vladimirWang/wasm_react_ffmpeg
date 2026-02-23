@@ -48,6 +48,7 @@ const Login: React.FC = () => {
 			} else {
 				console.error("Unknown error: ", error);
 			}
+			form.resetFields(["captchaText"]);
 			// 登录失败刷新验证码
 			loadCaptcha();
 		}
