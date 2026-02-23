@@ -86,6 +86,20 @@ export default function StockInForm(props: StockInFormProps) {
 		productVendorMap[val] = productFound.vendor.id;
 	};
 
+	// 非新建状态下，初始化产品供应商映射关系
+	useEffect(() => {
+		const productJoinStockInValue = props.initialValues?.productJoinStockIn;
+		if (!Array.isArray(productJoinStockInValue) || productJoinStockInValue.length === 0) {
+			return;
+		}
+		if (allProducts.length === 0) {
+			return;
+		}
+		productJoinStockInValue.forEach(item => {
+			makeCacheProductVendorMap(item.productId);
+		});
+	}, [props.initialValues?.productJoinStockIn, allProducts]);
+
 	const [shelfPriceMap, setShelfPriceMap] = useState<Partial<Record<number, number>>>({});
 
 	const makeCacheProductShelfPriceMap = async (val: number): Promise<number> => {

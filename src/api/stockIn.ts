@@ -14,7 +14,7 @@ export interface IStockIn {
 	totalCost: number;
 	remark?: string;
 	readonly id: number;
-	productsJoinStock: [];
+	productJoinStockIn: IProductJoinStockIn[];
 	status: StockInStatus;
 	createdAt: Date;
 	completedAt?: Date;
