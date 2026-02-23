@@ -259,7 +259,7 @@ export default function StockInForm(props: StockInFormProps) {
 				if (!props.onFinishCallback) return;
 				setLoading(true);
 				try {
-					let { productJoinStockIn } = values;
+					let { productJoinStockIn, remark } = values;
 					// 找出产品对应的供应商信息
 					for (const item of productJoinStockIn) {
 						let vendorId = productVendorMap[item.productId];
@@ -267,6 +267,9 @@ export default function StockInForm(props: StockInFormProps) {
 							throw new Error(`商品id: ${item.productId} 没有找到对应的供应商信息`);
 						}
 						item.vendorId = vendorId;
+					}
+					if (remark === null) {
+						values.remark = undefined;
 					}
 					await props.onFinishCallback(values || []);
 				} catch (e: unknown) {
