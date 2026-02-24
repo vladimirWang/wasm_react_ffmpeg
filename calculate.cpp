@@ -45,6 +45,34 @@ size_t getIntSize() {
     return sizeof(int); // 返回当前编译环境下 int 的字节数
 }
 
+// 文件分片：计算分片数量
+// fileSize: 文件总大小(字节), chunkSize: 每片大小(字节)，默认 100MB
+EMSCRIPTEN_KEEPALIVE
+int getChunkCount(int fileSize, int chunkSize) {
+    if (chunkSize <= 0 || fileSize <= 0) return 0;
+    return (fileSize + chunkSize - 1) / chunkSize;
+}
+
+// 文件分片：将指定分片复制到 outputPtr
+// 返回：实际复制的字节数，-1 表示参数错误
+// fileData: 文件数据指针, fileDataLen: 文件长度, chunkSize: 每片大小, chunkIndex: 分片索引(从0开始)
+// outputPtr: 输出缓冲区，必须预分配至少 chunkSize 字节
+EMSCRIPTEN_KEEPALIVE
+int copyChunk(unsigned char* fileData, int fileDataLen, int chunkSize, int chunkIndex, unsigned char* outputPtr) {
+    if (fileData == NULL || outputPtr == NULL || fileDataLen <= 0 || chunkSize <= 0 || chunkIndex < 0) {
+        return -1;
+    }
+    int chunkCount = getChunkCount(fileDataLen, chunkSize);
+    if (chunkIndex >= chunkCount) return -1;
+
+    int offset = chunkIndex * chunkSize;
+    int remaining = fileDataLen - offset;
+    int copySize = (remaining < chunkSize) ? remaining : chunkSize;
+
+    memcpy(outputPtr, fileData + offset, copySize);
+    return copySize;
+}
+
 #ifdef USE_FFMPEG
 // 自定义 AVIOContext 读取函数，从内存缓冲区读取数据
 struct BufferData {

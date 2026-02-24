@@ -106,7 +106,7 @@ mkdir -p public
 # 第五步：编译生成胶水代码到 public 目录（output.js 和 output.wasm）
 echo -e "${GREEN}开始编译胶水代码：emcc ${SOURCE_FILE} -o public/output.js${NC}"
 echo -e "${YELLOW}编译选项：${NC}"
-echo -e "  - EXPORTED_FUNCTIONS: _sumArray, _calculateFileSize, _getIntSize, _findAudioStreamIndex, _malloc, _free"
+echo -e "  - EXPORTED_FUNCTIONS: _sumArray, _calculateFileSize, _getIntSize, _getChunkCount, _copyChunk, _findAudioStreamIndex, _malloc, _free"
 echo -e "  - EXPORTED_RUNTIME_METHODS: ccall, cwrap, HEAP32, HEAP8, HEAP16, HEAPU8, HEAPU16, HEAPU32, HEAPF32, HEAPF64"
 echo -e "  - NO_EXIT_RUNTIME=1"
 echo -e "  - ALLOW_MEMORY_GROWTH=1 (允许内存动态增长，支持大文件)"
@@ -120,7 +120,7 @@ emcc ${SOURCE_FILE} -o public/output.js \
     ${FFMPEG_DEFINE} \
     ${FFMPEG_INCLUDE} \
     ${FFMPEG_LIBS} \
-    -s EXPORTED_FUNCTIONS='["_sumArray","_calculateFileSize", "_getIntSize","_findAudioStreamIndex","_malloc","_free"]' \
+    -s EXPORTED_FUNCTIONS='["_sumArray","_calculateFileSize", "_getIntSize","_getChunkCount","_copyChunk","_findAudioStreamIndex","_malloc","_free"]' \
     -s EXPORTED_RUNTIME_METHODS='["ccall","cwrap","HEAP32","HEAP8","HEAP16","HEAPU8","HEAPU16","HEAPU32","HEAPF32","HEAPF64"]' \
     -s NO_EXIT_RUNTIME=1 \
     -s ALLOW_MEMORY_GROWTH=1 \
