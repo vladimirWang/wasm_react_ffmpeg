@@ -28,7 +28,7 @@ export const requestGenerator = (baseUrl: string) => {
 	const axiosInstance: AxiosInstance = axios.create({
 		baseURL: baseUrl,
 		timeout: 10000,
-		headers: { "Content-Type": "application/json" },
+		// headers: { "Content-Type": "application/json" },
 	});
 
 	// 请求拦截器：统一添加 Token

@@ -16,12 +16,7 @@ export const uploadFile = async (file: File): Promise<IUploadFileResponse> => {
 
 	const md5 = await md5File(file);
 	formData.append("hash", md5);
-	// const formData = new FormData();
-	return goRequest.post<IUploadFileResponse>("/user/upload", formData, {
-		headers: {
-			"Content-Type": "multipart/form-data",
-		},
-	});
+	return goRequest.post<IUploadFileResponse>("/user/upload", formData);
 };
 
 interface IFileExisted {
@@ -51,9 +46,5 @@ export const checkAndUploadFile = async (file: File): Promise<IUploadFileRespons
 
 // 上传分片文件
 export const uploadChunkFile = async (formData: FormData): Promise<IUploadFileResponse> => {
-	return goRequest.post<IUploadFileResponse>("/user/uploadChunkFile", formData, {
-		headers: {
-			"Content-Type": "multipart/form-data",
-		},
-	});
+	return goRequest.post<IUploadFileResponse>("/user/uploadChunkFile", formData);
 };

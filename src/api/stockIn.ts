@@ -103,7 +103,7 @@ export const uploadStockInFile = async (file: File): Promise<IResponse<any>> => 
 
 	const response = await axios.post(`${baseURL}/upload/excel`, formData, {
 		headers: {
-			"Content-Type": "multipart/form-data",
+			// "Content-Type": "multipart/form-data",
 			...(token && { Authorization: token }),
 		},
 	});
