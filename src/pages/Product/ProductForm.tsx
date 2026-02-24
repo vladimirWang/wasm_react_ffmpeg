@@ -102,17 +102,53 @@ export default function ProductForm({
 
 	const handleUpload = async (options: any) => {
 		const { file } = options;
+		// try {
+		// 	console.log("module: ", module);
+		// 	if (!module) return;
+		// 	const chunks = await chunkFileWithWasm(file, module);
+		// 	console.log(`共 ${chunks.length} 个分片`);
+		// 	chunks.forEach((chunk, i) => {
+		// 		console.log(`分片 ${i}: ${chunk.length} 字节`);
+		// 	});
+		// } catch (e) {
+		// 	message.error("上传失败: " + (e as Error).message);
+		// }
 
+		// 分片上传
 		try {
-			// const res = await checkAndUploadFile(file);
-			const res = await uploadFile(file);
-			console.log("---res---: ", res);
-			form.setFieldsValue({
-				img: `${res.filePath}`,
+			if (!module) return;
+			const hash = await md5File(file);
+			const chunks = await chunkFileWithWasm(file, module);
+			console.log("chunks length: ", chunks.length);
+			const tasks = chunks.map(async (chunk, index) => {
+				const formData = new FormData();
+				const arrayBuffer = chunk.buffer.slice(
+					chunk.byteOffset,
+					chunk.byteOffset + chunk.byteLength
+				) as ArrayBuffer;
+				const blob = new Blob([arrayBuffer]);
+				formData.append("file", blob);
+				formData.append("hash", hash);
+				formData.append("index", String(index));
+				const chunkHash = await md5File(blob);
+				formData.append("chunkHash", chunkHash);
+				return uploadChunkFile(formData);
 			});
+			await Promise.all(tasks);
+			message.success("上传成功");
 		} catch (e) {
 			message.error("上传失败: " + (e as Error).message);
 		}
+		// try {
+		// 	// const res = await checkAndUploadFile(file);
+		// 	const res = await uploadFile(file);
+		// 	console.log("---res---: ", res);
+		// 	form.setFieldsValue({
+		// 		img: `${res.filePath}`,
+		// 	});
+		// } catch (e) {
+		// 	message.error("上传失败: " + (e as Error).message);
+		// }
 	};
 	return (
 		<div className="p-6">
