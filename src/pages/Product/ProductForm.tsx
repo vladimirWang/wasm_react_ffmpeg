@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useContext, useMemo, useState } from "react";
 import { useParams } from "react-router-dom";
 import useSWR from "swr";
 import debounce from "lodash/debounce";
@@ -22,8 +22,15 @@ import { getVendors } from "../../api/vendor";
 import { CostHistoryDrawer } from "./CostHistoryDrawer";
 import { PageOperation } from "../../enum";
 import { PositiveInputNumber } from "../../components/PositiveInputNumber";
-import { checkFileExistedByHash, uploadFile } from "../../api/util";
-import { md5File } from "../../utils/file";
+import {
+	checkAndUploadFile,
+	checkFileExistedByHash,
+	uploadChunkFile,
+	uploadFile,
+} from "../../api/util";
+import { chunkFileWithWasm, md5File } from "../../utils/file";
+import { EmscriptenModule } from "../../types/wasm";
+import { ModuleContext } from "../../context/moduleContext";
 
 export default function ProductForm({
 	initialValues,
@@ -34,6 +41,7 @@ export default function ProductForm({
 	onFinishCallback?: (values: IProductUpdateParams) => Promise<void>;
 	pageOperation: PageOperation;
 }) {
+	const module = useContext(ModuleContext);
 	const [form] = Form.useForm();
 	const { id } = useParams();
 
@@ -43,11 +51,12 @@ export default function ProductForm({
 	const [costDrawerOpen, setCostDrawerOpen] = useState(false);
 
 	const beforeUpload = (file: RcFile) => {
-		const isJpgOrPng = file.type === "image/jpeg" || file.type === "image/png";
-		if (!isJpgOrPng) {
-			message.error("You can only upload JPG/PNG file!");
-		}
-		return isJpgOrPng;
+		return true;
+		// const isJpgOrPng = file.type === "image/jpeg" || file.type === "image/png";
+		// if (!isJpgOrPng) {
+		// 	message.error("You can only upload JPG/PNG file!");
+		// }
+		// return isJpgOrPng;
 	};
 	const handleChange = (info: any) => {
 		const status = info?.file?.status as string | undefined;
@@ -93,12 +102,10 @@ export default function ProductForm({
 
 	const handleUpload = async (options: any) => {
 		const { file } = options;
+
 		try {
-			const md5 = await md5File(file);
-			const formData = new FormData();
-			formData.append("file", file);
-			formData.append("hash", md5);
-			const res = await uploadFile(formData);
+			// const res = await checkAndUploadFile(file);
+			const res = await uploadFile(file);
 			console.log("---res---: ", res);
 			form.setFieldsValue({
 				img: `${res.filePath}`,
@@ -107,9 +114,9 @@ export default function ProductForm({
 			message.error("上传失败: " + (e as Error).message);
 		}
 	};
-
 	return (
 		<div className="p-6">
+			{/* <strong>{typeof theme.ccall}</strong> */}
 			<Form
 				disabled={pageOperation === "view"}
 				form={form}
@@ -203,7 +210,7 @@ export default function ProductForm({
 					<section className="flex-1 space-y-4">
 						<Form.Item<IProductUpdateParams> label="产品图片" name="img">
 							<Upload
-								accept={".jpg,.jpeg,.png,.gif,.bmp,.webp"}
+								// accept={".jpg,.jpeg,.png,.gif,.bmp,.webp"}
 								name="file"
 								listType="picture-card"
 								className="avatar-uploader"

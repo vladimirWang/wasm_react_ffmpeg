@@ -10,10 +10,12 @@ import Editor from "./pages/Editor";
 import { router } from "./routes";
 import "./App.css";
 import { RouterProvider } from "react-router-dom";
+import { ModuleContext } from "./context/moduleContext";
 
 function App() {
 	const [wasmReady, setWasmReady] = useState(false);
 	const [error, setError] = useState<string | null>(null);
+	const [module, setModule] = useState<EmscriptenModule | null>(null);
 
 	useEffect(() => {
 		// 检查是否已经加载过脚本
@@ -51,6 +53,7 @@ function App() {
 				setError("WASM 模块加载失败");
 			};
 		}
+		setModule(window.Module);
 
 		// 动态加载 WASM 胶水代码
 		const script = document.createElement("script");
@@ -66,9 +69,9 @@ function App() {
 			// 不删除脚本，因为可能被其他组件使用
 		};
 	}, []);
-
+	// window.Module
 	return (
-		<div>
+		<ModuleContext value={module}>
 			<div>
 				{/* <div className="status">
           {!wasmReady && !error && (
@@ -98,7 +101,7 @@ function App() {
 			<Suspense fallback={<div>Loading...</div>}>
 				<RouterProvider router={router} />
 			</Suspense>
-		</div>
+		</ModuleContext>
 	);
 }
 
