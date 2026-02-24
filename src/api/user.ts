@@ -34,7 +34,7 @@ export const userLogin = (
 	config?: { showSuccessMessage?: boolean }
 ): Promise<string> => {
 	return nodejsRequest.post<LoginResponse>("/user/login", data, {
-		showSuccessMessage: config?.showSuccessMessage ?? true, // 登录成功默认显示提示
+		showSuccessMessage: config?.showSuccessMessage, // 登录成功默认显示提示
 	});
 };
 
