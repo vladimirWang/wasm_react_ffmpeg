@@ -111,7 +111,6 @@ const fetchCurrentUser = async (): Promise<IUser | null> => {
 	try {
 		userPromise = getCurrentUser()
 			.then(res => {
-				console.log("fetchCurrentUser res: ", res);
 				// 检查是否是直接的 user 对象（有 userId 或 email 等用户属性）
 				// 处理字段映射：如果 API 返回的是 userId，需要映射到 id
 				const user: IUser = {
