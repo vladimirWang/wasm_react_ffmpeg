@@ -20,7 +20,9 @@ async function fetchCostHistory(productId: number): Promise<CostHistoryPoint[]> 
 		const item = it as Partial<IProductHistoryCostItem> | number;
 		const value = typeof item === "number" ? item : Number(item.value);
 		const timeRaw =
-			typeof item === "object" && item ? (item.createdAt ?? item.updatedAt ?? item.time ?? item.date) : undefined;
+			typeof item === "object" && item
+				? (item.createdAt ?? item.updatedAt ?? item.time ?? item.date)
+				: undefined;
 		const time = timeRaw ? dayjs(timeRaw).format("YYYY-MM-DD HH:mm") : `#${idx + 1}`;
 		return { time, cost: value };
 	});
@@ -39,9 +41,13 @@ export function CostHistoryDrawer({
 		data: costHistory,
 		isLoading: costHistoryLoading,
 		error: costHistoryError,
-	} = useSWR(open && productId ? ["product-cost-history", productId] : null, () => fetchCostHistory(productId!), {
-		revalidateOnFocus: false,
-	});
+	} = useSWR(
+		open && productId ? ["product-cost-history", productId] : null,
+		() => fetchCostHistory(productId!),
+		{
+			revalidateOnFocus: false,
+		}
+	);
 
 	const lineConfig = useMemo(() => {
 		return {
@@ -59,8 +65,8 @@ export function CostHistoryDrawer({
 			open={open}
 			onClose={onClose}
 			title="历史成本（最近 10 条）"
-			width={720}
-			destroyOnClose
+			size={720}
+			destroyOnHidden={true}
 		>
 			{!productId ? (
 				<Empty description="创建产品时暂无历史成本" />
@@ -78,4 +84,3 @@ export function CostHistoryDrawer({
 		</Drawer>
 	);
 }
-
