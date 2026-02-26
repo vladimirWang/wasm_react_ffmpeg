@@ -5,9 +5,15 @@ import type { EmscriptenModule } from "../types/wasm";
 export const DEFAULT_CHUNK_SIZE = 100 * 1024 * 1024;
 
 // 分块读取大文件，避免内存占用过大
-export async function md5File(file: File | Blob): Promise<string> {
+export async function md5File(
+	file: File | Blob,
+	chunkSize: number = 2 * 1024 * 1024
+): Promise<string> {
+	if (!file) {
+		throw new Error("file is required");
+	}
 	const spark = new SparkMD5.ArrayBuffer();
-	const chunkSize = 2 * 1024 * 1024; // 2MB
+	// const chunkSize = 2 * 1024 * 1024; // 2MB
 	let offset = 0;
 
 	while (offset < file.size) {
