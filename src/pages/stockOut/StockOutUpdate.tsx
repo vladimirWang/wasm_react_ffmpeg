@@ -22,7 +22,9 @@ export default function StockInUpdate() {
 	// const [joinData, setJoinData] = useState<IProductJoinStockIn[]>([]);
 	const { data, isLoading, error } = useSWR(id, fetcher, { revalidateOnFocus: false });
 	const onFinishCallback = async (
-		formValue: { remark?: string } & { productJoinStockOut: IProductJoinStockOut[] }
+		formValue: { remark?: string; createdAt?: string } & {
+			productJoinStockOut: IProductJoinStockOut[];
+		}
 	) => {
 		try {
 			await updateStockOut(Number(id), formValue);
