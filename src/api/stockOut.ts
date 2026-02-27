@@ -30,7 +30,7 @@ export interface StockOutRecord extends StockOperationRecord {
 	price: number;
 }
 
-export interface ICreateStockOutParams {
+export interface IStockOutCreateParams {
 	remark?: string;
 	productJoinStockOut: IProductJoinStockOut[];
 	createdAt?: string;
@@ -51,16 +51,29 @@ export const getStockOutDetailById = async (id: number): Promise<IStockOut> => {
 // 更新出货记录
 export const updateStockOut = async (
 	id: number,
-	data?: ICreateStockOutParams
+	data?: IStockOutCreateParams
 ): Promise<IStockOutsQueryResponse> => {
 	return nodejsRequest.put<IStockOut>("/stockout/" + id, data);
 };
 
 // 新建出货
-export const createStockOut = (data: ICreateStockOutParams) => {
-	return nodejsRequest.post("/stockout/multiple", data);
+export const createStockOut = (
+	data: IStockOutCreateParams,
+	options?: { showSuccessMessage?: boolean }
+) => {
+	return nodejsRequest.post("/stockout/multiple", data, {
+		showSuccessMessage: options?.showSuccessMessage ?? true,
+	});
 };
 
 export const confirmStockOutCompleted = (id: number) => {
 	return nodejsRequest.patch("/stockout/confirmCompleted/" + id);
+};
+
+export const batchDeleteStockOut = async (ids: number[]): Promise<IStockIn[]> => {
+	const p = ids.reduce((a, c) => {
+		a.append("id", c);
+		return a;
+	}, new URLSearchParams());
+	return nodejsRequest.delete<IStockIn[]>("/stockout/batchDelete", { params: p });
 };

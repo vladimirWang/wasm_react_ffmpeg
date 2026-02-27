@@ -1,5 +1,5 @@
 import React, { useRef, useState } from "react";
-import { Button, Input, Pagination, Space, Table, Tooltip } from "antd";
+import { Button, Input, message, Pagination, Space, Table, Tooltip } from "antd";
 import {
 	CheckCircleOutlined,
 	CloseCircleOutlined,
@@ -13,6 +13,8 @@ import {
 	IStockOut,
 	confirmStockOutCompleted,
 	createStockOut,
+	batchDeleteStockOut,
+	IStockOutCreateParams,
 } from "../../api/stockOut";
 import useSWR from "swr";
 import { Link, useNavigate } from "react-router-dom";
@@ -27,6 +29,7 @@ import SearchBox from "../../components/SearchBox";
 const StockOuts: React.FC = () => {
 	const [fileUploadModalOpen, setFileUploadModalOpen] = useState(false);
 
+	const [selectedRowKeys, setSelectedRowKeys] = useState<React.Key[]>([]);
 	const stockOperationUploadModalRef = useRef<StockOperationUploadModalRefProps>(null);
 	const navigate = useNavigate();
 	const [queryParams, setQueryParams] = useState<IProductQueryParams>({
@@ -146,14 +149,14 @@ const StockOuts: React.FC = () => {
 		},
 	];
 
-	const handleConfirm = async (groupedRecords: StockOutRecord[][]) => {
-		const tasks = groupedRecords.map((recordSet, recordSetIndex) => () => {
+	const handleConfirm = async (data: { group: StockOutRecord[][]; flat: StockOutRecord[] }) => {
+		const tasks = data.group.map((recordSet, recordSetIndex) => () => {
 			const params = {
 				createdAt: recordSet[0].createdAt,
 				productJoinStockOut: recordSet,
 			};
 			return (
-				createStockOut(params)
+				createStockOut(params as IStockOutCreateParams, { showSuccessMessage: false })
 					// 处理成功与失败情况的导入结果展示
 					.then(res => {
 						stockOperationUploadModalRef.current?.onItemFinish(recordSetIndex, true);
@@ -167,6 +170,7 @@ const StockOuts: React.FC = () => {
 		});
 		try {
 			await composePromise(...tasks);
+			message.success(`成功导入出货单${data.group.length}笔，包含商品${data.flat.length}件`);
 		} finally {
 			return Promise.resolve();
 		}
@@ -207,6 +211,17 @@ const StockOuts: React.FC = () => {
 				dataSource={stockIns?.list}
 				rowKey={"id"}
 				loading={isLoading}
+				rowSelection={{
+					selectedRowKeys,
+					getCheckboxProps: record => {
+						return {
+							disabled: record.status === "COMPLETED" || record.deletedAt !== null,
+						};
+					},
+					onChange: values => {
+						setSelectedRowKeys(values);
+					},
+				}}
 				pagination={false}
 				onRow={record => ({
 					onClick: () => {
@@ -215,7 +230,21 @@ const StockOuts: React.FC = () => {
 				})}
 			/>
 			<br />
-			<section className="flex justify-end">
+			<section className="flex justify-between">
+				<Button
+					danger
+					size="small"
+					onClick={async () => {
+						try {
+							await batchDeleteStockOut(selectedRowKeys as number[]);
+							setSelectedRowKeys([]);
+						} finally {
+							mutate();
+						}
+					}}
+				>
+					删除选中 ({selectedRowKeys.length})
+				</Button>
 				<Pagination
 					total={stockIns?.total}
 					showTotal={(total, range) => `${range[0]}-${range[1]} of ${total} items`}
