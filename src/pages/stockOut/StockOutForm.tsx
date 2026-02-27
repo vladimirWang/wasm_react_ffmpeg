@@ -47,45 +47,9 @@ export default function StockOutForm(props: StockInFormProps) {
 
 	type JoinFieldRow = { key: number; name: number };
 
+	const [productVendorMap, setProductVendorMap] = useState<Partial<Record<number, number>>>({});
+
 	const columnsBase: TableProps<JoinFieldRow>["columns"] = [
-		{
-			title: "#",
-			width: 60,
-			align: "center",
-			render: (_v, _r, idx) => {
-				return <span style={{ fontWeight: 500 }}>{idx + 1}</span>;
-			},
-		},
-		{
-			title: "商品名称",
-			key: "productId",
-			width: 200,
-			render: (_v, row) => {
-				return (
-					// <VendorProductTree
-					// 	onChange={(vendorId: number, productId: number) => {
-					// 		console.log("vendorId: ", vendorId, "; productId: ", productId);
-					// 	}}
-					// />
-					<Form.Item
-						name={[row.name, "productId"]}
-						style={{ marginBottom: 0 }}
-						rules={[{ required: true, message: "请选择商品" }]}
-					>
-						<Select
-							disabled={!editable}
-							allowClear={true}
-							style={{ width: "100%" }}
-							placeholder="请选择商品"
-							options={restProducts.map(item => ({
-								value: item.id,
-								label: item.name,
-							}))}
-						/>
-					</Form.Item>
-				);
-			},
-		},
 		{
 			title: "价格",
 			key: "price",
@@ -103,22 +67,6 @@ export default function StockOutForm(props: StockInFormProps) {
 							style={{ width: "100%" }}
 							addonAfter="元"
 						/>
-					</Form.Item>
-				);
-			},
-		},
-		{
-			title: "数量",
-			key: "count",
-			width: 150,
-			render: (_v, row) => {
-				return (
-					<Form.Item
-						name={[row.name, "count"]}
-						style={{ marginBottom: 0 }}
-						rules={[{ required: true, message: "请输入数量" }]}
-					>
-						<PositiveInputNumber disabled={!editable} min={1} style={{ width: "100%" }} />
 					</Form.Item>
 				);
 			},
@@ -170,6 +118,18 @@ export default function StockOutForm(props: StockInFormProps) {
 						if (!props.onFinishCallback) return;
 						setLoading(true);
 						try {
+							const { productJoinStockOut, remark } = values;
+							// 找出产品对应的供应商信息
+							for (const item of productJoinStockOut) {
+								let vendorId = productVendorMap[item.productId];
+								if (!vendorId) {
+									throw new Error(`商品id: ${item.productId} 没有找到对应的供应商信息`);
+								}
+								item.vendorId = vendorId;
+							}
+							if (remark === null) {
+								values.remark = undefined;
+							}
 							await props.onFinishCallback(values);
 						} catch (e: unknown) {
 						} finally {
@@ -181,6 +141,7 @@ export default function StockOutForm(props: StockInFormProps) {
 					<Form.List name="productJoinStockOut">
 						{(fields, { add, remove }) => (
 							<StockOperationTable<IProductJoinStockOut>
+								onUpdateProductVendorMap={setProductVendorMap}
 								editable={editable}
 								pageOperation={props.pageOperation}
 								columnsBase={columnsBase}

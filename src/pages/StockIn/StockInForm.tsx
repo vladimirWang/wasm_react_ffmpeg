@@ -31,14 +31,10 @@ interface StockInFormProps {
 	initialValues?: IStockIn;
 }
 
-// 产品id与供应商id的映射
-const productVendorMap: Partial<Record<number, number>> = {};
-
 export default function StockInForm(props: StockInFormProps) {
 	const [loading, setLoading] = useState(false);
 	const [form] = Form.useForm();
 
-	const [allProducts, setAllProducts] = useState<IProduct[]>([]);
 	const editable = useMemo(() => {
 		return props.pageOperation !== "view";
 	}, [props.pageOperation]);
@@ -49,56 +45,7 @@ export default function StockInForm(props: StockInFormProps) {
 
 	const productJoinStockInData: IProductJoinStockIn[] = Form.useWatch("productJoinStockIn", form);
 
-	// 根据其他航的选项，加载本行产品数据
-	const getProductOptionsForRow = (rowIndex: number) => {
-		const usedByOtherRows = new Set<number>();
-		(productJoinStockInData || []).forEach((p, idx) => {
-			// 只排除“其它行”已选的商品；本行当前值必须保留，才能在编辑态正常显示 label
-			if (idx === rowIndex) return;
-			if (!p || typeof p.productId !== "number") return;
-			usedByOtherRows.add(p.productId);
-		});
-
-		return allProducts
-			.filter(item => !usedByOtherRows.has(item.id))
-			.map(item => {
-				const vendorInfo = item.vendor;
-				if (!vendorInfo) {
-					return { value: item.id, label: item.name };
-				}
-				const withVendorName =
-					vendorInfo.name.length > 5 ? vendorInfo.name.slice(0, 5) + "..." : vendorInfo.name;
-				return { value: item.id, label: withVendorName + "/" + item.name };
-			});
-	};
-
-	// 缓存产品id和供应商的映射关系
-	const makeCacheProductVendorMap = async (val: number) => {
-		if (productVendorMap[val]) {
-			return;
-		}
-		const productFound = allProducts.find(item => {
-			return item.id === val;
-		});
-		if (!productFound || !productFound.vendor) {
-			return;
-		}
-		productVendorMap[val] = productFound.vendor.id;
-	};
-
-	// 非新建状态下，初始化产品供应商映射关系
-	useEffect(() => {
-		const productJoinStockInValue = props.initialValues?.productJoinStockIn;
-		if (!Array.isArray(productJoinStockInValue) || productJoinStockInValue.length === 0) {
-			return;
-		}
-		if (allProducts.length === 0) {
-			return;
-		}
-		productJoinStockInValue.forEach(item => {
-			makeCacheProductVendorMap(item.productId);
-		});
-	}, [props.initialValues?.productJoinStockIn, allProducts]);
+	const [allProducts, setAllProducts] = useState<IProduct[]>([]);
 
 	const [shelfPriceMap, setShelfPriceMap] = useState<Partial<Record<number, number>>>({});
 
@@ -116,41 +63,6 @@ export default function StockInForm(props: StockInFormProps) {
 	};
 
 	const columnsBase: TableProps<JoinFieldRow>["columns"] = [
-		{
-			title: "#",
-			width: 30,
-			align: "center",
-			render: (_v, _r, idx) => {
-				return <span style={{ fontWeight: 500 }}>{idx + 1}</span>;
-			},
-		},
-		{
-			title: "商品名称",
-			key: "productId",
-			width: 200,
-			render: (_v, row) => {
-				return (
-					<Form.Item
-						name={[row.name, "productId"]}
-						style={{ marginBottom: 0 }}
-						rules={[{ required: true, message: "请选择商品" }]}
-					>
-						<Select
-							disabled={!editable}
-							allowClear={true}
-							style={{ width: "100%" }}
-							placeholder="请选择商品"
-							options={getProductOptionsForRow(row.name)}
-							onSelect={async val => {
-								makeCacheProductVendorMap(val);
-								const shelfPrice = await makeCacheProductShelfPriceMap(val);
-								form.setFieldValue(["productJoinStockIn", row.name, "shelfPrice"], shelfPrice);
-							}}
-						/>
-					</Form.Item>
-				);
-			},
-		},
 		{
 			title: "成本价",
 			key: "cost",
@@ -204,22 +116,6 @@ export default function StockInForm(props: StockInFormProps) {
 				);
 			},
 		},
-		{
-			title: "数量",
-			key: "count",
-			width: 150,
-			render: (_v, row) => {
-				return (
-					<Form.Item
-						name={[row.name, "count"]}
-						style={{ marginBottom: 0 }}
-						rules={[{ required: true, message: "请输入数量" }]}
-					>
-						<PositiveInputNumber disabled={!editable} min={1} style={{ width: "100%" }} />
-					</Form.Item>
-				);
-			},
-		},
 	];
 
 	const loadProducts = async () => {
@@ -237,6 +133,7 @@ export default function StockInForm(props: StockInFormProps) {
 	const disabledDate: DatePickerProps["disabledDate"] = current => {
 		return current && current > dayjs().endOf("day");
 	};
+	const [productVendorMap, setProductVendorMap] = useState<Partial<Record<number, number>>>({});
 	return (
 		<Form
 			disabled={!editable}
@@ -284,6 +181,7 @@ export default function StockInForm(props: StockInFormProps) {
 				{(fields, { add, remove }) => (
 					<>
 						<StockOperationTable<IProductJoinStockIn>
+							onUpdateProductVendorMap={setProductVendorMap}
 							editable={editable}
 							pageOperation={props.pageOperation}
 							columnsBase={columnsBase}
@@ -293,6 +191,10 @@ export default function StockInForm(props: StockInFormProps) {
 							allData={allProducts}
 							onAdd={() => {
 								add({ productId: undefined, cost: 1, count: 1, shelfPrice: 1 });
+							}}
+							onSelectProduct={async (val, row) => {
+								const shelfPrice = await makeCacheProductShelfPriceMap(val);
+								form.setFieldValue(["productJoinStockIn", row.name, "shelfPrice"], shelfPrice);
 							}}
 						/>
 					</>
