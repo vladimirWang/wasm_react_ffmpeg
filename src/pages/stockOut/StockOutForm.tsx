@@ -4,7 +4,7 @@ import { IVendorUpdateParams } from "../../api/vendor";
 import { useEffect, useMemo, useState } from "react";
 import { IProductJoinStockOut, IStockOut } from "../../api/stockOut";
 import { PlusSquareOutlined } from "@ant-design/icons";
-import { getProducts, IProduct } from "../../api/product";
+import { getProductDetailById, getProducts, IProduct } from "../../api/product";
 import { PageOperation } from "../../enum";
 import { PositiveInputNumber } from "../../components/PositiveInputNumber";
 import { useDistinctProducts } from "../../hooks/useDistinctProducts";
@@ -50,6 +50,7 @@ export default function StockOutForm(props: StockInFormProps) {
 	type JoinFieldRow = { key: number; name: number };
 
 	const [productVendorMap, setProductVendorMap] = useState<Partial<Record<number, number>>>({});
+	const [productBalanceMap, setProductBalanceMap] = useState<Partial<Record<number, number>>>({});
 
 	const columnsBase: TableProps<JoinFieldRow>["columns"] = [
 		{
@@ -68,6 +69,31 @@ export default function StockOutForm(props: StockInFormProps) {
 							min={1}
 							style={{ width: "100%" }}
 							addonAfter="元"
+						/>
+					</Form.Item>
+				);
+			},
+		},
+		{
+			title: "数量",
+			key: "count",
+			width: 150,
+			render: (_v, row) => {
+				const rowValue = (productJoinStockOutData || [])[row.name];
+				const productId = rowValue?.productId;
+				const balance =
+					!productId || !productBalanceMap[productId] ? 999 : productBalanceMap[productId];
+				return (
+					<Form.Item
+						name={[row.name, "count"]}
+						style={{ marginBottom: 0 }}
+						rules={[{ required: true, message: "请输入数量" }]}
+					>
+						<PositiveInputNumber
+							disabled={!editable}
+							min={1}
+							style={{ width: "100%" }}
+							max={balance}
 						/>
 					</Form.Item>
 				);
@@ -143,6 +169,19 @@ export default function StockOutForm(props: StockInFormProps) {
 						allData={allProducts}
 						onAdd={() => {
 							add({ productId: undefined, price: 1, count: 1 });
+						}}
+						onSelectProduct={async val => {
+							try {
+								const result = await getProductDetailById(val);
+								if (!result) {
+									message.error("商品不存在");
+									return;
+								}
+								console.log("product detail result: ", result);
+								setProductBalanceMap(prev => ({ ...prev, [val]: result.balance }));
+							} catch (e) {
+								message.error((e as Error).message);
+							}
 						}}
 					/>
 				)}

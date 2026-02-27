@@ -117,6 +117,22 @@ export default function StockInForm(props: StockInFormProps) {
 				);
 			},
 		},
+		{
+			title: "数量",
+			key: "count",
+			width: 150,
+			render: (_v, row) => {
+				return (
+					<Form.Item
+						name={[row.name, "count"]}
+						style={{ marginBottom: 0 }}
+						rules={[{ required: true, message: "请输入数量" }]}
+					>
+						<PositiveInputNumber disabled={!editable} min={1} style={{ width: "100%" }} />
+					</Form.Item>
+				);
+			},
+		},
 	];
 
 	const loadProducts = async () => {
