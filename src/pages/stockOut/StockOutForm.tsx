@@ -1,5 +1,5 @@
-import { Button, Card, Form, Input, Select, Space, Divider, message } from "antd";
-import type { TableProps } from "antd";
+import { Button, Card, Form, Input, Select, Space, Divider, message, DatePicker } from "antd";
+import type { DatePickerProps, TableProps } from "antd";
 import { IVendorUpdateParams } from "../../api/vendor";
 import { useEffect, useMemo, useState } from "react";
 import { IProductJoinStockOut, IStockOut } from "../../api/stockOut";
@@ -9,6 +9,8 @@ import { PageOperation } from "../../enum";
 import { PositiveInputNumber } from "../../components/PositiveInputNumber";
 import { useDistinctProducts } from "../../hooks/useDistinctProducts";
 import StockOperationTable from "../../components/StockOperationTable";
+import { disabledFuture } from "../../utils/common";
+import dayjs from "dayjs";
 // import VendorProductTree from "../../components/VendorProductTree";
 
 interface StockInFormProps {
@@ -91,102 +93,92 @@ export default function StockOutForm(props: StockInFormProps) {
 		form
 	);
 
-	// 剩下未选中过的商品
-	const restProducts = useDistinctProducts<IProduct>(allProducts, productJoinStockOutData ?? []);
-
 	return (
-		<div style={{ padding: "24px", background: "#f5f5f5", minHeight: "100vh" }}>
-			<Card
-				title="出库单信息"
-				style={{
-					maxWidth: 1200,
-					margin: "0 auto",
-					boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
-					borderRadius: "8px",
-				}}
-			>
-				<Form
-					disabled={!editable}
-					form={form}
-					name="basic"
-					initialValues={{
-						...props.initialValues,
-					}}
-					labelCol={{ span: 2 }}
-					wrapperCol={{ span: 18 }}
-					onFinish={async (values: StockInFormValues) => {
-						if (!props.onFinishCallback) return;
-						setLoading(true);
-						try {
-							const { productJoinStockOut, remark } = values;
-							// 找出产品对应的供应商信息
-							for (const item of productJoinStockOut) {
-								let vendorId = productVendorMap[item.productId];
-								if (!vendorId) {
-									throw new Error(`商品id: ${item.productId} 没有找到对应的供应商信息`);
-								}
-								item.vendorId = vendorId;
-							}
-							if (remark === null) {
-								values.remark = undefined;
-							}
-							await props.onFinishCallback(values);
-						} catch (e: unknown) {
-						} finally {
-							setLoading(false);
+		<Form
+			disabled={!editable}
+			form={form}
+			name="basic"
+			initialValues={{
+				...props.initialValues,
+				createdAt: props.initialValues?.createdAt
+					? dayjs(props.initialValues.createdAt)
+					: undefined,
+			}}
+			labelCol={{ span: 2 }}
+			wrapperCol={{ span: 18 }}
+			onFinish={async (values: StockInFormValues) => {
+				if (!props.onFinishCallback) return;
+				setLoading(true);
+				try {
+					const { productJoinStockOut, remark } = values;
+					// 找出产品对应的供应商信息
+					for (const item of productJoinStockOut) {
+						let vendorId = productVendorMap[item.productId];
+						if (!vendorId) {
+							throw new Error(`商品id: ${item.productId} 没有找到对应的供应商信息`);
 						}
-					}}
-					autoComplete="off"
-				>
-					<Form.List name="productJoinStockOut">
-						{(fields, { add, remove }) => (
-							<StockOperationTable<IProductJoinStockOut>
-								onUpdateProductVendorMap={setProductVendorMap}
-								editable={editable}
-								pageOperation={props.pageOperation}
-								columnsBase={columnsBase}
-								fields={fields}
-								remove={remove}
-								currentValues={productJoinStockOutData ?? []}
-								allData={allProducts}
-								onAdd={() => {
-									add({ productId: undefined, price: 1, count: 1 });
-								}}
-							/>
-						)}
-					</Form.List>
-					<Divider />
+						item.vendorId = vendorId;
+					}
+					if (remark === null) {
+						values.remark = undefined;
+					}
+					await props.onFinishCallback(values);
+				} catch (e: unknown) {
+				} finally {
+					setLoading(false);
+				}
+			}}
+			autoComplete="off"
+		>
+			<Form.List name="productJoinStockOut">
+				{(fields, { add, remove }) => (
+					<StockOperationTable<IProductJoinStockOut>
+						onUpdateProductVendorMap={setProductVendorMap}
+						editable={editable}
+						pageOperation={props.pageOperation}
+						columnsBase={columnsBase}
+						fields={fields}
+						remove={remove}
+						currentValues={productJoinStockOutData ?? []}
+						allData={allProducts}
+						onAdd={() => {
+							add({ productId: undefined, price: 1, count: 1 });
+						}}
+					/>
+				)}
+			</Form.List>
+			<Divider />
+			<Form.Item name="createdAt" label="创建日期">
+				<DatePicker placeholder="请选择创建日期" disabledDate={disabledFuture} />
+			</Form.Item>
+			<Form.Item<IVendorUpdateParams> label="备注" name="remark" style={{ marginBottom: 24 }}>
+				<Input.TextArea
+					showCount
+					maxLength={190}
+					rows={4}
+					placeholder="请输入备注信息（可选）"
+					style={{ resize: "none" }}
+				/>
+			</Form.Item>
 
-					<Form.Item<IVendorUpdateParams> label="备注" name="remark" style={{ marginBottom: 24 }}>
-						<Input.TextArea
-							showCount
-							maxLength={190}
-							rows={4}
-							placeholder="请输入备注信息（可选）"
-							style={{ resize: "none" }}
-						/>
-					</Form.Item>
-
-					{props.pageOperation !== "view" && (
-						<Form.Item label={null} style={{ marginBottom: 0 }}>
-							<Space>
-								<Button
-									type="primary"
-									htmlType="submit"
-									loading={loading}
-									size="large"
-									style={{ minWidth: 120 }}
-								>
-									提交
-								</Button>
-								<Button htmlType="reset" size="large" onClick={() => form.resetFields()}>
-									重置
-								</Button>
-							</Space>
-						</Form.Item>
-					)}
-				</Form>
-			</Card>
-		</div>
+			{props.pageOperation !== "view" && (
+				<Form.Item label={null} style={{ marginBottom: 0 }}>
+					<Space>
+						<Button
+							type="primary"
+							htmlType="submit"
+							loading={loading}
+							size="large"
+							style={{ minWidth: 120 }}
+						>
+							提交
+						</Button>
+						<Button htmlType="reset" size="large" onClick={() => form.resetFields()}>
+							重置
+						</Button>
+					</Space>
+				</Form.Item>
+			)}
+		</Form>
 	);
 }

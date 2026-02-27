@@ -1,4 +1,6 @@
 import _ from "lodash";
+import dayjs from "dayjs";
+import type { DatePickerProps } from "antd";
 
 /**
  * 将 Excel 日期序列号转为 JS Date（情况 A：解析得到的是数字）。
@@ -116,4 +118,9 @@ export function paramsToSearchParams(
 
 export function getTrueType(obj: any): string {
 	return Object.prototype.toString.call(obj).slice(8, -1).toLowerCase();
+}
+
+// 禁用未来日期
+export function disabledFuture(current: Dayjs): boolean {
+	return current && current > dayjs().endOf("day");
 }

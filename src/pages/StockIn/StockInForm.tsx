@@ -21,6 +21,7 @@ import { PositiveInputNumber } from "../../components/PositiveInputNumber";
 import { useDistinctProducts } from "../../hooks/useDistinctProducts";
 import StockOperationTable, { JoinFieldRow } from "../../components/StockOperationTable";
 import dayjs from "dayjs";
+import { disabledFuture } from "../../utils/common";
 // import VendorProductTree from "../../components/VendorProductTree";
 
 interface StockInFormProps {
@@ -130,9 +131,7 @@ export default function StockInForm(props: StockInFormProps) {
 	useEffect(() => {
 		loadProducts();
 	}, []);
-	const disabledDate: DatePickerProps["disabledDate"] = current => {
-		return current && current > dayjs().endOf("day");
-	};
+
 	const [productVendorMap, setProductVendorMap] = useState<Partial<Record<number, number>>>({});
 	return (
 		<Form
@@ -202,7 +201,7 @@ export default function StockInForm(props: StockInFormProps) {
 			</Form.List>
 			<Divider />
 			<Form.Item name="createdAt" label="创建日期">
-				<DatePicker placeholder="请选择创建日期" disabledDate={disabledDate} />
+				<DatePicker placeholder="请选择创建日期" disabledDate={disabledFuture} />
 			</Form.Item>
 			<Form.Item<IVendorUpdateParams> label="备注" name="remark" style={{ marginBottom: 24 }}>
 				<Input.TextArea
