@@ -13,6 +13,7 @@ import { StockOperationRecord } from "../api/commonDef";
 const { Dragger } = Upload;
 
 interface StockOperationUploadModalProps<T> {
+	results: number[];
 	columns: TableProps<T>["columns"];
 	open: boolean;
 	onCancel: () => void;
@@ -47,6 +48,7 @@ const StockOperationUploadModal = <T extends StockOperationRecord>(
 		onConfirm,
 		requiredFields,
 		columns,
+		results,
 	}: StockOperationUploadModalProps<T>,
 	ref: React.Ref<StockOperationUploadModalRefProps>
 ) => {
@@ -203,6 +205,11 @@ const StockOperationUploadModal = <T extends StockOperationRecord>(
 		}
 	};
 
+	const [segments, setSegments] = useState<{ start: number; length: number }[]>([
+		// { start: 0, length: 2 },
+		// { start: 2, length: 3 },
+	]);
+
 	// 自定义上传方法 - 改为前端解析
 	const customRequest = async (options: any) => {
 		const { file, onSuccess: onUploadSuccess, onError } = options;
@@ -218,6 +225,10 @@ const StockOperationUploadModal = <T extends StockOperationRecord>(
 				const previousLength = previous.reduce((a, c) => {
 					return a + c.length;
 				}, 0);
+
+				setSegments(prev => {
+					return [...prev, { start: previousLength, length: record.length }];
+				});
 				importedRecordBatchTmp[index] = [previousLength, previousLength + record.length];
 			});
 			setImportedRecordBatch(importedRecordBatchTmp);
@@ -333,10 +344,35 @@ const StockOperationUploadModal = <T extends StockOperationRecord>(
 	];
 	const resultColumns: TableProps<T>["columns"] = [
 		{
+			title: "入(出)库单id",
+			key: "id",
+			width: 100,
+			render: (_, _record, index) => {
+				const segmentIndex = segments.findIndex(
+					segment => index >= segment.start && index < segment.start + segment.length
+				);
+				if (segmentIndex === -1) {
+					return "-";
+				}
+				return results[segmentIndex];
+			},
+			onCell: (_, index) => {
+				const match = segments.find(segment => index == segment.start);
+				if (match) {
+					return {
+						rowSpan: match.length,
+					};
+				}
+				return {
+					rowSpan: 0,
+				};
+			},
+		},
+		{
 			title: "匹配结果",
 			key: "matchResult",
 			fixed: "right",
-			width: 100,
+			width: 60,
 			render: (_, record) => {
 				const product = products.find(p => p.id === record.productId);
 				const vendor = vendors.find(v => v.id === record.vendorId);
@@ -352,7 +388,7 @@ const StockOperationUploadModal = <T extends StockOperationRecord>(
 			title: "导入结果",
 			key: "success",
 			fixed: "right",
-			width: 100,
+			width: 60,
 			render: (_, record) => {
 				if (record.success === undefined) return null;
 				return record.success ? (
@@ -370,7 +406,7 @@ const StockOperationUploadModal = <T extends StockOperationRecord>(
 			title="批量导入结果"
 			onCancel={handleModalCancel}
 			footer={null}
-			width={800}
+			width={900}
 			confirmLoading={uploading}
 		>
 			<Steps

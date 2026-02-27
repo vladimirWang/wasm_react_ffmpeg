@@ -139,6 +139,7 @@ const StockOuts: React.FC = () => {
 			),
 		},
 	];
+	const [results, setResults] = useState<number[]>([]);
 
 	const batchOperationColumns: TableProps<StockOutRecord>["columns"] = [
 		{
@@ -159,6 +160,7 @@ const StockOuts: React.FC = () => {
 				createStockOut(params as IStockOutCreateParams, { showSuccessMessage: false })
 					// 处理成功与失败情况的导入结果展示
 					.then(res => {
+						setResults(prev => [...prev, res.id]);
 						stockOperationUploadModalRef.current?.onItemFinish(recordSetIndex, true);
 						return res;
 					})
@@ -260,6 +262,7 @@ const StockOuts: React.FC = () => {
 				/>
 			</section>
 			<StockOperationUploadModal<StockOutRecord>
+				results={results}
 				columns={batchOperationColumns}
 				requiredFields={["productId", "count", "price", "vendorId"]}
 				ref={stockOperationUploadModalRef}

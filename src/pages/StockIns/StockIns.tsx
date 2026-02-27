@@ -211,6 +211,8 @@ const StockIns: React.FC = () => {
 
 	const [selectedRowKeys, setSelectedRowKeys] = useState<React.Key[]>([]);
 
+	const [results, setResults] = useState<number[]>([]);
+
 	// 确认导入（串行调用 createStockIn，避免并发过多）
 	const handleConfirm = async (data: { group: StockInRecord[][]; flat: StockInRecord[] }) => {
 		const tasks = data.group.map((recordSet, recordSetIndex) => () => {
@@ -222,6 +224,7 @@ const StockIns: React.FC = () => {
 				createStockIn(params as IStockInCreateParams, { showSuccessMessage: false })
 					// 处理成功与失败情况的导入结果展示
 					.then(res => {
+						setResults(prev => [...prev, res.id]);
 						stockOperationUploadModalRef.current?.onItemFinish(recordSetIndex, true);
 						return res;
 					})
@@ -328,6 +331,7 @@ const StockIns: React.FC = () => {
 				/>
 			</section>
 			<StockOperationUploadModal<StockInRecord>
+				results={results}
 				columns={batchOperationColumns}
 				requiredFields={["productId", "vendorId", "count", "cost"]}
 				ref={stockOperationUploadModalRef}

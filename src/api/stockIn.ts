@@ -67,8 +67,8 @@ export interface IStockInCreateParams {
 export const createStockIn = async (
 	data?: IStockInCreateParams,
 	config?: { showSuccessMessage: boolean; showErrorMessage?: boolean }
-): Promise<IStockInsQueryResponse> => {
-	const res = await nodejsRequest.post<IStockInsQueryResponse>("/stockin/multiple", data, {
+): Promise<IStockIn> => {
+	const res = await nodejsRequest.post<IStockIn>("/stockin/multiple", data, {
 		showSuccessMessage: config?.showSuccessMessage ?? false, // 登录成功默认显示提示
 	});
 	// await sleep(2000);
