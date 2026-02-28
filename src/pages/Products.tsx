@@ -79,19 +79,19 @@ const Products: React.FC = () => {
 			dataIndex: "stockOutPending",
 			key: "stockOutPending",
 		},
-		{
-			title: "产品编码",
-			dataIndex: "productCode",
-			key: "productCode",
-			onCell: (record, rowIndex) => {
-				return {
-					onClick() {
-						console.log("click： ", record, rowIndex);
-						showModal();
-					},
-				};
-			},
-		},
+		// {
+		// 	title: "产品编码",
+		// 	dataIndex: "productCode",
+		// 	key: "productCode",
+		// 	onCell: (record, rowIndex) => {
+		// 		return {
+		// 			onClick() {
+		// 				console.log("click： ", record, rowIndex);
+		// 				showModal();
+		// 			},
+		// 		};
+		// 	},
+		// },
 		{
 			title: "更新时间",
 			dataIndex: "updatedAt",
