@@ -25,7 +25,12 @@ import StockOperationUploadModal, {
 	StockOperationUploadModalRefProps,
 } from "../../components/StockOperationUploadModal";
 import dayjs, { Dayjs } from "dayjs";
-import { composePromise, paramsToSearchParams } from "../../utils/common";
+import {
+	composePromise,
+	composePromise2,
+	getBitMask,
+	paramsToSearchParams,
+} from "../../utils/common";
 import SearchBox from "../../components/SearchBox";
 
 const StockIns: React.FC = () => {
@@ -204,6 +209,12 @@ const StockIns: React.FC = () => {
 			key: "cost",
 			width: 100,
 		},
+		{
+			title: "推荐零售价",
+			dataIndex: "shelfPrice",
+			key: "shelfPrice",
+			width: 100,
+		},
 	];
 
 	const stockOperationUploadModalRef = useRef<StockOperationUploadModalRefProps>(null);
@@ -214,32 +225,87 @@ const StockIns: React.FC = () => {
 	const [results, setResults] = useState<number[]>([]);
 
 	// 确认导入（串行调用 createStockIn，避免并发过多）
-	const handleConfirm = async (data: { group: StockInRecord[][]; flat: StockInRecord[] }) => {
-		const tasks = data.group.map((recordSet, recordSetIndex) => () => {
-			const params = {
-				createdAt: recordSet[0].createdAt,
-				productJoinStockIn: recordSet,
-			};
-			return (
-				createStockIn(params as IStockInCreateParams, { showSuccessMessage: false })
-					// 处理成功与失败情况的导入结果展示
+	const handleConfirm = async (data: {
+		group: StockInRecord[][];
+		flat: StockInRecord[];
+		uniqueGroups: StockInRecord[][][];
+	}) => {
+		// 逻辑为并发执行产品id不同的产品进货单
+		// 一组并发执行完毕后，执行下一个分组
+		setResults(Array.from({ length: data.group.length }, () => -1));
+		// 把productId与所在group的index映射起来
+		const maskToGroupIndexMap: Map<number, number> = data.group.reduce((a, c, i) => {
+			const mask = getBitMask<StockInRecord>(c, r => r.productId);
+			a.set(mask, i);
+			return a;
+		}, new Map());
+		// 串行执行的任务
+		const tasks = data.uniqueGroups.map((uniqueGroup, uniqueGroupIndex) => () => {
+			// const params = {
+			// 	createdAt: uniqueGroup[0].createdAt,
+			// 	productJoinStockIn: uniqueGroup,
+			// };
+			// return createStockIn(params as IStockInCreateParams, { showSuccessMessage: false });
+			// 并发执行的任务
+			const concurrentTasks = uniqueGroup.map((recordSet, recordSetIndex) => {
+				const params = {
+					createdAt: recordSet[0].createdAt,
+					productJoinStockIn: recordSet,
+				};
+				return createStockIn(params as IStockInCreateParams, { showSuccessMessage: false })
 					.then(res => {
-						setResults(prev => [...prev, res.id]);
+						const mask = getBitMask<StockInRecord>(recordSet, r => r.productId);
+						const groupIndex = maskToGroupIndexMap.get(mask);
+						if (groupIndex !== undefined) {
+							setResults(prev => {
+								return prev.map((item, index) => (index === groupIndex ? res.id : item));
+							});
+						}
 						stockOperationUploadModalRef.current?.onItemFinish(recordSetIndex, true);
 						return res;
 					})
-					.catch(e => {
+					.catch(err => {
 						stockOperationUploadModalRef.current?.onItemFinish(recordSetIndex, false);
-						return Promise.reject(e);
-					})
-			);
+						return Promise.reject(err);
+					});
+			});
+			return Promise.all(concurrentTasks);
 		});
 		try {
-			await composePromise(...tasks);
-			message.success(`成功导入进货单${data.group.length}笔，包含商品${data.flat.length}件`);
+			await composePromise2(...tasks);
+			message.success(`成功导入进货单${data.uniqueGroups.length}笔，包含商品${data.flat.length}件`);
+		} catch (error) {
+			console.error(error);
 		} finally {
 			return Promise.resolve();
 		}
+
+		// 没有并发的处理方式
+		// const tasks = data.group.map((recordSet, recordSetIndex) => () => {
+		// 	const params = {
+		// 		createdAt: recordSet[0].createdAt,
+		// 		productJoinStockIn: recordSet,
+		// 	};
+		// 	return (
+		// 		createStockIn(params as IStockInCreateParams, { showSuccessMessage: false })
+		// 			// 处理成功与失败情况的导入结果展示
+		// 			.then(res => {
+		// 				setResults(prev => [...prev, res.id]);
+		// 				stockOperationUploadModalRef.current?.onItemFinish(recordSetIndex, true);
+		// 				return res;
+		// 			})
+		// 			.catch(e => {
+		// 				stockOperationUploadModalRef.current?.onItemFinish(recordSetIndex, false);
+		// 				return Promise.reject(e);
+		// 			})
+		// 	);
+		// });
+		// try {
+		// 	await composePromise(...tasks);
+		// 	message.success(`成功导入进货单${data.group.length}笔，包含商品${data.flat.length}件`);
+		// } finally {
+		// 	return Promise.resolve();
+		// }
 	};
 	const toolBar = (
 		<div className="flex flex-col gap-2">
@@ -333,7 +399,7 @@ const StockIns: React.FC = () => {
 			<StockOperationUploadModal<StockInRecord>
 				results={results}
 				columns={batchOperationColumns}
-				requiredFields={["productId", "vendorId", "count", "cost"]}
+				requiredFields={["productId", "vendorId", "count", "cost", "shelfPrice"]}
 				ref={stockOperationUploadModalRef}
 				operationType="stockIn"
 				open={fileUploadModalOpen}

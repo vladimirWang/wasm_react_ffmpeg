@@ -6,7 +6,7 @@ import { getProducts, IProduct } from "../api/product";
 import { getVendors, IVendor } from "../api/vendor";
 // import { StockInRecord } from "../api/stockIn";
 import * as XLSX from "xlsx";
-import { dateToMsSince1900, excelSerialToDate } from "../utils/common";
+import { dateToMsSince1900, excelSerialToDate, groupByUniqueElements } from "../utils/common";
 import dayjs from "dayjs";
 import { StockOperationRecord } from "../api/commonDef";
 
@@ -19,7 +19,7 @@ interface StockOperationUploadModalProps<T> {
 	onCancel: () => void;
 	onSuccess: () => void;
 	operationType: "stockIn" | "stockOut";
-	onConfirm: (records: { group: T[][]; flat: T[] }) => Promise<void>;
+	onConfirm: (records: { group: T[][]; flat: T[]; uniqueGroups: T[][][] }) => Promise<void>;
 	requiredFields: (keyof T)[];
 }
 
@@ -63,6 +63,7 @@ const StockOperationUploadModal = <T extends StockOperationRecord>(
 	const [vendors, setVendors] = useState<IVendor[]>([]); // 供应商列表
 	const [loadingData, setLoadingData] = useState(false); // 加载产品和供应商数据的状态
 	const [filterStatus, setFilterStatus] = useState<"all" | "success" | "failed">("all"); // 筛选状态
+	const [uniqueGroups, setUniqueGroups] = useState<T[][][]>([]); // 唯一分组
 	// const [, setSelectedRowKeys] = useState<React.Key[]>([]); // 选中的行 key
 
 	// 批量导入成功次数
@@ -86,7 +87,9 @@ const StockOperationUploadModal = <T extends StockOperationRecord>(
 	});
 
 	// 解析 Excel 文件 - 第二行作为字段 key
-	const parseExcelFile = async (file: File): Promise<{ group: T[][]; flat: T[] }> => {
+	const parseExcelFile = async (
+		file: File
+	): Promise<{ group: T[][]; flat: T[]; uniqueGroups: T[][][] }> => {
 		return new Promise((resolve, reject) => {
 			const reader = new FileReader();
 			reader.onload = e => {
@@ -109,13 +112,15 @@ const StockOperationUploadModal = <T extends StockOperationRecord>(
 						return;
 					}
 
+					console.log("----jsonData----: ", jsonData);
+
 					// 第二行作为字段 key（表头）
 					const headerRow = jsonData[1];
 					if (!headerRow || headerRow.length === 0) {
 						reject(new Error("Excel 文件格式不正确：第二行必须包含字段名称"));
 						return;
 					}
-
+					console.log("----headerRow----: ", headerRow);
 					// 创建字段映射：字段名 -> 列索引
 					const fieldMap: Partial<Record<keyof T, number>> = {};
 					headerRow.forEach((header: any, index: number) => {
@@ -173,8 +178,16 @@ const StockOperationUploadModal = <T extends StockOperationRecord>(
 						reject(new Error("Excel 文件中没有有效数据"));
 						return;
 					}
+					// const ids = groupRecords.map(record => record.map(r => r.productId));
+					// console.log("----ids----: ", ids);
+					const productIdExtractor = (record: T) => record.productId;
+					const uniqueGroups = groupByUniqueElements<T>(groupRecords, productIdExtractor);
+					// console.log("----uniqueGroups----: ", uniqueGroups);
+					// console.log("----groupRecords----: ", groupRecords);
+					// console.log("----flatRecords----: ", flatRecords);
 
 					resolve({
+						uniqueGroups,
 						group: groupRecords,
 						flat: flatRecords,
 					});
@@ -218,7 +231,9 @@ const StockOperationUploadModal = <T extends StockOperationRecord>(
 			setUploading(true);
 
 			// // 前端解析 Excel 文件
-			const records: { group: T[][]; flat: T[] } = await parseExcelFile(file as File);
+			const records: { group: T[][]; flat: T[]; uniqueGroups: T[][][] } = await parseExcelFile(
+				file as File
+			);
 			const importedRecordBatchTmp: ImportedRecordBatch = {};
 			records.group.forEach((record, index) => {
 				const previous = records.group.slice(0, index);
@@ -226,6 +241,7 @@ const StockOperationUploadModal = <T extends StockOperationRecord>(
 					return a + c.length;
 				}, 0);
 
+				// 记录分组起止位置
 				setSegments(prev => {
 					return [...prev, { start: previousLength, length: record.length }];
 				});
@@ -233,6 +249,7 @@ const StockOperationUploadModal = <T extends StockOperationRecord>(
 			});
 			setImportedRecordBatch(importedRecordBatchTmp);
 			setGroupedRecords(records.group as unknown as T[][]);
+			setUniqueGroups(records.uniqueGroups as unknown as T[][][]);
 			// 加载产品和供应商数据
 			await loadProductsAndVendors();
 
@@ -287,7 +304,7 @@ const StockOperationUploadModal = <T extends StockOperationRecord>(
 	const handleOk = async () => {
 		try {
 			setUploading(true);
-			await onConfirm({ group: groupedRecords, flat: parsedRecords });
+			await onConfirm({ group: groupedRecords, flat: parsedRecords, uniqueGroups });
 		} finally {
 			setUploading(false);
 			setConfirmBtnVisible(false);
@@ -347,14 +364,15 @@ const StockOperationUploadModal = <T extends StockOperationRecord>(
 			title: "入(出)库单id",
 			key: "id",
 			width: 100,
-			render: (_, _record, index) => {
+			render: (_value, _record, index) => {
 				const segmentIndex = segments.findIndex(
 					segment => index >= segment.start && index < segment.start + segment.length
 				);
 				if (segmentIndex === -1) {
 					return "-";
 				}
-				return results[segmentIndex];
+				const result = results[segmentIndex];
+				return result === -1 ? null : result;
 			},
 			onCell: (_, index) => {
 				const match = segments.find(segment => index == segment.start);

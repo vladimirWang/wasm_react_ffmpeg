@@ -101,6 +101,51 @@ export function composePromise<T = any>(...tasks: Array<() => Promise<T>>): Prom
 	);
 }
 
+// 定义任务执行结果的类型，清晰区分成功/失败
+type TaskResult<T = any> = {
+	/** 任务是否执行成功 */
+	success: boolean;
+	/** 成功时的返回值（仅success=true时有值） */
+	data?: T;
+	/** 失败时的错误信息（仅success=false时有值） */
+	error?: Error;
+};
+
+/**
+ * 串行执行异步任务列表
+ * 特性：前一个任务失败（reject），仍会执行下一个任务；全程串行，按顺序执行
+ * @param tasks 异步任务列表（每个元素是返回Promise的函数）
+ * @returns 所有任务的执行结果（按执行顺序排列，包含成功/失败状态）
+ */
+export function composePromise2<T = any>(
+	...tasks: Array<() => Promise<T>>
+): Promise<TaskResult<T>[]> {
+	// 空任务直接返回空数组
+	if (tasks.length === 0) return Promise.resolve([]);
+
+	// 用async/await实现串行执行，每个任务单独捕获错误
+	return (async () => {
+		const results: TaskResult<T>[] = [];
+
+		// 遍历所有任务，逐个执行
+		for (const task of tasks) {
+			try {
+				// 执行当前任务，等待完成（串行核心）
+				const data = await task();
+				// 收集成功结果
+				results.push({ success: true, data });
+			} catch (err) {
+				// 捕获当前任务的错误，不中断循环，继续执行下一个
+				const error = err instanceof Error ? err : new Error(String(err));
+				results.push({ success: false, error });
+			}
+		}
+
+		// 返回所有任务的结果（无论成功/失败）
+		return results;
+	})();
+}
+
 // 参数对象转SearchParams对象
 export function paramsToSearchParams(
 	params: Record<string, string | number | boolean | undefined | Date>
@@ -123,4 +168,72 @@ export function getTrueType(obj: any): string {
 // 禁用未来日期
 export function disabledFuture(current: Dayjs): boolean {
 	return current && current > dayjs().endOf("day");
+}
+
+/**
+ * 计算数组的位掩码（标记数组中出现的数字）
+ * @param {number[]} arr - 数字数组
+ * @returns {number} 位掩码（若数组自身有重复，返回 -1）
+ */
+export function getBitMask<T>(arr: T[], extractor: (item: T) => number): number {
+	let mask = 0;
+	for (const item of arr) {
+		const num = extractor(item);
+		// 先检查当前数字是否已在数组内重复（比如 [1,1,2] 这种情况）
+		if (mask & (1 << num)) {
+			return -1; // 自身有重复，标记为无效
+		}
+		mask |= 1 << num; // 标记该数字的位为 1
+	}
+	return mask;
+}
+
+/**
+ * 按「无重复元素」规则分组二维数组（位运算优化）
+ * @param {number[][]} source - 原始二维数组
+ * @returns {number[][][]} 分组后的三维数组
+ */
+interface IUniqueGroup<T> {
+	mask: number;
+	items: T[];
+}
+export function groupByUniqueElements<T>(source: T[][], extractor: (item: T) => number): T[][][] {
+	// 存储分组：每个元素是 { mask: 分组总掩码, items: 分组内的子数组 }
+	const groups: IUniqueGroup<T>[] = [];
+
+	for (const subArr of source) {
+		// 1. 计算当前子数组的位掩码（先排除自身有重复的子数组）
+		const subMask = getBitMask<T>(subArr, extractor);
+		console.log("----subMask----: ", subArr, subMask);
+		if (subMask === -1) {
+			console.warn(`子数组 [${subArr}] 自身包含重复元素，跳过`);
+			continue;
+		}
+
+		// 2. 找第一个能加入的分组（分组总掩码和子数组掩码无交集）
+		let foundGroup = false;
+		for (const group of groups) {
+			if ((group.mask & subMask) === 0) {
+				// 无重复，加入该分组并更新分组总掩码
+				group.items.push(subArr);
+				console.log("----group.mask before----: ", group.mask, subMask);
+				// group.mask |= subMask;
+				group.mask = (group.mask !== undefined ? group.mask : 0) | subMask;
+				console.log("----group.mask after----: ", group.mask);
+				foundGroup = true;
+				break;
+			}
+		}
+
+		// 3. 没有可加入的分组，新建分组
+		if (!foundGroup) {
+			groups.push({
+				mask: subMask,
+				items: [subArr],
+			});
+		}
+	}
+
+	// 4. 提取分组的 items 作为最终结果（去掉 mask 字段）
+	return groups.map(group => group.items);
 }

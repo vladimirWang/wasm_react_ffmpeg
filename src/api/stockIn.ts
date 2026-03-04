@@ -68,6 +68,7 @@ export const createStockIn = async (
 	data?: IStockInCreateParams,
 	config?: { showSuccessMessage: boolean; showErrorMessage?: boolean }
 ): Promise<IStockIn> => {
+	// await sleep((Math.random() + 3) * 1000 + 1000);
 	const res = await nodejsRequest.post<IStockIn>("/stockin/multiple", data, {
 		showSuccessMessage: config?.showSuccessMessage ?? false, // 登录成功默认显示提示
 	});
