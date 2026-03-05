@@ -1,6 +1,7 @@
 import _ from "lodash";
 import dayjs from "dayjs";
 import type { DatePickerProps } from "antd";
+import SparkMD5 from "spark-md5";
 
 /**
  * 将 Excel 日期序列号转为 JS Date（情况 A：解析得到的是数字）。
@@ -236,4 +237,25 @@ export function groupByUniqueElements<T>(source: T[][], extractor: (item: T) => 
 
 	// 4. 提取分组的 items 作为最终结果（去掉 mask 字段）
 	return groups.map(group => group.items);
+}
+
+function createHash(chunks: Blob[]): string {
+	return new Promise(resolve => {
+		const spark = new SparkMD5();
+		function _read(index: number) {
+			if (index >= chunks.length) {
+				resolve(spark.end());
+				return;
+			}
+			const chunk = chunks[index];
+			const reader = new FileReader();
+			reader.readAsArrayBuffer(chunk);
+			reader.onload = () => {
+				const bytes = reader.result as ArrayBuffer;
+				spark.append(bytes);
+				_read(index + 1);
+			};
+		}
+		_read(0);
+	});
 }
