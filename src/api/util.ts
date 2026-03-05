@@ -1,6 +1,5 @@
-import { goRequest } from "../request";
+import { goRequest, nodejsRequest } from "../request";
 import { IResponse } from "./commonDef";
-import { md5File } from "../utils/file";
 
 interface IUploadFileParams {
 	file: File;
@@ -11,7 +10,9 @@ interface IUploadFileResponse {
 	hash: string;
 }
 export const uploadFile = async (formData: FormData): Promise<IUploadFileResponse> => {
-	return goRequest.post<IUploadFileResponse>("/user/upload", formData);
+	// return goRequest.post<IUploadFileResponse>("/user/upload", formData);
+	console.log("---uploadFile---: ", formData);
+	return nodejsRequest.post<IUploadFileResponse>("/user/upload", formData);
 };
 
 interface IFileExisted {
@@ -24,24 +25,30 @@ export const checkFileExistedByHash = (
 	hash: string,
 	config?: { showSuccessMessage?: boolean }
 ): Promise<IFileExisted> => {
-	return goRequest.get<IFileExisted>("/user/checkFileExisted/" + hash, {
+	// return goRequest.get<IFileExisted>("/user/checkFileExisted/" + hash, {
+	// 	showSuccessMessage: config?.showSuccessMessage,
+	// });
+	return nodejsRequest.get<IFileExisted>("/user/checkFileExisted/" + hash, {
 		showSuccessMessage: config?.showSuccessMessage,
 	});
 };
 
 // 检查文件是否存在，不存在则上传
-export const checkAndUploadFile = async (file: File): Promise<IUploadFileResponse> => {
-	const md5 = await md5File(file);
-	const existed = await checkFileExistedByHash(md5);
+export const checkAndUploadFile = async (hash: string, file: File): Promise<IUploadFileResponse> => {
+	const existed = await checkFileExistedByHash(hash);
 	if (existed.filePath) {
-		return { ...existed, hash: md5 };
+		return { ...existed, hash };
 	}
-	return uploadFile(file);
+	const formData = new FormData();
+	formData.append("hash", hash);
+	formData.append("file", file);
+	return uploadFile(formData);
 };
 
 // 上传分片文件
 export const uploadChunkFile = async (formData: FormData): Promise<IUploadFileResponse> => {
-	return goRequest.post<IUploadFileResponse>("/user/uploadChunk", formData);
+	// return goRequest.post<IUploadFileResponse>("/user/uploadChunk", formData);
+	return nodejsRequest.post<IUploadFileResponse>("/user/uploadChunk", formData);
 };
 
 interface IMergeChunkFilesParams {
@@ -53,5 +60,6 @@ interface IMergeChunkFilesParams {
 export const mergeChunkFiles = async (
 	data: IMergeChunkFilesParams
 ): Promise<IUploadFileResponse> => {
-	return goRequest.post<IUploadFileResponse>("/user/mergeChunks", data);
+	// return goRequest.post<IUploadFileResponse>("/user/mergeChunks", data);
+	return nodejsRequest.post<IUploadFileResponse>("/user/mergeChunks", data);
 };

@@ -1,4 +1,4 @@
-import { useContext, useMemo, useState } from "react";
+import { useContext, useMemo, useRef, useState } from "react";
 import { useParams } from "react-router-dom";
 import useSWR from "swr";
 import debounce from "lodash/debounce";
@@ -33,7 +33,8 @@ import { chunkFileWithWasm, md5File } from "../../utils/file";
 import { EmscriptenModule } from "../../types/wasm";
 import { ModuleContext } from "../../context/moduleContext";
 import { getTrueType } from "../../utils/common";
-import SparkMD5 from "spark-md5";
+import ExampleWorker from "../../workers/example.worker?worker";
+import type { WorkerResult } from "../../workers/example.worker";
 
 function createChunks(file: File, chunkSize: number) {
 	const chunks = [];
@@ -42,27 +43,6 @@ function createChunks(file: File, chunkSize: number) {
 		chunks.push(chunk);
 	}
 	return chunks;
-}
-
-function createHash(chunks: Blob[]) {
-	return new Promise(resolve => {
-		const spark = new SparkMD5();
-		function _read(index: number) {
-			if (index >= chunks.length) {
-				resolve(spark.end());
-				return;
-			}
-			const chunk = chunks[index];
-			const reader = new FileReader();
-			reader.readAsArrayBuffer(chunk);
-			reader.onload = () => {
-				const bytes = reader.result as ArrayBuffer;
-				spark.append(bytes);
-				_read(index + 1);
-			};
-		}
-		_read(0);
-	});
 }
 
 export default function ProductForm({
@@ -84,6 +64,9 @@ export default function ProductForm({
 	const [costDrawerOpen, setCostDrawerOpen] = useState(false);
 	const [hash, setHash] = useState<string>();
 	const [filename, setFilename] = useState<string>();
+	const [workerLoading, setWorkerLoading] = useState(false);
+	const [workerResult, setWorkerResult] = useState<string>();
+	const workerFileInputRef = useRef<HTMLInputElement>(null);
 
 	const beforeUpload = (file: RcFile) => {
 		return true;
@@ -135,20 +118,21 @@ export default function ProductForm({
 		[form]
 	);
 
-	const testUploadFile = async (file: File) => {
+	const testUploadFile = async (options: any) => {
 		try {
+			const { file } = options;
 			const blob = file.slice(0, file.size);
 			const trueType = getTrueType(blob);
 			console.log("---trueType: ", trueType);
 			const fileType = getTrueType(file);
 			console.log("---fileType: ", fileType);
-			// const res = await checkAndUploadFile(file);
+			const md5 = await md5File(file);
+			const res = await checkAndUploadFile(md5, file);
 			const formData = new FormData();
 			formData.append("file", file);
 
-			const md5 = await md5File(file);
 			formData.append("hash", md5);
-			const res = await uploadFile(formData);
+			// const res = await uploadFile(formData);
 			console.log("---res---: ", res);
 			form.setFieldsValue({
 				img: `${res.filePath}`,
@@ -189,17 +173,17 @@ export default function ProductForm({
 
 	const handleUpload = async (options: any) => {
 		const { file } = options;
-		// try {
-		// 	console.log("module: ", module);
-		// 	if (!module) return;
-		// 	const chunks = await chunkFileWithWasm(file, module);
-		// 	console.log(`共 ${chunks.length} 个分片`);
-		// 	chunks.forEach((chunk, i) => {
-		// 		console.log(`分片 ${i}: ${chunk.length} 字节`);
-		// 	});
-		// } catch (e) {
-		// 	message.error("上传失败: " + (e as Error).message);
-		// }
+		try {
+			console.log("module: ", module);
+			if (!module) return;
+			const chunks = await chunkFileWithWasm(file, module);
+			console.log(`共 ${chunks.length} 个分片`);
+			chunks.forEach((chunk, i) => {
+				console.log(`分片 ${i}: ${chunk.length} 字节`);
+			});
+		} catch (e) {
+			message.error("上传失败: " + (e as Error).message);
+		}
 
 		// // 测试分片上传
 		// testUploadChunk(file);
@@ -210,44 +194,44 @@ export default function ProductForm({
 		// const hash = await createHash(chunks);
 		// console.log("---hash: ", hash);
 
-		// 调用bun_api
-		const chunks = createChunks(file, 10 * 1024 * 1024);
-		console.log("chunks.length: ", chunks.length);
+		// // 调用bun_api
+		// const chunks = createChunks(file, 10 * 1024 * 1024);
+		// console.log("chunks.length: ", chunks.length);
 
-		const hash = await md5File(file);
-		setHash(hash);
-		setFilename(file.name);
+		// const hash = await md5File(file);
+		// setHash(hash);
+		// setFilename(file.name);
 
-		async function uploadRecursion(chunks: Blob[], index: number) {
-			// const reader = new FileReader();
-			// reader.readAsArrayBuffer(file);
-			// reader.onload = () => {
-			//   const arrayBuffer = reader.result;
-			//   const chunk = arrayBuffer.slice(
-			//     index * chunkSize,
-			//     (index + 1) * chunkSize,
-			//   );
-			// };
-			if (index >= chunks.length) {
-				console.log("上传完成");
-				return;
-			}
-			const formData = new FormData();
-			formData.append("file", chunks[index]);
-			formData.append("hash", hash);
-			formData.append("index", index + "");
-			uploadChunkFile(formData).then(() => {
-				uploadRecursion(chunks, index + 1);
-			});
-			// fetch("/bun_api/uploadChunk", {
-			// 	method: "POST",
-			// 	body: formData,
-			// }).then(() => {
-			// 	uploadRecursion(chunks, index + 1);
-			// });
-		}
+		// async function uploadRecursion(chunks: Blob[], index: number) {
+		// 	// const reader = new FileReader();
+		// 	// reader.readAsArrayBuffer(file);
+		// 	// reader.onload = () => {
+		// 	//   const arrayBuffer = reader.result;
+		// 	//   const chunk = arrayBuffer.slice(
+		// 	//     index * chunkSize,
+		// 	//     (index + 1) * chunkSize,
+		// 	//   );
+		// 	// };
+		// 	if (index >= chunks.length) {
+		// 		console.log("上传完成");
+		// 		return;
+		// 	}
+		// 	const formData = new FormData();
+		// 	formData.append("file", chunks[index]);
+		// 	formData.append("hash", hash);
+		// 	formData.append("index", index + "");
+		// 	uploadChunkFile(formData).then(() => {
+		// 		uploadRecursion(chunks, index + 1);
+		// 	});
+		// 	// fetch("/bun_api/uploadChunk", {
+		// 	// 	method: "POST",
+		// 	// 	body: formData,
+		// 	// }).then(() => {
+		// 	// 	uploadRecursion(chunks, index + 1);
+		// 	// });
+		// }
 
-		uploadRecursion(chunks, 0);
+		// uploadRecursion(chunks, 0);
 	};
 
 	const handleMergeChunks = async () => {
@@ -263,6 +247,44 @@ export default function ProductForm({
 		mergeChunkFiles(params).then(() => {
 			message.success("合并成功");
 		});
+	};
+
+	/** Web Worker 范例：传入 File，在后台线程计算 MD5 hash */
+	const handleWebWorkerDemo = (file: File) => {
+		setWorkerLoading(true);
+		setWorkerResult(undefined);
+		const worker = new ExampleWorker();
+		worker.postMessage({ type: "compute", payload: { file } });
+		worker.onmessage = (e: MessageEvent<WorkerResult>) => {
+			const res = e.data;
+			if (res.type === "computed") {
+				setHash(res.payload.hash);
+				console.log("---hash---in handleWebWorkerDemo res.payload.hash: ", res.payload.hash);
+				setFilename(file.name);
+				setWorkerResult(
+					`MD5: ${res.payload.hash.slice(0, 16)}...，耗时 ${res.payload.duration.toFixed(0)}ms`
+				);
+				message.success("Web Worker 计算完成");
+			} else if (res.type === "error") {
+				message.error("Worker 错误: " + res.payload.message);
+			}
+			setWorkerLoading(false);
+			worker.terminate();
+		};
+		worker.onerror = () => {
+			message.error("Web Worker 执行出错");
+			setWorkerLoading(false);
+			worker.terminate();
+		};
+	};
+
+	const handleUploadBigFile = async (options: any) => {
+		try {
+			const { file } = options;
+			handleWebWorkerDemo(file);
+		} catch (e) {
+			message.error("上传失败: " + (e as Error).message);
+		}
 	};
 
 	return (
@@ -361,12 +383,12 @@ export default function ProductForm({
 					<section className="flex-1 space-y-4">
 						<Form.Item<IProductUpdateParams> label="产品图片" name="img">
 							<Upload
-								// accept={".jpg,.jpeg,.png,.gif,.bmp,.webp"}
+								accept={".jpg,.jpeg,.png,.gif,.bmp,.webp"}
 								name="file"
 								listType="picture-card"
 								className="avatar-uploader"
 								showUploadList={false}
-								customRequest={handleUpload}
+								customRequest={testUploadFile}
 								beforeUpload={beforeUpload}
 								onChange={handleChange}
 							>
@@ -394,7 +416,27 @@ export default function ProductForm({
 						<Button htmlType="reset" size="large" onClick={() => form.resetFields()}>
 							重置
 						</Button>
+						{/*
 						<Button onClick={handleMergeChunks}>merge</Button>
+						<Button
+							onClick={() => workerFileInputRef.current?.click()}
+							loading={workerLoading}
+							size="large"
+						>
+							Web Worker 演示
+						</Button>
+						<input
+							ref={workerFileInputRef}
+							type="file"
+							className="hidden"
+							onChange={e => {
+								const file = e.target.files?.[0];
+								if (file) handleWebWorkerDemo(file);
+								e.target.value = "";
+							}}
+						/>
+						{workerResult && <span className="text-gray-500">{workerResult}</span>}
+*/}
 					</Space>
 				</Form.Item>
 			</Form>
