@@ -1,4 +1,9 @@
-import { createBrowserRouter, type RouteObject, redirect } from "react-router-dom";
+import {
+	createBrowserRouter,
+	createHashRouter,
+	type RouteObject,
+	redirect,
+} from "react-router-dom";
 import { ReactNode, lazy } from "react";
 import { PieChartOutlined, DesktopOutlined, TeamOutlined, FileOutlined } from "@ant-design/icons";
 import Home from "../pages/Home";
@@ -452,7 +457,7 @@ export const routeConfig: ExtendedRouteObject[] = [
 ];
 
 // 创建路由（应用 auth loader）
-export const router = createBrowserRouter(addAuthLoader(routeConfig));
+export const router = createHashRouter(addAuthLoader(routeConfig));
 
 // 主布局下的子路由（用于面包屑）
 const layoutChildren = routeConfig[0].children ?? [];
