@@ -31,6 +31,8 @@ const StockOutCreate = lazy(() => import("../pages/stockOut/StockOutCreate"));
 const StockOutView = lazy(() => import("../pages/stockOut/StockOutView"));
 const StockOutUpdate = lazy(() => import("../pages/stockOut/StockOutUpdate"));
 const StockOuts = lazy(() => import("../pages/StockOuts/StockOuts"));
+const Clients = lazy(() => import("../pages/Clients/Clients"));
+const ClientCreate = lazy(() => import("../pages/Client/ClientCreate"));
 import { getCurrentUser, type IUser } from "../api/user";
 import { useUserStore } from "../store/userStore";
 
@@ -380,6 +382,25 @@ export const routeConfig: ExtendedRouteObject[] = [
 					icon: <DesktopOutlined />,
 					order: 4,
 					title: "出货记录详情",
+				},
+			},
+			{
+				path: "clients",
+				Component: Clients,
+				meta: {
+					icon: <DesktopOutlined />,
+					order: 4,
+					title: "客户管理",
+				},
+			},
+			{
+				path: "client/create",
+				Component: ClientCreate,
+				meta: {
+					hidden: true,
+					icon: <DesktopOutlined />,
+					order: 4,
+					title: "客户创建",
 				},
 			},
 		],
