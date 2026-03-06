@@ -1,0 +1,52 @@
+name: 构建并部署到服务器
+
+on:
+  push:
+    branches:
+      - main
+      - master
+  workflow_dispatch: # 允许手动触发
+
+permissions:
+  contents: read
+
+concurrency:
+  group: "deploy"
+  cancel-in-progress: false
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: 检出代码
+        uses: actions/checkout@v4
+
+      - name: 设置 pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10.14.0
+
+      - name: 设置 Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22.16.0"
+          cache: "pnpm"
+
+      - name: 安装依赖
+        run: pnpm install --frozen-lockfile
+
+      - name: 构建项目
+        run: pnpm run build
+
+      - name: 修复 SPA 路由（复制 index.html 到 404.html）
+        run: cp dist/index.html dist/404.html
+
+      - name: 安装 sshpass
+        run: sudo apt-get update && sudo apt-get install -y sshpass
+
+      - name: 部署到服务器
+        env:
+          SERVER_PASSWORD: ${{ secrets.SERVER_PASSWORD }}
+        run: |
+          export SSHPASS="$SERVER_PASSWORD"
+          sshpass -e scp -r -o StrictHostKeyChecking=no ./dist/. root@139.224.68.145:/root/galleryrepo_server/frontend-dist/
