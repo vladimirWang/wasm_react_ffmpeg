@@ -303,7 +303,7 @@ export default function ProductForm({
 					try {
 						await onFinishCallback({
 							...values,
-							shelfPrice: values.shelfPrice ? Number(values.shelfPrice) : undefined,
+							salePrice: values.salePrice ? Number(values.salePrice) : undefined,
 						});
 					} finally {
 						setSubmitting(false);
@@ -352,9 +352,9 @@ export default function ProductForm({
 								}}
 							/>
 						</Form.Item>
-						{/* <Form.Item<IProductUpdateParams>
-							label="指导零售价"
-							name="shelfPrice"
+						<Form.Item<IProductUpdateParams>
+							label="售价"
+							name="salePrice"
 							rules={[
 								// { required: true, message: "请输入上架价格" },
 								{ max: 9999, message: "价格不能超过9999元" },
@@ -366,7 +366,7 @@ export default function ProductForm({
 									precision={0}
 									placeholder="请输入价格"
 									style={{ width: "100%" }}
-									value={initialValues?.shelfPrice}
+									value={initialValues?.salePrice}
 								/>
 								<QuestionCircleOutlined
 									style={{ color: "red" }}
@@ -375,7 +375,7 @@ export default function ProductForm({
 									}}
 								/>
 							</div>
-						</Form.Item> */}
+						</Form.Item>
 						<Form.Item<IProductUpdateParams> label="备注" name="remark">
 							<Input.TextArea showCount maxLength={190} rows={4} placeholder="请输入备注信息" />
 						</Form.Item>

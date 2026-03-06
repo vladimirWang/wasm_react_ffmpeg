@@ -209,12 +209,12 @@ const StockIns: React.FC = () => {
 			key: "cost",
 			width: 100,
 		},
-		{
-			title: "推荐零售价",
-			dataIndex: "shelfPrice",
-			key: "shelfPrice",
-			width: 100,
-		},
+		// {
+		// 	title: "推荐零售价",
+		// 	dataIndex: "shelfPrice",
+		// 	key: "shelfPrice",
+		// 	width: 100,
+		// },
 	];
 
 	const stockOperationUploadModalRef = useRef<StockOperationUploadModalRefProps>(null);
@@ -399,7 +399,7 @@ const StockIns: React.FC = () => {
 			<StockOperationUploadModal<StockInRecord>
 				results={results}
 				columns={batchOperationColumns}
-				requiredFields={["productId", "vendorId", "count", "cost", "shelfPrice"]}
+				requiredFields={["productId", "vendorId", "count", "cost"]}
 				ref={stockOperationUploadModalRef}
 				operationType="stockIn"
 				open={fileUploadModalOpen}

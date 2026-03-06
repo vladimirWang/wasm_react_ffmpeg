@@ -48,20 +48,20 @@ export default function StockInForm(props: StockInFormProps) {
 
 	const [allProducts, setAllProducts] = useState<IProduct[]>([]);
 
-	const [shelfPriceMap, setShelfPriceMap] = useState<Partial<Record<number, number>>>({});
+	// const [shelfPriceMap, setShelfPriceMap] = useState<Partial<Record<number, number>>>({});
 
-	const makeCacheProductShelfPriceMap = async (val: number): Promise<number> => {
-		if (shelfPriceMap[val]) {
-			return shelfPriceMap[val];
-		}
-		const latestShelfPrice = await getLatestShelfPriceByProductId(val);
+	// const makeCacheProductShelfPriceMap = async (val: number): Promise<number> => {
+	// 	if (shelfPriceMap[val]) {
+	// 		return shelfPriceMap[val];
+	// 	}
+	// 	const latestShelfPrice = await getLatestShelfPriceByProductId(val);
 
-		if (latestShelfPrice.shelfPrice) {
-			// productShelfPriceMap[val] = latestShelfPrice.shelfPrice as number;
-			setShelfPriceMap(prev => ({ ...prev, [val]: latestShelfPrice.shelfPrice as number }));
-		}
-		return latestShelfPrice.shelfPrice as number;
-	};
+	// 	if (latestShelfPrice.shelfPrice) {
+	// 		// productShelfPriceMap[val] = latestShelfPrice.shelfPrice as number;
+	// 		setShelfPriceMap(prev => ({ ...prev, [val]: latestShelfPrice.shelfPrice as number }));
+	// 	}
+	// 	return latestShelfPrice.shelfPrice as number;
+	// };
 
 	const columnsBase: TableProps<JoinFieldRow>["columns"] = [
 		{
@@ -87,36 +87,36 @@ export default function StockInForm(props: StockInFormProps) {
 				);
 			},
 		},
-		{
-			title: (
-				<Flex gap={10}>
-					<span>推荐零售价</span>
-					<Tooltip title="推荐零售价是根据商品的历史价格计算得出的，用于指导零售价的设置。第一次进货的商品须手动设置">
-						<QuestionCircleOutlined />
-					</Tooltip>
-				</Flex>
-			),
-			key: "shelfPrice",
-			width: 200,
-			render: (_v, row) => {
-				return (
-					<Form.Item
-						name={[row.name, "shelfPrice"]}
-						style={{ marginBottom: 0 }}
-						rules={[{ required: true, message: "请输入价格" }]}
-					>
-						<PositiveInputNumber
-							disabled={!editable}
-							min={1}
-							precision={0}
-							style={{ width: "100%" }}
-							placeholder="请输入价格"
-							addonAfter="元"
-						/>
-					</Form.Item>
-				);
-			},
-		},
+		// {
+		// 	title: (
+		// 		<Flex gap={10}>
+		// 			<span>推荐零售价</span>
+		// 			<Tooltip title="推荐零售价是根据商品的历史价格计算得出的，用于指导零售价的设置。第一次进货的商品须手动设置">
+		// 				<QuestionCircleOutlined />
+		// 			</Tooltip>
+		// 		</Flex>
+		// 	),
+		// 	key: "shelfPrice",
+		// 	width: 200,
+		// 	render: (_v, row) => {
+		// 		return (
+		// 			<Form.Item
+		// 				name={[row.name, "shelfPrice"]}
+		// 				style={{ marginBottom: 0 }}
+		// 				rules={[{ required: true, message: "请输入价格" }]}
+		// 			>
+		// 				<PositiveInputNumber
+		// 					disabled={!editable}
+		// 					min={1}
+		// 					precision={0}
+		// 					style={{ width: "100%" }}
+		// 					placeholder="请输入价格"
+		// 					addonAfter="元"
+		// 				/>
+		// 			</Form.Item>
+		// 		);
+		// 	},
+		// },
 		{
 			title: "数量",
 			key: "count",
@@ -207,10 +207,10 @@ export default function StockInForm(props: StockInFormProps) {
 							onAdd={() => {
 								add({ productId: undefined, cost: 1, count: 1, shelfPrice: 1 });
 							}}
-							onSelectProduct={async (val, row) => {
-								const shelfPrice = await makeCacheProductShelfPriceMap(val);
-								form.setFieldValue(["productJoinStockIn", row.name, "shelfPrice"], shelfPrice);
-							}}
+							// onSelectProduct={async (val, row) => {
+							// 	const shelfPrice = await makeCacheProductShelfPriceMap(val);
+							// 	form.setFieldValue(["productJoinStockIn", row.name, "shelfPrice"], shelfPrice);
+							// }}
 						/>
 					</>
 				)}

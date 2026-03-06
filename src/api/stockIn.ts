@@ -49,13 +49,13 @@ export const getStockIns = async (
 
 export interface IProductJoinStockIn extends IProductJoinStockOperation {
 	cost: number;
-	shelfPrice: number;
+	// shelfPrice: number;
 }
 
 // Excel 解析后的数据格式
 export interface StockInRecord extends StockOperationRecord {
 	cost: number;
-	shelfPrice?: number;
+	// shelfPrice?: number;
 }
 
 export interface IStockInCreateParams {

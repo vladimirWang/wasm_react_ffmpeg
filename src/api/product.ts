@@ -28,7 +28,7 @@ export interface IProduct {
 	historyCost?: IProductHistoryCostItem[];
 	stockInPending: number;
 	stockOutPending: number;
-	shelfPrice: number;
+	salePrice: number;
 	vendor?: IVendor;
 }
 
