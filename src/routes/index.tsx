@@ -1,27 +1,26 @@
 import {
-	createBrowserRouter,
 	createHashRouter,
 	type RouteObject,
 	redirect,
 } from "react-router-dom";
 import { ReactNode, lazy } from "react";
 import { PieChartOutlined, DesktopOutlined, TeamOutlined, FileOutlined } from "@ant-design/icons";
-import Home from "../pages/Home";
-import About from "../pages/About";
-import NotFound from "../pages/NotFound";
-import Login from "../pages/Login";
-import Register from "../pages/Register";
-// import Products from "../pages/Products";
-// import Vendors from "../pages/Vendors";
-// import ProductDetail from "../pages/Product/ProductDetail";
-// import VendorDetail from "../pages/VendorDetail";
-import Landing from "../pages/Landing";
-import { LayoutComponent } from "../layout";
-import VendorCreate from "../pages/Vendor/VendorCreate";
-import VendorUpdate from "../pages/Vendor/VendorUpdate";
-import VendorView from "../pages/Vendor/VendorView";
-import StockIns from "../pages/StockIns/StockIns";
 import RouteErrorPage from "../pages/RouteErrorPage";
+
+// 懒加载页面，减少首屏体积
+const Home = lazy(() => import("../pages/Home"));
+const About = lazy(() => import("../pages/About"));
+const NotFound = lazy(() => import("../pages/NotFound"));
+const Login = lazy(() => import("../pages/Login"));
+const Register = lazy(() => import("../pages/Register"));
+const Landing = lazy(() => import("../pages/Landing"));
+const LayoutComponent = lazy(() =>
+	import("../layout").then(m => ({ default: m.LayoutComponent }))
+);
+const VendorCreate = lazy(() => import("../pages/Vendor/VendorCreate"));
+const VendorUpdate = lazy(() => import("../pages/Vendor/VendorUpdate"));
+const VendorView = lazy(() => import("../pages/Vendor/VendorView"));
+const StockIns = lazy(() => import("../pages/StockIns/StockIns"));
 // import ProductCreate from "../pages/Product/ProductCreate";
 // import ProductUpdate from "../pages/Product/ProductUpdate";
 const Products = lazy(() => import("../pages/Products"));
