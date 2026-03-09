@@ -1,4 +1,4 @@
-import React, { useRef, useState } from "react";
+import React, { useMemo, useRef, useState } from "react";
 import type { FormItemProps, FormProps } from "antd";
 import { Button, Card, Checkbox, Form, Input, Space, Steps } from "antd";
 import {
@@ -7,11 +7,13 @@ import {
 	type RegisterResponse,
 	sendEmailVerificationCode,
 	checkEmailVerificationCode,
+	checkEmailExisted,
 } from "../api/user";
 import { Link, useNavigate } from "react-router-dom";
 import { useWindowSize } from "react-use";
 import Confetti from "react-confetti";
 import { sleep } from "../utils/common";
+import { debounce } from "lodash";
 
 /** 垂直布局：标签与输入均占满一行，避免右侧留白 */
 const formItemLayout: FormProps = {
@@ -27,6 +29,8 @@ const stepItems = [
 	{ title: "验证邮箱", description: "填写邮箱并获取验证码" },
 	{ title: "设置账号", description: "填写用户名与密码" },
 ];
+
+const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 const registerFormInitialValues = {
 	// email: "aachen2012@outlook.com",
@@ -48,6 +52,7 @@ const Register: React.FC = () => {
 	const [form] = Form.useForm();
 	const navigate = useNavigate();
 	const [email, setEmail] = useState("");
+	const [verifyCode, setVerifyCode] = useState("");
 	const [currentStep, setCurrentStep] = useState(0);
 	const [countdown, setCountdown] = useState(0);
 	const [step1Loading, setStep1Loading] = useState(false);
@@ -60,7 +65,6 @@ const Register: React.FC = () => {
 			await form.validateFields(["email"]);
 			const email = form.getFieldValue("email");
 			await sendEmailVerificationCode(email);
-			console.log("发送验证码到:", email);
 			setCountdown(60);
 			const timer = setInterval(() => {
 				setCountdown(prev => {
@@ -85,6 +89,7 @@ const Register: React.FC = () => {
 			await checkEmailVerificationCode({ email, verifyCode });
 			setCurrentStep(1);
 			setEmail(email);
+			setVerifyCode(verifyCode);
 		} finally {
 			setStep1Loading(false);
 			// 校验失败由 Form 展示
@@ -99,8 +104,7 @@ const Register: React.FC = () => {
 		try {
 			setStep2Loading(true);
 			const { password, username } = values;
-			const res: RegisterResponse = await userRegister({ email, password, username });
-			console.log("注册结果:", res);
+			const res: RegisterResponse = await userRegister({ email, password, username, verifyCode });
 			setConfettiVisible(true);
 			await sleep(4500);
 			setConfettiVisible(false);
@@ -114,6 +118,16 @@ const Register: React.FC = () => {
 			setStep2Loading(false);
 		}
 	};
+	const debounceCheckEmail = useMemo(
+		() =>
+			debounce(email => {
+				if (!emailRegex.test(email)) return;
+				checkEmailExisted(email).then(existed => {
+					form.setFields([{ name: "email", errors: existed ? ["邮箱已存在"] : [] }]);
+				});
+			}, 500),
+		[form]
+	);
 
 	return (
 		<div>
@@ -136,11 +150,29 @@ const Register: React.FC = () => {
 									name="email"
 									label="邮箱"
 									rules={[
-										{ type: "email", message: "请输入有效的邮箱地址！" },
-										{ required: true, message: "请输入邮箱！" },
+										// { type: "email", message: "请输入有效的邮箱地址！" },
+										// { required: true, message: "请输入邮箱！" },
+										{
+											validator: async (_, value) => {
+												if (value === "") {
+													return Promise.reject(new Error("请输入邮箱！"));
+												}
+												if (!emailRegex.test(value)) {
+													return Promise.reject(new Error("请输入有效的邮箱地址！"));
+												}
+												const existed = await checkEmailExisted(value);
+												return existed
+													? Promise.reject(new Error("邮箱已存在"))
+													: Promise.resolve();
+											},
+										},
 									]}
+									validateTrigger={["onBlur", "onSubmit"]}
 								>
-									<Input placeholder="请输入邮箱" />
+									<Input
+										placeholder="请输入邮箱"
+										onChange={e => debounceCheckEmail(e.target.value)}
+									/>
 								</Form.Item>
 								<Form.Item
 									name="verifyCode"

@@ -25,8 +25,8 @@ export interface LoginParams {
 export interface RegisterParams {
 	email: string;
 	password: string;
-	username?: string;
-	verifyCode?: string;
+	username: string;
+	verifyCode: string;
 }
 
 export const userLogin = (
@@ -39,6 +39,7 @@ export const userLogin = (
 };
 
 export const userRegister = (data: RegisterParams): Promise<RegisterResponse> => {
+	console.log("userRegister data: ", data);
 	return nodejsRequest.post<RegisterResponse>("/user/register", data);
 };
 
@@ -71,4 +72,9 @@ export const checkEmailVerificationCode = (data: {
 
 export const logout = (): Promise<void> => {
 	return nodejsRequest.post<void>("/user/logout");
+};
+
+export const checkEmailExisted = (email: string): Promise<boolean> => {
+	console.log("checkEmailExisted: ", email);
+	return nodejsRequest.get<boolean>("/user/checkEmailExisted/" + email);
 };
