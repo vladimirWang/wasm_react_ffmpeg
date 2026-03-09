@@ -1,4 +1,6 @@
-import _ from "lodash";
+import difference from "lodash/difference";
+import intersection from "lodash/intersection";
+import isEqual from "lodash/isEqual";
 import dayjs from "dayjs";
 import type { DatePickerProps } from "antd";
 import SparkMD5 from "spark-md5";
@@ -58,13 +60,13 @@ interface changedFields<T> {
 export function pickIncrementalFields<T extends {}>(newData: T, oldData: T): changedFields<T> {
 	const newKeys = Object.keys(newData) as Array<keyof T>,
 		oldKeys = Object.keys(oldData) as Array<keyof T>;
-	const created: Array<keyof T> = _.difference(newKeys, oldKeys);
-	const deleted = _.difference(oldKeys, newKeys);
+	const created: Array<keyof T> = difference(newKeys, oldKeys);
+	const deleted = difference(oldKeys, newKeys);
 
 	const updated: Array<keyof T> = [];
 	const same: Array<keyof T> = [];
 
-	const commonKeys = _.intersection(newKeys, oldKeys);
+	const commonKeys = intersection(newKeys, oldKeys);
 
 	// 4. 遍历公共字段，判断值是否变化，分类收集
 	commonKeys.forEach(key => {
@@ -72,7 +74,7 @@ export function pickIncrementalFields<T extends {}>(newData: T, oldData: T): cha
 		const oldValue = oldData[key];
 
 		// 用 _.isEqual 深比较（支持嵌套对象/数组），判断值是否相等
-		if (_.isEqual(newValue, oldValue)) {
+		if (isEqual(newValue, oldValue)) {
 			// 值相等：放入未变字段 same
 			same.push(key);
 		} else {
