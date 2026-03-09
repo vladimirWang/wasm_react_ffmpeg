@@ -34,6 +34,8 @@ export interface IStockOutCreateParams {
 	remark?: string;
 	productJoinStockOut: IProductJoinStockOut[];
 	createdAt?: string;
+	platform: number;
+	platformOrderNo: string;
 }
 
 type IStockOutsQueryResponse = IPaginationResp<IStockOut>;

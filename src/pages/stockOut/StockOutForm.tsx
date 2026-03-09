@@ -2,7 +2,7 @@ import { Button, Card, Form, Input, Select, Space, Divider, message, DatePicker 
 import type { DatePickerProps, TableProps } from "antd";
 import { IVendorUpdateParams } from "../../api/vendor";
 import { useEffect, useMemo, useState } from "react";
-import { IProductJoinStockOut, IStockOut } from "../../api/stockOut";
+import { IProductJoinStockOut, IStockOut, IStockOutCreateParams } from "../../api/stockOut";
 import { PlusSquareOutlined } from "@ant-design/icons";
 import { getProductDetailById, getProducts, IProduct } from "../../api/product";
 import { PageOperation } from "../../enum";
@@ -11,13 +11,12 @@ import { useDistinctProducts } from "../../hooks/useDistinctProducts";
 import StockOperationTable from "../../components/StockOperationTable";
 import { disabledFuture } from "../../utils/common";
 import dayjs from "dayjs";
+import { getPlatforms, IPlatform } from "../../api/platform";
 // import VendorProductTree from "../../components/VendorProductTree";
 
 interface StockInFormProps {
 	pageOperation: PageOperation;
-	onFinishCallback?: (
-		formValue: IVendorUpdateParams & { productJoinStockOut: IProductJoinStockOut[] }
-	) => Promise<void>;
+	onFinishCallback?: (formValue: IStockOutCreateParams) => Promise<void>;
 	initialValues?: IStockOut;
 }
 
@@ -110,8 +109,20 @@ export default function StockOutForm(props: StockInFormProps) {
 		}
 	};
 
+	const [platforms, setPlatforms] = useState<IPlatform[]>([]);
+
+	const loadPlatforms = async () => {
+		try {
+			const res = await getPlatforms();
+			setPlatforms(res);
+		} catch (e) {
+			message.error((e as Error).message);
+		}
+	};
+
 	useEffect(() => {
 		loadProducts();
+		loadPlatforms();
 	}, []);
 
 	const productJoinStockOutData: IProductJoinStockOut[] = Form.useWatch(
@@ -130,9 +141,9 @@ export default function StockOutForm(props: StockInFormProps) {
 					? dayjs(props.initialValues.createdAt)
 					: undefined,
 			}}
-			labelCol={{ span: 2 }}
+			labelCol={{ span: 4 }}
 			wrapperCol={{ span: 18 }}
-			onFinish={async (values: StockInFormValues) => {
+			onFinish={async (values: IStockOutCreateParams) => {
 				if (!props.onFinishCallback) return;
 				setLoading(true);
 				try {
@@ -189,6 +200,16 @@ export default function StockOutForm(props: StockInFormProps) {
 			<Divider />
 			<Form.Item name="createdAt" label="创建日期">
 				<DatePicker placeholder="请选择创建日期" disabledDate={disabledFuture} />
+			</Form.Item>
+			<Form.Item name="platformId" label="平台" rules={[{ required: true, message: "请选择平台" }]}>
+				<Select options={platforms} fieldNames={{ label: "name", value: "id" }} />
+			</Form.Item>
+			<Form.Item
+				name="platformOrderNo"
+				label="平台订单号"
+				rules={[{ required: true, message: "请填写平台订单号" }]}
+			>
+				<Input placeholder="请填写平台订单号" />
 			</Form.Item>
 			<Form.Item<IVendorUpdateParams> label="备注" name="remark" style={{ marginBottom: 24 }}>
 				<Input.TextArea

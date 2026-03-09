@@ -52,15 +52,15 @@ const Products: React.FC = () => {
 			dataIndex: ["vendor", "name"],
 		},
 		{
-			title: "最新成交价",
-			key: "latestPrice",
-			dataIndex: "latestPrice",
+			title: "零售价",
+			key: "salePrice",
+			dataIndex: "salePrice",
 		},
-		{
-			title: "最新成本价",
-			dataIndex: "latestCost",
-			key: "latestCost",
-		},
+		// {
+		// 	title: "最新成本价",
+		// 	dataIndex: "latestCost",
+		// 	key: "latestCost",
+		// },
 		{
 			title: "库存数",
 			dataIndex: "balance",
