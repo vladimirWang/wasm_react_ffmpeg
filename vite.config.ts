@@ -37,7 +37,20 @@ export default defineConfig({
 	},
 	// 确保开发模式下生成 source map
 	build: {
-		sourcemap: true, // 生产构建时也生成 source map（可选）
+		sourcemap: true,
+		chunkSizeWarningLimit: 800, // 提高警告阈值，拆分后单 chunk 会更小
+		rollupOptions: {
+			output: {
+				manualChunks: {
+					"vendor-react": ["react", "react-dom", "react-router-dom"],
+					"vendor-antd": ["antd", "@ant-design/icons"],
+					"vendor-charts": ["@ant-design/charts"],
+					"vendor-three": ["three", "@react-three/fiber"],
+					"vendor-konva": ["konva", "react-konva"],
+					"vendor-xlsx": ["xlsx"],
+				},
+			},
+		},
 	},
 	// 开发模式下的 source map 配置
 	css: {
