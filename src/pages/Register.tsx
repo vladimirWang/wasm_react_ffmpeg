@@ -75,7 +75,8 @@ const Register: React.FC = () => {
 					return prev - 1;
 				});
 			}, 1000);
-		} catch {
+		} catch (error) {
+			console.log("error: ", error);
 			// 校验失败由 Form 展示
 		}
 	};
