@@ -1,11 +1,11 @@
 import { useState, useEffect, Suspense } from "react";
-import { Button } from "antd";
-import SumArray from "./components/SumArray";
-import MazeCanvas from "./pages/MazeCanvas";
-import FileSizeCalculator from "./components/FileSizeCalculator";
-import VideoStreamDetector from "./components/VideoStreamDetector";
+// import { Button } from "antd";
+// import SumArray from "./components/SumArray";
+// import MazeCanvas from "./pages/MazeCanvas";
+// import FileSizeCalculator from "./components/FileSizeCalculator";
+// import VideoStreamDetector from "./components/VideoStreamDetector";
 import type { EmscriptenModule } from "./types/wasm";
-import Editor from "./pages/Editor";
+// import Editor from "./pages/Editor";
 // import { BrowserRouter, Routes, Route, Link, Navigate } from 'react-router-dom';
 import { router } from "./routes";
 import "./App.css";
@@ -13,8 +13,8 @@ import { RouterProvider } from "react-router-dom";
 import { ModuleContext } from "./context/moduleContext";
 
 function App() {
-	const [wasmReady, setWasmReady] = useState(false);
-	const [error, setError] = useState<string | null>(null);
+	// const [wasmReady, setWasmReady] = useState(false);
+	// const [error, setError] = useState<string | null>(null);
 	const [module, setModule] = useState<EmscriptenModule | null>(null);
 
 	// useEffect(() => {
