@@ -224,7 +224,6 @@ const StockOuts: React.FC = () => {
 					platformOrderNo: recordSet[0].platformOrderNo,
 					clientId: recordSet[0].clientId,
 				};
-				console.log("----params----: ", params);
 				return createStockOut(params as IStockOutCreateParams, { showSuccessMessage: false });
 			});
 			return Promise.all(concurrentTasks);

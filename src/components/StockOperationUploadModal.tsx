@@ -19,7 +19,7 @@ interface StockOperationUploadModalProps<T> {
 	onCancel: () => void;
 	onSuccess: () => void;
 	operationType: "stockIn" | "stockOut";
-	onConfirm: (records: { group: T[][]; flat: T[]; uniqueGroups: T[][][] }) => Promise<void>;
+	onConfirm: () => Promise<void>;
 	requiredFields: (keyof T)[];
 	onParseExcelFile: (data: T[]) => Promise<void>;
 }
@@ -178,9 +178,6 @@ const StockOperationUploadModal = <T extends StockOperationRecord>(
 						flatRecords.push(requiredValues);
 						// createdAtMap[formatCreatedAt].push(requiredValues);
 					}
-					setParsedRecords(flatRecords);
-					setCurrentStep(1);
-					message.success(`成功解析 ${flatRecords.length} 条记录`);
 					resolve(flatRecords);
 
 					// const groupRecords = Object.values(createdAtMap);
@@ -367,8 +364,11 @@ const StockOperationUploadModal = <T extends StockOperationRecord>(
 
 			const flatRecords = await parseExcelFile2(file);
 
-			await onParseExcelFile(flatRecords);
+			setParsedRecords(flatRecords);
+			setUploadedFile(file as File);
+			setCurrentStep(1);
 			message.success(`成功解析 ${flatRecords.length} 条记录`);
+			await onParseExcelFile?.(flatRecords);
 			// // // 前端解析 Excel 文件
 			// const records: { group: T[][]; flat: T[]; uniqueGroups: T[][][] } = await parseExcelFile(
 			// 	file as File
@@ -443,7 +443,7 @@ const StockOperationUploadModal = <T extends StockOperationRecord>(
 	const handleOk = async () => {
 		try {
 			setUploading(true);
-			await onConfirm({ group: groupedRecords, flat: parsedRecords, uniqueGroups });
+			await onConfirm();
 		} finally {
 			setUploading(false);
 			setConfirmBtnVisible(false);
