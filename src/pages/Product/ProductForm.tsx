@@ -1,5 +1,5 @@
 import { useContext, useMemo, useRef, useState } from "react";
-import { useParams } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import useSWR from "swr";
 import debounce from "lodash/debounce";
 import { IProductUpdateParams, checkProductNameExistedInVendor } from "../../api/product";
@@ -32,9 +32,10 @@ import {
 import { chunkFileWithWasm, md5File } from "../../utils/file";
 import { EmscriptenModule } from "../../types/wasm";
 import { ModuleContext } from "../../context/moduleContext";
-import { getTrueType } from "../../utils/common";
+import { getTrueType, pickIncrementalFields } from "../../utils/common";
 import ExampleWorker from "../../workers/example.worker?worker";
 import type { WorkerResult } from "../../workers/example.worker";
+import { pick } from "lodash";
 
 function createChunks(file: File, chunkSize: number) {
 	const chunks = [];
@@ -49,7 +50,9 @@ export default function ProductForm({
 	initialValues,
 	onFinishCallback,
 	pageOperation,
+	redirect,
 }: {
+	redirect?: string;
 	initialValues?: IProductUpdateParams;
 	onFinishCallback?: (values: IProductUpdateParams) => Promise<void>;
 	pageOperation: PageOperation;
@@ -95,7 +98,7 @@ export default function ProductForm({
 	// const [vendors, setVendors] = useState<IVendor[]>([]);
 
 	const vendorsFetch = async () => {
-		const res = await getVendors({ pagination: false });
+		const res = await getVendors({ pagination: 0 });
 		return res.list.map(item => ({ value: item.id, label: item.name }));
 	};
 
@@ -287,6 +290,8 @@ export default function ProductForm({
 		}
 	};
 
+	const navigate = useNavigate();
+
 	return (
 		<div className="p-6">
 			{/* <strong>{typeof theme.ccall}</strong> */}
@@ -301,9 +306,16 @@ export default function ProductForm({
 					if (!onFinishCallback) return;
 					setSubmitting(true);
 					try {
+						const { updated } = pickIncrementalFields<IProductUpdateParams>(
+							values,
+							initialValues as IProductUpdateParams
+						);
+						const incrementalValues = pick(values, updated);
 						await onFinishCallback({
-							...values,
-							salePrice: values.salePrice ? Number(values.salePrice) : undefined,
+							...incrementalValues,
+							salePrice: incrementalValues.salePrice
+								? Number(incrementalValues.salePrice)
+								: undefined,
 						});
 					} finally {
 						setSubmitting(false);
@@ -315,10 +327,21 @@ export default function ProductForm({
 					<section className="flex-1 space-y-4">
 						<Form.Item<IProductUpdateParams>
 							label="供应商"
-							name="vendorId"
 							rules={[{ required: true, message: "请选择供应商" }]}
 						>
-							<Select style={{ width: "100%" }} placeholder="请选择供应商" options={vendors} />
+							<div className="flex items-center gap-2">
+								<Form.Item name="vendorId" noStyle>
+									<Select style={{ width: "100%" }} placeholder="请选择供应商" options={vendors} />
+								</Form.Item>
+								<Button
+									type="primary"
+									onClick={() => {
+										navigate("/vendor/create?redirect=" + (redirect ?? ""));
+									}}
+								>
+									<PlusOutlined />
+								</Button>
+							</div>
 						</Form.Item>
 						<Form.Item<IProductUpdateParams>
 							label="名称"

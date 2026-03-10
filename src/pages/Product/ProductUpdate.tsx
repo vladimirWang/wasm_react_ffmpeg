@@ -32,13 +32,8 @@ export default function ProductUpdate() {
 	const [completed, setCompleted] = useState(false);
 
 	const onFinish = async (values: IProductUpdateParams) => {
-		const { updated } = pickIncrementalFields<IProductUpdateParams>(
-			values,
-			initialValues as IProductUpdateParams
-		);
-		const incrementalValues = pick(values, updated);
 		try {
-			await patchProductById(Number(id), incrementalValues);
+			await patchProductById(Number(id), values);
 		} catch (error) {
 			console.error("<delete>  ");
 		} finally {
