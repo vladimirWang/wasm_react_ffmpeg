@@ -3,7 +3,7 @@ import type { DatePickerProps, TableProps } from "antd";
 import { IVendorUpdateParams } from "../../api/vendor";
 import { useEffect, useMemo, useState } from "react";
 import { IProductJoinStockOut, IStockOut, IStockOutCreateParams } from "../../api/stockOut";
-import { PlusSquareOutlined } from "@ant-design/icons";
+import { PlusOutlined, PlusSquareOutlined } from "@ant-design/icons";
 import { getProductDetailById, getProducts, IProduct } from "../../api/product";
 import { PageOperation } from "../../enum";
 import { PositiveInputNumber } from "../../components/PositiveInputNumber";
@@ -12,9 +12,12 @@ import StockOperationTable from "../../components/StockOperationTable";
 import { disabledFuture } from "../../utils/common";
 import dayjs from "dayjs";
 import { getPlatforms, IPlatform } from "../../api/platform";
+import { getClients, IClient } from "../../api/client";
+import { useNavigate } from "react-router-dom";
 // import VendorProductTree from "../../components/VendorProductTree";
 
 interface StockInFormProps {
+	redirect?: string;
 	pageOperation: PageOperation;
 	onFinishCallback?: (formValue: IStockOutCreateParams) => Promise<void>;
 	initialValues?: IStockOut;
@@ -34,6 +37,7 @@ interface StockInFormProps {
 // ];
 
 export default function StockOutForm(props: StockInFormProps) {
+	const navigate = useNavigate();
 	const [loading, setLoading] = useState(false);
 	const [form] = Form.useForm();
 
@@ -119,10 +123,21 @@ export default function StockOutForm(props: StockInFormProps) {
 			message.error((e as Error).message);
 		}
 	};
+	const [clients, setClients] = useState<IClient[]>([]);
+	const loadClients = async () => {
+		try {
+			const { list } = await getClients({ pagination: 0 });
+
+			setClients(list);
+		} catch (e) {
+			message.error((e as Error).message);
+		}
+	};
 
 	useEffect(() => {
 		loadProducts();
 		loadPlatforms();
+		loadClients();
 	}, []);
 
 	const productJoinStockOutData: IProductJoinStockOut[] = Form.useWatch(
@@ -210,6 +225,21 @@ export default function StockOutForm(props: StockInFormProps) {
 				rules={[{ required: true, message: "请填写平台订单号" }]}
 			>
 				<Input placeholder="请填写平台订单号" />
+			</Form.Item>
+			<Form.Item label="客户" rules={[{ required: true, message: "请选择客户" }]}>
+				<div className="flex items-center gap-2">
+					<Form.Item name="clientId" noStyle>
+						<Select options={clients} fieldNames={{ label: "name", value: "id" }} />
+					</Form.Item>
+					<Button
+						type="primary"
+						onClick={() => {
+							navigate("/client/create?redirect=" + (props.redirect ?? ""));
+						}}
+					>
+						<PlusOutlined />
+					</Button>
+				</div>
 			</Form.Item>
 			<Form.Item<IVendorUpdateParams> label="备注" name="remark" style={{ marginBottom: 24 }}>
 				<Input.TextArea

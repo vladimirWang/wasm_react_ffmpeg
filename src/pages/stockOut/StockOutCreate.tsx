@@ -8,9 +8,6 @@ import {
 	IStockOutCreateParams,
 } from "../../api/stockOut";
 import { useEffect, useState } from "react";
-import { useParams } from "react-router-dom";
-import useSWR from "swr";
-import { message, Spin } from "antd";
 
 export default function StockInCreate() {
 	const onFinishCallback = async (formValue: IStockOutCreateParams) => {
@@ -24,6 +21,7 @@ export default function StockInCreate() {
 	return (
 		<div>
 			<StockOutForm
+				redirect={"/stockout/create"}
 				// initialValues={initialValues}
 				// joinData={joinData}
 				onFinishCallback={onFinishCallback}

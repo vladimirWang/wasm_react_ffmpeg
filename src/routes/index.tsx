@@ -1,8 +1,4 @@
-import {
-	createHashRouter,
-	type RouteObject,
-	redirect,
-} from "react-router-dom";
+import { createHashRouter, type RouteObject, redirect } from "react-router-dom";
 import { ReactNode, lazy } from "react";
 import { PieChartOutlined, DesktopOutlined, TeamOutlined, FileOutlined } from "@ant-design/icons";
 import RouteErrorPage from "../pages/RouteErrorPage";
@@ -14,9 +10,7 @@ const NotFound = lazy(() => import("../pages/NotFound"));
 const Login = lazy(() => import("../pages/Login"));
 const Register = lazy(() => import("../pages/Register"));
 const Landing = lazy(() => import("../pages/Landing"));
-const LayoutComponent = lazy(() =>
-	import("../layout").then(m => ({ default: m.LayoutComponent }))
-);
+const LayoutComponent = lazy(() => import("../layout").then(m => ({ default: m.LayoutComponent })));
 const VendorCreate = lazy(() => import("../pages/Vendor/VendorCreate"));
 const VendorUpdate = lazy(() => import("../pages/Vendor/VendorUpdate"));
 const VendorView = lazy(() => import("../pages/Vendor/VendorView"));
@@ -37,6 +31,7 @@ const StockOutUpdate = lazy(() => import("../pages/stockOut/StockOutUpdate"));
 const StockOuts = lazy(() => import("../pages/StockOuts/StockOuts"));
 const Clients = lazy(() => import("../pages/Clients/Clients"));
 const ClientCreate = lazy(() => import("../pages/Client/ClientCreate"));
+const ClientUpdate = lazy(() => import("../pages/Client/ClientUpdate"));
 import { getCurrentUser, type IUser } from "../api/user";
 import { useUserStore } from "../store/userStore";
 
@@ -405,6 +400,16 @@ export const routeConfig: ExtendedRouteObject[] = [
 					icon: <DesktopOutlined />,
 					order: 4,
 					title: "客户创建",
+				},
+			},
+			{
+				path: "client/update/:id",
+				Component: ClientUpdate,
+				meta: {
+					hidden: true,
+					icon: <DesktopOutlined />,
+					order: 4,
+					title: "客户编辑",
 				},
 			},
 		],
