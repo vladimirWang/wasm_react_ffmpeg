@@ -1,4 +1,4 @@
-import React, { useRef, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { Button, Input, message, Pagination, Space, Table, Tooltip } from "antd";
 import {
 	CheckCircleOutlined,
@@ -23,8 +23,10 @@ import dayjs from "dayjs";
 import StockOperationUploadModal, {
 	StockOperationUploadModalRefProps,
 } from "../../components/StockOperationUploadModal";
-import { composePromise } from "../../utils/common";
+import { composePromise, groupByUniqueElements } from "../../utils/common";
 import SearchBox from "../../components/SearchBox";
+import { getClients, IClient } from "../../api/client";
+import { getPlatforms, IPlatform } from "../../api/platform";
 
 const StockOuts: React.FC = () => {
 	const [fileUploadModalOpen, setFileUploadModalOpen] = useState(false);
@@ -77,6 +79,16 @@ const StockOuts: React.FC = () => {
 			title: "出货单总金额",
 			dataIndex: "totalPrice",
 			key: "totalPrice",
+		},
+		{
+			title: "平台订单号",
+			dataIndex: "platformOrderNo",
+			key: "platformOrderNo",
+		},
+		{
+			title: "平台",
+			dataIndex: "platform",
+			key: "platform",
 		},
 		{
 			title: "状态",
@@ -140,42 +152,111 @@ const StockOuts: React.FC = () => {
 		},
 	];
 	const [results, setResults] = useState<number[]>([]);
+	const [platforms, setPlatforms] = useState<IPlatform[]>([]);
+	const [clients, setClients] = useState<IClient[]>([]);
+
+	const loadPlatforms = async () => {
+		const res = await getPlatforms();
+		setPlatforms(res);
+	};
+	const loadClients = async () => {
+		const res = await getClients({ pagination: 0 });
+		setClients(res.list);
+	};
+	useEffect(() => {
+		loadPlatforms();
+		loadClients();
+	}, []);
 
 	const batchOperationColumns: TableProps<StockOutRecord>["columns"] = [
 		{
 			title: "价格",
 			dataIndex: "price",
 			key: "price",
+			width: 80,
+		},
+		{
+			title: "平台",
+			dataIndex: "platform",
+			key: "platform",
+			width: 50,
+			render: (_, record) => {
+				const matched = platforms.find(platform => platform.id === record.platformId)?.name;
+				if (!matched) {
+					return "--";
+				}
+				return <Tooltip title={matched}>{matched}</Tooltip>;
+			},
+		},
+		{
+			title: "平台订单号",
+			dataIndex: "platformOrderNo",
+			key: "platformOrderNo",
 			width: 100,
+		},
+		{
+			title: "客户",
+			dataIndex: "clientId",
+			key: "clientId",
+			width: 50,
+			render: (_, record) => {
+				const matched = clients.find(client => client.id === record.clientId)?.name;
+				if (!matched) {
+					return "--";
+				}
+				return (
+					<Tooltip title={matched}>
+						<div className="text-ellipsis overflow-hidden whitespace-nowrap">{matched}</div>
+					</Tooltip>
+				);
+			},
 		},
 	];
 
-	const handleConfirm = async (data: { group: StockOutRecord[][]; flat: StockOutRecord[] }) => {
-		const tasks = data.group.map((recordSet, recordSetIndex) => () => {
-			const params = {
-				createdAt: recordSet[0].createdAt,
-				productJoinStockOut: recordSet,
-			};
-			return (
-				createStockOut(params as IStockOutCreateParams, { showSuccessMessage: false })
-					// 处理成功与失败情况的导入结果展示
-					.then(res => {
-						setResults(prev => [...prev, res.id]);
-						stockOperationUploadModalRef.current?.onItemFinish(recordSetIndex, true);
-						return res;
-					})
-					.catch(e => {
-						stockOperationUploadModalRef.current?.onItemFinish(recordSetIndex, false);
-						return Promise.reject(e);
-					})
-			);
+	const handleConfirm = async () => {
+		console.log("----handleConfirm uniqueGroups----: ", uniqueGroups);
+		const serialTasks = uniqueGroups.map((uniqueGroup, uniqueGroupIndex) => () => {
+			const concurrentTasks = uniqueGroup.map((recordSet, recordSetIndex) => () => {
+				const params = {
+					createdAt: recordSet[0].createdAt,
+					productJoinStockOut: recordSet,
+					platform: recordSet[0].platformId,
+					platformOrderNo: recordSet[0].platformOrderNo,
+					clientId: recordSet[0].clientId,
+				};
+				console.log("----params----: ", params);
+				return createStockOut(params as IStockOutCreateParams, { showSuccessMessage: false });
+			});
+			return Promise.all(concurrentTasks);
 		});
-		try {
-			await composePromise(...tasks);
-			message.success(`成功导入出货单${data.group.length}笔，包含商品${data.flat.length}件`);
-		} finally {
-			return Promise.resolve();
-		}
+		console.log("----serialTasks----: ", serialTasks);
+		await composePromise(...serialTasks);
+		message.success(`成功导入出货单${groupedRecords.length}笔`);
+		// const tasks = data.group.map((recordSet, recordSetIndex) => () => {
+		// 	const params = {
+		// 		createdAt: recordSet[0].createdAt,
+		// 		productJoinStockOut: recordSet,
+		// 	};
+		// 	return (
+		// 		createStockOut(params as IStockOutCreateParams, { showSuccessMessage: false })
+		// 			// 处理成功与失败情况的导入结果展示
+		// 			.then(res => {
+		// 				setResults(prev => [...prev, res.id]);
+		// 				stockOperationUploadModalRef.current?.onItemFinish(recordSetIndex, true);
+		// 				return res;
+		// 			})
+		// 			.catch(e => {
+		// 				stockOperationUploadModalRef.current?.onItemFinish(recordSetIndex, false);
+		// 				return Promise.reject(e);
+		// 			})
+		// 	);
+		// });
+		// try {
+		// 	await composePromise(...tasks);
+		// 	message.success(`成功导入出货单${data.group.length}笔，包含商品${data.flat.length}件`);
+		// } finally {
+		// 	return Promise.resolve();
+		// }
 	};
 
 	const [keyword, setKeyword] = useState<string>(queryParams.productName || "");
@@ -203,6 +284,29 @@ const StockOuts: React.FC = () => {
 			<SearchBox queryParams={queryParams} onSetQueryParams={setQueryParams} />
 		</div>
 	);
+
+	const [groupedRecords, setGroupedRecords] = useState<StockOutRecord[][]>([]);
+	const [uniqueGroups, setUniqueGroups] = useState<StockOutRecord[][][]>([]);
+
+	const handleParseExcelFile = async (data: StockOutRecord[]): Promise<void> => {
+		console.log("----handleParseExcelFile data----: ", data);
+		// 分组处理, 同一个平台订单号分一组
+		const platformOrderNoMap: Record<string, StockOutRecord[]> = {};
+		data.forEach(record => {
+			if (!platformOrderNoMap[record.platformOrderNo]) {
+				platformOrderNoMap[record.platformOrderNo] = [];
+			}
+			platformOrderNoMap[record.platformOrderNo].push(record);
+		});
+		const groupRecords = Object.values(platformOrderNoMap);
+		const uniqueGroupsResult = groupByUniqueElements<StockOutRecord>(groupRecords, data => {
+			return data.productId;
+		});
+		console.log("----groupRecords----: ", groupRecords);
+		console.log("----uniqueGroups----: ", uniqueGroupsResult);
+		setGroupedRecords(groupRecords);
+		setUniqueGroups(uniqueGroupsResult);
+	};
 	return (
 		<div className="py-2 px-3">
 			{toolBar}
@@ -264,7 +368,16 @@ const StockOuts: React.FC = () => {
 			<StockOperationUploadModal<StockOutRecord>
 				results={results}
 				columns={batchOperationColumns}
-				requiredFields={["productId", "count", "price", "vendorId"]}
+				requiredFields={[
+					"productId",
+					"count",
+					"price",
+					"vendorId",
+					"clientId",
+					"platformId",
+					"platformOrderNo",
+					"createdAt",
+				]}
 				ref={stockOperationUploadModalRef}
 				operationType="stockOut"
 				open={fileUploadModalOpen}
@@ -274,6 +387,7 @@ const StockOuts: React.FC = () => {
 					setFileUploadModalOpen(false);
 				}}
 				onConfirm={handleConfirm}
+				onParseExcelFile={handleParseExcelFile}
 			/>
 		</div>
 	);

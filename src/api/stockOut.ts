@@ -28,6 +28,9 @@ export interface IProductJoinStockOut extends IProductJoinStockOperation {
 // Excel 解析后的数据格式（如需复用可在页面/组件中引入）
 export interface StockOutRecord extends StockOperationRecord {
 	price: number;
+	clientId: number;
+	platformId: number;
+	platformOrderNo: string;
 }
 
 export interface IStockOutCreateParams {
@@ -36,6 +39,7 @@ export interface IStockOutCreateParams {
 	createdAt?: string;
 	platform: number;
 	platformOrderNo: string;
+	clientId: number;
 }
 
 type IStockOutsQueryResponse = IPaginationResp<IStockOut>;
@@ -63,6 +67,7 @@ export const createStockOut = (
 	data: IStockOutCreateParams,
 	options?: { showSuccessMessage?: boolean }
 ) => {
+	console.log("----createStockOut data----: ", data);
 	return nodejsRequest.post("/stockout/multiple", data, {
 		showSuccessMessage: options?.showSuccessMessage ?? true,
 	});

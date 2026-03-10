@@ -1,4 +1,4 @@
-import React, { forwardRef, useState, useImperativeHandle } from "react";
+import React, { forwardRef, useState, useImperativeHandle, useEffect } from "react";
 import { Button, message, Modal, Table, Upload, Steps, Select, Tooltip, Divider } from "antd";
 import { InboxOutlined, CheckCircleOutlined, CloseCircleOutlined } from "@ant-design/icons";
 import type { TableProps, UploadProps } from "antd";
@@ -21,6 +21,7 @@ interface StockOperationUploadModalProps<T> {
 	operationType: "stockIn" | "stockOut";
 	onConfirm: (records: { group: T[][]; flat: T[]; uniqueGroups: T[][][] }) => Promise<void>;
 	requiredFields: (keyof T)[];
+	onParseExcelFile: (data: T[]) => Promise<void>;
 }
 
 /**
@@ -49,6 +50,7 @@ const StockOperationUploadModal = <T extends StockOperationRecord>(
 		requiredFields,
 		columns,
 		results,
+		onParseExcelFile,
 	}: StockOperationUploadModalProps<T>,
 	ref: React.Ref<StockOperationUploadModalRefProps>
 ) => {
@@ -85,6 +87,130 @@ const StockOperationUploadModal = <T extends StockOperationRecord>(
 			},
 		};
 	});
+
+	// 解析 Excel 文件 - 第二行作为字段 key
+	const parseExcelFile2 = async (file: File): Promise<T[]> => {
+		return new Promise((resolve, reject) => {
+			const reader = new FileReader();
+			reader.onload = e => {
+				try {
+					const data = new Uint8Array(e.target?.result as ArrayBuffer);
+					const workbook = XLSX.read(data, { type: "array" });
+
+					// 读取第一个工作表
+					const firstSheetName = workbook.SheetNames[0];
+					const worksheet = workbook.Sheets[firstSheetName];
+
+					// 将工作表转换为 JSON 数组
+					const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 }) as any[][];
+					if (jsonData.length < 3) {
+						reject(
+							new Error(
+								"Excel 文件格式不正确：至少需要 3 行数据（第一行忽略，第二行表头，第三行开始为数据）"
+							)
+						);
+						return;
+					}
+
+					console.log("----jsonData----: ", jsonData);
+
+					// 第二行作为字段 key（表头）
+					const headerRow = jsonData[1];
+					if (!headerRow || headerRow.length === 0) {
+						reject(new Error("Excel 文件格式不正确：第二行必须包含字段名称"));
+						return;
+					}
+					console.log("----headerRow----: ", headerRow);
+					// 创建字段映射：字段名 -> 列索引
+					const fieldMap: Partial<Record<keyof T, number | string>> = {};
+					headerRow.forEach((header: any, index: number) => {
+						if (header) {
+							const headerStr = String(header).trim();
+							fieldMap[headerStr as keyof T] = index;
+						}
+					});
+
+					// 验证必需的字段是否存在
+					const missingFields = requiredFields.filter(field => fieldMap[field] === undefined);
+					if (missingFields.length > 0) {
+						reject(new Error(`Excel 文件缺少必需字段：${missingFields.join(", ")}`));
+						return;
+					}
+
+					// resolve({
+					// 	uniqueGroups: [],
+					// 	group: [],
+					// 	flat: [],
+					// });
+					// 从第三行开始解析数据（索引从 2 开始）
+					// 注意：Excel 行号从 1 开始，数组索引从 0 开始
+					// 第一行（索引 0）被忽略，第二行（索引 1）是表头，第三行（索引 2）开始是数据
+					// 所以 Excel 行号 = 数组索引 + 1，数据行的 Excel 行号 = i + 1
+					// const createdAtMap: Record<string, T[]> = {};
+					const flatRecords: T[] = [];
+					for (let i = 2; i < jsonData.length; i++) {
+						const row = jsonData[i];
+						if (!row || row.length === 0) continue; // 跳过空行
+
+						// 必填字段的对象
+						const requiredValues: T = {} as unknown as T;
+						for (const field of requiredFields) {
+							const colIndex = fieldMap[field] as number;
+							const value = row[colIndex];
+							// if (isNaN(value)) {
+							// 	reject(
+							// 		new Error(`Excel 文件格式不正确：第 ${i + 1} 行 ${field as string} 字段值不合法`)
+							// 	);
+							// 	return;
+							// }
+							requiredValues[field] = value as T[keyof T];
+						}
+						// const createdAtSerial =
+						// 	row[fieldMap["createdAt"] as number] || dateToMsSince1900(new Date());
+						// const createdAt = excelSerialToDate(createdAtSerial);
+						// const formatCreatedAt = dayjs(createdAt).format("YYYY-MM-DD");
+
+						// if (!createdAtMap[formatCreatedAt]) {
+						// 	createdAtMap[formatCreatedAt] = [];
+						// }
+						// requiredValues.createdAt = formatCreatedAt;
+						requiredValues.rowIndex = i + 1;
+						flatRecords.push(requiredValues);
+						// createdAtMap[formatCreatedAt].push(requiredValues);
+					}
+					setParsedRecords(flatRecords);
+					setCurrentStep(1);
+					message.success(`成功解析 ${flatRecords.length} 条记录`);
+					resolve(flatRecords);
+
+					// const groupRecords = Object.values(createdAtMap);
+					// if (groupRecords.length === 0) {
+					// 	reject(new Error("Excel 文件中没有有效数据"));
+					// 	return;
+					// }
+					// // const ids = groupRecords.map(record => record.map(r => r.productId));
+					// // console.log("----ids----: ", ids);
+					// const productIdExtractor = (record: T) => record.productId;
+					// const uniqueGroups = groupByUniqueElements<T>(groupRecords, productIdExtractor);
+					// // console.log("----uniqueGroups----: ", uniqueGroups);
+					// // console.log("----groupRecords----: ", groupRecords);
+					// // console.log("----flatRecords----: ", flatRecords);
+
+					// resolve({
+					// 	uniqueGroups,
+					// 	group: groupRecords,
+					// 	flat: flatRecords,
+					// });
+				} catch (error) {
+					reject(error);
+				}
+			};
+			reader.onerror = () => {
+				reject(new Error("文件读取失败"));
+			};
+			reader.readAsArrayBuffer(file);
+		});
+	};
 
 	// 解析 Excel 文件 - 第二行作为字段 key
 	const parseExcelFile = async (
@@ -137,60 +263,65 @@ const StockOperationUploadModal = <T extends StockOperationRecord>(
 						return;
 					}
 
-					// 从第三行开始解析数据（索引从 2 开始）
-					// 注意：Excel 行号从 1 开始，数组索引从 0 开始
-					// 第一行（索引 0）被忽略，第二行（索引 1）是表头，第三行（索引 2）开始是数据
-					// 所以 Excel 行号 = 数组索引 + 1，数据行的 Excel 行号 = i + 1
-					const createdAtMap: Record<string, T[]> = {};
-					const flatRecords: T[] = [];
-					for (let i = 2; i < jsonData.length; i++) {
-						const row = jsonData[i];
-						if (!row || row.length === 0) continue; // 跳过空行
-
-						// 必填字段的对象
-						const requiredValues: T = {} as unknown as T;
-						for (const field of requiredFields) {
-							const value = Number(row[fieldMap[field] as number]);
-							if (isNaN(value)) {
-								reject(
-									new Error(`Excel 文件格式不正确：第 ${i + 1} 行 ${field as string} 字段值不合法`)
-								);
-								return;
-							}
-							requiredValues[field] = value as T[keyof T];
-						}
-						const createdAtSerial =
-							row[fieldMap["createdAt"] as number] || dateToMsSince1900(new Date());
-						const createdAt = excelSerialToDate(createdAtSerial);
-						const formatCreatedAt = dayjs(createdAt).format("YYYY-MM-DD");
-
-						if (!createdAtMap[formatCreatedAt]) {
-							createdAtMap[formatCreatedAt] = [];
-						}
-						requiredValues.createdAt = formatCreatedAt;
-						requiredValues.rowIndex = i + 1;
-						flatRecords.push(requiredValues);
-						createdAtMap[formatCreatedAt].push(requiredValues);
-					}
-
-					const groupRecords = Object.values(createdAtMap);
-					if (groupRecords.length === 0) {
-						reject(new Error("Excel 文件中没有有效数据"));
-						return;
-					}
-					// const ids = groupRecords.map(record => record.map(r => r.productId));
-					// console.log("----ids----: ", ids);
-					const productIdExtractor = (record: T) => record.productId;
-					const uniqueGroups = groupByUniqueElements<T>(groupRecords, productIdExtractor);
-					// console.log("----uniqueGroups----: ", uniqueGroups);
-					// console.log("----groupRecords----: ", groupRecords);
-					// console.log("----flatRecords----: ", flatRecords);
-
 					resolve({
-						uniqueGroups,
-						group: groupRecords,
-						flat: flatRecords,
+						uniqueGroups: [],
+						group: [],
+						flat: [],
 					});
+					// // 从第三行开始解析数据（索引从 2 开始）
+					// // 注意：Excel 行号从 1 开始，数组索引从 0 开始
+					// // 第一行（索引 0）被忽略，第二行（索引 1）是表头，第三行（索引 2）开始是数据
+					// // 所以 Excel 行号 = 数组索引 + 1，数据行的 Excel 行号 = i + 1
+					// const createdAtMap: Record<string, T[]> = {};
+					// const flatRecords: T[] = [];
+					// for (let i = 2; i < jsonData.length; i++) {
+					// 	const row = jsonData[i];
+					// 	if (!row || row.length === 0) continue; // 跳过空行
+
+					// 	// 必填字段的对象
+					// 	const requiredValues: T = {} as unknown as T;
+					// 	for (const field of requiredFields) {
+					// 		const value = Number(row[fieldMap[field] as number]);
+					// 		if (isNaN(value)) {
+					// 			reject(
+					// 				new Error(`Excel 文件格式不正确：第 ${i + 1} 行 ${field as string} 字段值不合法`)
+					// 			);
+					// 			return;
+					// 		}
+					// 		requiredValues[field] = value as T[keyof T];
+					// 	}
+					// 	const createdAtSerial =
+					// 		row[fieldMap["createdAt"] as number] || dateToMsSince1900(new Date());
+					// 	const createdAt = excelSerialToDate(createdAtSerial);
+					// 	const formatCreatedAt = dayjs(createdAt).format("YYYY-MM-DD");
+
+					// 	if (!createdAtMap[formatCreatedAt]) {
+					// 		createdAtMap[formatCreatedAt] = [];
+					// 	}
+					// 	requiredValues.createdAt = formatCreatedAt;
+					// 	requiredValues.rowIndex = i + 1;
+					// 	flatRecords.push(requiredValues);
+					// 	createdAtMap[formatCreatedAt].push(requiredValues);
+					// }
+
+					// const groupRecords = Object.values(createdAtMap);
+					// if (groupRecords.length === 0) {
+					// 	reject(new Error("Excel 文件中没有有效数据"));
+					// 	return;
+					// }
+					// // const ids = groupRecords.map(record => record.map(r => r.productId));
+					// // console.log("----ids----: ", ids);
+					// const productIdExtractor = (record: T) => record.productId;
+					// const uniqueGroups = groupByUniqueElements<T>(groupRecords, productIdExtractor);
+					// // console.log("----uniqueGroups----: ", uniqueGroups);
+					// // console.log("----groupRecords----: ", groupRecords);
+					// // console.log("----flatRecords----: ", flatRecords);
+
+					// resolve({
+					// 	uniqueGroups,
+					// 	group: groupRecords,
+					// 	flat: flatRecords,
+					// });
 				} catch (error) {
 					reject(error);
 				}
@@ -207,8 +338,8 @@ const StockOperationUploadModal = <T extends StockOperationRecord>(
 		try {
 			setLoadingData(true);
 			const [productsRes, vendorsRes] = await Promise.all([
-				getProducts({ pagination: false }),
-				getVendors({ pagination: false }),
+				getProducts({ pagination: 0 }),
+				getVendors({ pagination: 0 }),
 			]);
 
 			setProducts(productsRes.list);
@@ -217,6 +348,10 @@ const StockOperationUploadModal = <T extends StockOperationRecord>(
 			setLoadingData(false);
 		}
 	};
+
+	useEffect(() => {
+		loadProductsAndVendors();
+	}, []);
 
 	const [segments, setSegments] = useState<{ start: number; length: number }[]>([
 		// { start: 0, length: 2 },
@@ -230,35 +365,39 @@ const StockOperationUploadModal = <T extends StockOperationRecord>(
 		try {
 			setUploading(true);
 
-			// // 前端解析 Excel 文件
-			const records: { group: T[][]; flat: T[]; uniqueGroups: T[][][] } = await parseExcelFile(
-				file as File
-			);
-			const importedRecordBatchTmp: ImportedRecordBatch = {};
-			records.group.forEach((record, index) => {
-				const previous = records.group.slice(0, index);
-				const previousLength = previous.reduce((a, c) => {
-					return a + c.length;
-				}, 0);
+			const flatRecords = await parseExcelFile2(file);
 
-				// 记录分组起止位置
-				setSegments(prev => {
-					return [...prev, { start: previousLength, length: record.length }];
-				});
-				importedRecordBatchTmp[index] = [previousLength, previousLength + record.length];
-			});
-			setImportedRecordBatch(importedRecordBatchTmp);
-			setGroupedRecords(records.group as unknown as T[][]);
-			setUniqueGroups(records.uniqueGroups as unknown as T[][][]);
-			// 加载产品和供应商数据
-			await loadProductsAndVendors();
+			await onParseExcelFile(flatRecords);
+			message.success(`成功解析 ${flatRecords.length} 条记录`);
+			// // // 前端解析 Excel 文件
+			// const records: { group: T[][]; flat: T[]; uniqueGroups: T[][][] } = await parseExcelFile(
+			// 	file as File
+			// );
+			// const importedRecordBatchTmp: ImportedRecordBatch = {};
+			// records.group.forEach((record, index) => {
+			// 	const previous = records.group.slice(0, index);
+			// 	const previousLength = previous.reduce((a, c) => {
+			// 		return a + c.length;
+			// 	}, 0);
 
-			// 保存解析结果和文件，切换到第二步（解析实现为 StockInRecord，使用时 T=StockInRecord）
-			setParsedRecords(records.flat as unknown as (T & { success?: boolean })[]);
-			setUploadedFile(file as File);
-			setCurrentStep(1);
-			onUploadSuccess?.(records.flat, file);
-			message.success(`成功解析 ${records.flat.length} 条记录`);
+			// 	// 记录分组起止位置
+			// 	setSegments(prev => {
+			// 		return [...prev, { start: previousLength, length: record.length }];
+			// 	});
+			// 	importedRecordBatchTmp[index] = [previousLength, previousLength + record.length];
+			// });
+			// setImportedRecordBatch(importedRecordBatchTmp);
+			// setGroupedRecords(records.group as unknown as T[][]);
+			// setUniqueGroups(records.uniqueGroups as unknown as T[][][]);
+			// // 加载产品和供应商数据
+			// await loadProductsAndVendors();
+
+			// // 保存解析结果和文件，切换到第二步（解析实现为 StockInRecord，使用时 T=StockInRecord）
+			// setParsedRecords(records.flat as unknown as (T & { success?: boolean })[]);
+			// setUploadedFile(file as File);
+			// setCurrentStep(1);
+			// onUploadSuccess?.(records.flat, file);
+			// message.success(`成功解析 ${records.flat.length} 条记录`);
 		} catch (error: any) {
 			message.error(error.message);
 			onError?.(error);
@@ -323,6 +462,7 @@ const StockOperationUploadModal = <T extends StockOperationRecord>(
 			key: "vendorName",
 			width: 90,
 			render: (_, record) => {
+				console.log("----供应商名称 record----: ", record, vendors);
 				const vendor = vendors.find(v => v.id === record.vendorId);
 				return vendor ? vendor.name : "-";
 			},
@@ -360,32 +500,32 @@ const StockOperationUploadModal = <T extends StockOperationRecord>(
 		},
 	];
 	const resultColumns: TableProps<T>["columns"] = [
-		{
-			title: "入(出)库单id",
-			key: "id",
-			width: 100,
-			render: (_value, _record, index) => {
-				const segmentIndex = segments.findIndex(
-					segment => index >= segment.start && index < segment.start + segment.length
-				);
-				if (segmentIndex === -1) {
-					return "-";
-				}
-				const result = results[segmentIndex];
-				return result === -1 ? null : result;
-			},
-			onCell: (_, index) => {
-				const match = segments.find(segment => index == segment.start);
-				if (match) {
-					return {
-						rowSpan: match.length,
-					};
-				}
-				return {
-					rowSpan: 0,
-				};
-			},
-		},
+		// {
+		// 	title: "入(出)库单id",
+		// 	key: "id",
+		// 	width: 100,
+		// 	render: (_value, _record, index) => {
+		// 		const segmentIndex = segments.findIndex(
+		// 			segment => index >= segment.start && index < segment.start + segment.length
+		// 		);
+		// 		if (segmentIndex === -1) {
+		// 			return "-";
+		// 		}
+		// 		const result = results[segmentIndex];
+		// 		return result === -1 ? null : result;
+		// 	},
+		// 	onCell: (_, index) => {
+		// 		const match = segments.find(segment => index == segment.start);
+		// 		if (match) {
+		// 			return {
+		// 				rowSpan: match.length,
+		// 			};
+		// 		}
+		// 		return {
+		// 			rowSpan: 0,
+		// 		};
+		// 	},
+		// },
 		{
 			title: "匹配结果",
 			key: "matchResult",
