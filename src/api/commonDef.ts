@@ -14,6 +14,7 @@ export type Undefinedify<T> = Partial<Record<keyof T, undefined>>;
 
 // 定义登录请求参数类型
 export interface IPagination {
+	pagination?: 0 | 1;
 	limit?: number;
 	page?: number;
 }

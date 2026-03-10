@@ -9,25 +9,19 @@ import { GlobalModal } from "../../components/GlobalModal";
 import DateQuery, { DateQueryValue } from "../../components/DateQuery";
 import dayjs from "dayjs";
 import { paramsToSearchParams } from "../../utils/common";
+import { getClients, IClient } from "../../api/client";
 
-const columns: TableProps<IVendor>["columns"] = [
+const columns: TableProps<IClient>["columns"] = [
 	{
-		title: "供应商id",
+		title: "客户id",
 		dataIndex: "id",
 		key: "id",
+		width: 50,
 	},
 	{
 		title: "名称",
 		dataIndex: "name",
 		key: "name",
-	},
-	{
-		title: "更新时间",
-		dataIndex: "updatedAt",
-		key: "updatedAt",
-		render: (_, record) => {
-			return record.updatedAt ? dayjs(record.updatedAt).format("YYYY-MM-DD HH:mm:ss") : null;
-		},
 	},
 	// {
 	//   title: 'balance',
@@ -47,8 +41,8 @@ const columns: TableProps<IVendor>["columns"] = [
 		dataIndex: "action",
 		render: (_, record) => (
 			<Space size="middle">
-				<Link to={`/vendor/update/${record.id}`}>编辑</Link>
-				<Link to={`/vendor/${record.id}`}>查看</Link>
+				<Link to={`/client/update/${record.id}`}>编辑</Link>
+				{/* <Link to={`/client/${record.id}`}>查看</Link> */}
 			</Space>
 		),
 	},
@@ -81,18 +75,17 @@ const Clients: React.FC = () => {
 	);
 
 	// 2. 定义SWR的fetcher函数：接收参数，调用getProducts
-	const fetcher = async ([_tag, page, limit, name, deletedAt]: typeof swrKey) => {
-		const res = await getVendors({
+	const fetcher = async ([_tag, page, limit, name]: typeof swrKey) => {
+		const res = await getClients({
 			page,
 			limit,
 			name: name === "" ? undefined : name,
-			deletedAt,
 		});
 		return res; // 若你的getProducts返回的是响应体（如res.data），则这里取res.data
 	};
 
 	const {
-		data: products, // 接口返回的产品列表数据
+		data, // 接口返回的产品列表数据
 		error, // 请求错误信息
 		isLoading, // 加载状态
 		mutate,
@@ -207,11 +200,11 @@ const Clients: React.FC = () => {
 				></Button>
 			</section>
 			{error && <div>Error loading products.</div>}
-			<Table<IVendor>
+			<Table<IClient>
 				size="small"
 				// rowSelection={{ type: "checkbox", ...rowSelection }}
 				columns={columns}
-				dataSource={products?.list}
+				dataSource={data?.list}
 				rowKey={"id"}
 				loading={isLoading}
 				pagination={false}
@@ -229,7 +222,7 @@ const Clients: React.FC = () => {
 			</section> */}
 			<section className="flex justify-end">
 				<Pagination
-					total={products?.total}
+					total={data?.total}
 					showTotal={(total, range) => `${range[0]}-${range[1]} / ${total} 条`}
 					defaultPageSize={20}
 					defaultCurrent={page}

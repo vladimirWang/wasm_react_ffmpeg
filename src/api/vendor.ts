@@ -32,7 +32,7 @@ export interface IVendorQueryParams {
 	limit?: number;
 	page?: number;
 	name?: string;
-	pagination?: boolean;
+	pagination?: 0 | 1;
 	deletedAt?: boolean | Date;
 }
 
