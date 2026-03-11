@@ -22,6 +22,7 @@ interface StockOperationUploadModalProps<T> {
 	onConfirm: () => Promise<void>;
 	requiredFields: (keyof T)[];
 	onParseExcelFile: (data: T[]) => Promise<void>;
+	dateFields: (keyof T)[];
 }
 
 /**
@@ -50,6 +51,7 @@ const StockOperationUploadModal = <T extends StockOperationRecord>(
 		requiredFields,
 		columns,
 		results,
+		dateFields,
 		onParseExcelFile,
 	}: StockOperationUploadModalProps<T>,
 	ref: React.Ref<StockOperationUploadModalRefProps>
@@ -157,18 +159,22 @@ const StockOperationUploadModal = <T extends StockOperationRecord>(
 						for (const field of requiredFields) {
 							const colIndex = fieldMap[field] as number;
 							const value = row[colIndex];
+							if (dateFields.includes(field)) {
+								const createdAtSerial = value || dateToMsSince1900(new Date());
+								const createdAt = excelSerialToDate(createdAtSerial);
+								const formatCreatedAt = dayjs(createdAt).format("YYYY-MM-DD");
+								console.log("----createdAt value----: ", value, formatCreatedAt);
+								requiredValues[field] = formatCreatedAt as T[keyof T];
+							} else {
+								requiredValues[field] = value as T[keyof T];
+							}
 							// if (isNaN(value)) {
 							// 	reject(
 							// 		new Error(`Excel 文件格式不正确：第 ${i + 1} 行 ${field as string} 字段值不合法`)
 							// 	);
 							// 	return;
 							// }
-							requiredValues[field] = value as T[keyof T];
 						}
-						// const createdAtSerial =
-						// 	row[fieldMap["createdAt"] as number] || dateToMsSince1900(new Date());
-						// const createdAt = excelSerialToDate(createdAtSerial);
-						// const formatCreatedAt = dayjs(createdAt).format("YYYY-MM-DD");
 
 						// if (!createdAtMap[formatCreatedAt]) {
 						// 	createdAtMap[formatCreatedAt] = [];
@@ -243,7 +249,6 @@ const StockOperationUploadModal = <T extends StockOperationRecord>(
 						reject(new Error("Excel 文件格式不正确：第二行必须包含字段名称"));
 						return;
 					}
-					console.log("----headerRow----: ", headerRow);
 					// 创建字段映射：字段名 -> 列索引
 					const fieldMap: Partial<Record<keyof T, number>> = {};
 					headerRow.forEach((header: any, index: number) => {
@@ -462,7 +467,6 @@ const StockOperationUploadModal = <T extends StockOperationRecord>(
 			key: "vendorName",
 			width: 90,
 			render: (_, record) => {
-				console.log("----供应商名称 record----: ", record, vendors);
 				const vendor = vendors.find(v => v.id === record.vendorId);
 				return vendor ? vendor.name : "-";
 			},

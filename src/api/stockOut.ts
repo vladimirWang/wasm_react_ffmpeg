@@ -37,7 +37,7 @@ export interface IStockOutCreateParams {
 	remark?: string;
 	productJoinStockOut: IProductJoinStockOut[];
 	createdAt?: string;
-	platform: number;
+	platformId: number;
 	platformOrderNo: string;
 	clientId: number;
 }
@@ -63,10 +63,11 @@ export const updateStockOut = async (
 };
 
 // 新建出货
-export const createStockOut = (
+export const createStockOut = async (
 	data: IStockOutCreateParams,
 	options?: { showSuccessMessage?: boolean }
 ) => {
+	// await sleep(3000)
 	console.log("----createStockOut data----: ", data);
 	return nodejsRequest.post("/stockout/multiple", data, {
 		showSuccessMessage: options?.showSuccessMessage ?? true,

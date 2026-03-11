@@ -23,7 +23,7 @@ import dayjs from "dayjs";
 import StockOperationUploadModal, {
 	StockOperationUploadModalRefProps,
 } from "../../components/StockOperationUploadModal";
-import { composePromise, groupByUniqueElements } from "../../utils/common";
+import { composePromise, composePromise2, groupByUniqueElements } from "../../utils/common";
 import SearchBox from "../../components/SearchBox";
 import { getClients, IClient } from "../../api/client";
 import { getPlatforms, IPlatform } from "../../api/platform";
@@ -213,24 +213,167 @@ const StockOuts: React.FC = () => {
 		},
 	];
 
-	const handleConfirm = async () => {
-		console.log("----handleConfirm uniqueGroups----: ", uniqueGroups);
-		const serialTasks = uniqueGroups.map((uniqueGroup, uniqueGroupIndex) => () => {
-			const concurrentTasks = uniqueGroup.map((recordSet, recordSetIndex) => () => {
+	const test = async () => {
+		const data: StockOutRecord[][][] = [
+			[
+				[
+					{
+						productId: 2,
+						count: 5,
+						price: 100,
+						vendorId: 1,
+						clientId: 10,
+						platformId: 1,
+						platformOrderNo: "XY001",
+						createdAt: "2020-01-01 00:00:00",
+						rowIndex: 3,
+					},
+					{
+						productId: 3,
+						count: 2,
+						price: 120,
+						vendorId: 2,
+						clientId: 10,
+						platformId: 1,
+						platformOrderNo: "XY001",
+						createdAt: "2020-01-01 00:00:00",
+						rowIndex: 4,
+					},
+				],
+			],
+			[
+				[
+					{
+						productId: 1,
+						count: 1,
+						price: 100,
+						vendorId: 2,
+						clientId: 3,
+						platformId: 2,
+						platformOrderNo: "PDD002",
+						createdAt: "2020-01-01 00:00:00",
+						rowIndex: 5,
+					},
+				],
+			],
+		];
+		const data2: StockOutRecord[][][] = [
+			[
+				[
+					{
+						productId: 3,
+						count: 5,
+						price: 100,
+						vendorId: 2,
+						clientId: 10,
+						platformId: 1,
+						platformOrderNo: "XY001",
+						createdAt: "2020-01-01 00:00:00",
+						rowIndex: 3,
+					},
+					{
+						productId: 2,
+						count: 2,
+						price: 120,
+						vendorId: 1,
+						clientId: 10,
+						platformId: 1,
+						platformOrderNo: "XY001",
+						createdAt: "2020-01-01 00:00:00",
+						rowIndex: 4,
+					},
+				],
+				[
+					{
+						productId: 4,
+						count: 10,
+						price: 200,
+						vendorId: 2,
+						clientId: 4,
+						platformId: 2,
+						platformOrderNo: "PDD003",
+						createdAt: "2020-01-01 00:00:00",
+						rowIndex: 6,
+					},
+				],
+			],
+			[
+				[
+					{
+						productId: 3,
+						count: 1,
+						price: 100,
+						vendorId: 2,
+						clientId: 3,
+						platformId: 2,
+						platformOrderNo: "PDD002",
+						createdAt: "2020-01-01 00:00:00",
+						rowIndex: 5,
+					},
+				],
+			],
+		];
+
+		const serialTasks = uniqueGroups.map(group => {
+			const concurrentTasks = group.map(recordSet => {
 				const params = {
 					createdAt: recordSet[0].createdAt,
 					productJoinStockOut: recordSet,
-					platform: recordSet[0].platformId,
+					platformId: recordSet[0].platformId,
 					platformOrderNo: recordSet[0].platformOrderNo,
 					clientId: recordSet[0].clientId,
 				};
 				return createStockOut(params as IStockOutCreateParams, { showSuccessMessage: false });
 			});
-			return Promise.all(concurrentTasks);
+			return () => Promise.all(concurrentTasks);
 		});
-		console.log("----serialTasks----: ", serialTasks);
-		await composePromise(...serialTasks);
-		message.success(`成功导入出货单${groupedRecords.length}笔`);
+		await composePromise2(...serialTasks);
+		message.success("success： " + serialTasks.length);
+		// const dataItem = data[0][0][0];
+		// const params = {
+		// 	createdAt: dataItem.createdAt,
+		// 	productJoinStockOut: data[0][0],
+		// 	platformId: dataItem.platformId,
+		// 	platformOrderNo: dataItem.platformOrderNo,
+		// 	clientId: dataItem.clientId,
+		// };
+		// console.log("----params----: ", params);
+		// try {
+		// 	await createStockOut(params as IStockOutCreateParams, { showSuccessMessage: false });
+		// 	message.success("success");
+		// } catch (error) {
+		// 	console.log("----error----: ", error);
+		// 	message.error("error: " + (error as Error).message);
+		// } finally {
+		// 	message.success("finally");
+		// }
+	};
+
+	const handleConfirm = async (data: {
+		group: StockOutRecord[][];
+		flat: StockOutRecord[];
+		uniqueGroups: StockOutRecord[][][];
+	}) => {
+		console.log("----uniqueGroups----: ", JSON.stringify(uniqueGroups));
+		// const serialTasks = data.uniqueGroups.map((uniqueGroup, uniqueGroupIndex) => () => {
+		// 	console.log("----uniqueGroup item----: ", uniqueGroup);
+		// 	const concurrentTasks = uniqueGroup.map((recordSet, recordSetIndex) => () => {
+		// 		console.log("----uniqueGroup recordSet----: ", recordSet);
+		// 		const params = {
+		// 			createdAt: recordSet[0].createdAt,
+		// 			productJoinStockOut: recordSet,
+		// 			platform: recordSet[0].platformId,
+		// 			platformOrderNo: recordSet[0].platformOrderNo,
+		// 			clientId: recordSet[0].clientId,
+		// 		};
+		// 		console.log("----uniqueGroup params----: ", JSON.stringify(params));
+		// 		return createStockOut(params as IStockOutCreateParams, { showSuccessMessage: false });
+		// 	});
+		// 	return Promise.all(concurrentTasks);
+		// });
+		// console.log("----serialTasks----: ", serialTasks);
+		// await composePromise(...serialTasks);
+		// message.success(`成功导入出货单${groupedRecords.length}笔`);
 		// const tasks = data.group.map((recordSet, recordSetIndex) => () => {
 		// 	const params = {
 		// 		createdAt: recordSet[0].createdAt,
@@ -288,7 +431,6 @@ const StockOuts: React.FC = () => {
 	const [uniqueGroups, setUniqueGroups] = useState<StockOutRecord[][][]>([]);
 
 	const handleParseExcelFile = async (data: StockOutRecord[]): Promise<void> => {
-		console.log("----handleParseExcelFile data----: ", data);
 		// 分组处理, 同一个平台订单号分一组
 		const platformOrderNoMap: Record<string, StockOutRecord[]> = {};
 		data.forEach(record => {
@@ -301,8 +443,6 @@ const StockOuts: React.FC = () => {
 		const uniqueGroupsResult = groupByUniqueElements<StockOutRecord>(groupRecords, data => {
 			return data.productId;
 		});
-		console.log("----groupRecords----: ", groupRecords);
-		console.log("----uniqueGroups----: ", uniqueGroupsResult);
 		setGroupedRecords(groupRecords);
 		setUniqueGroups(uniqueGroupsResult);
 	};
@@ -364,6 +504,7 @@ const StockOuts: React.FC = () => {
 					}}
 				/>
 			</section>
+			<button onClick={test}>test</button>
 			<StockOperationUploadModal<StockOutRecord>
 				results={results}
 				columns={batchOperationColumns}
@@ -377,6 +518,7 @@ const StockOuts: React.FC = () => {
 					"platformOrderNo",
 					"createdAt",
 				]}
+				dateFields={["createdAt"]}
 				ref={stockOperationUploadModalRef}
 				operationType="stockOut"
 				open={fileUploadModalOpen}
@@ -385,7 +527,7 @@ const StockOuts: React.FC = () => {
 					mutate();
 					setFileUploadModalOpen(false);
 				}}
-				onConfirm={handleConfirm}
+				onConfirm={test}
 				onParseExcelFile={handleParseExcelFile}
 			/>
 		</div>
