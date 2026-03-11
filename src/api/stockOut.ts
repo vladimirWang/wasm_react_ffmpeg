@@ -68,7 +68,6 @@ export const createStockOut = async (
 	options?: { showSuccessMessage?: boolean }
 ) => {
 	// await sleep(3000)
-	console.log("----createStockOut data----: ", data);
 	return nodejsRequest.post("/stockout/multiple", data, {
 		showSuccessMessage: options?.showSuccessMessage ?? true,
 	});

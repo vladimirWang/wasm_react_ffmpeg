@@ -213,50 +213,7 @@ const StockOuts: React.FC = () => {
 		},
 	];
 
-	const test = async () => {
-		const data: StockOutRecord[][][] = [
-			[
-				[
-					{
-						productId: 2,
-						count: 5,
-						price: 100,
-						vendorId: 1,
-						clientId: 10,
-						platformId: 1,
-						platformOrderNo: "XY001",
-						createdAt: "2020-01-01 00:00:00",
-						rowIndex: 3,
-					},
-					{
-						productId: 3,
-						count: 2,
-						price: 120,
-						vendorId: 2,
-						clientId: 10,
-						platformId: 1,
-						platformOrderNo: "XY001",
-						createdAt: "2020-01-01 00:00:00",
-						rowIndex: 4,
-					},
-				],
-			],
-			[
-				[
-					{
-						productId: 1,
-						count: 1,
-						price: 100,
-						vendorId: 2,
-						clientId: 3,
-						platformId: 2,
-						platformOrderNo: "PDD002",
-						createdAt: "2020-01-01 00:00:00",
-						rowIndex: 5,
-					},
-				],
-			],
-		];
+	const handleConfirm = async () => {
 		const data2: StockOutRecord[][][] = [
 			[
 				[
@@ -314,18 +271,33 @@ const StockOuts: React.FC = () => {
 			],
 		];
 
-		const serialTasks = uniqueGroups.map(group => {
-			const concurrentTasks = group.map(recordSet => {
-				const params = {
-					createdAt: recordSet[0].createdAt,
-					productJoinStockOut: recordSet,
-					platformId: recordSet[0].platformId,
-					platformOrderNo: recordSet[0].platformOrderNo,
-					clientId: recordSet[0].clientId,
-				};
-				return createStockOut(params as IStockOutCreateParams, { showSuccessMessage: false });
-			});
-			return () => Promise.all(concurrentTasks);
+		const serialTasks = uniqueGroups.map((group, groupIndex) => {
+			return async () => {
+				const concurrentTasks = group.map(recordSet => {
+					const params = {
+						createdAt: recordSet[0].createdAt,
+						productJoinStockOut: recordSet,
+						platformId: recordSet[0].platformId,
+						platformOrderNo: recordSet[0].platformOrderNo,
+						clientId: recordSet[0].clientId,
+					};
+					return createStockOut(params as IStockOutCreateParams, {
+						showSuccessMessage: false,
+					})
+						.then(res => {
+							console.log("----createStockOut success res----: ", res);
+							return res;
+						})
+						.catch(err => {
+							console.log("----createStockOut error err----: ", err);
+							return Promise.reject(err);
+						});
+				});
+				const result = await Promise.all(concurrentTasks);
+				console.log("----并发执行完毕----: ", `groupIndex: ${groupIndex}`, `result: ${result}`);
+				return result;
+			};
+			// return () => Promise.all(concurrentTasks);
 		});
 		await composePromise2(...serialTasks);
 		message.success("success： " + serialTasks.length);
@@ -349,7 +321,7 @@ const StockOuts: React.FC = () => {
 		// }
 	};
 
-	const handleConfirm = async (data: {
+	const test = async (data: {
 		group: StockOutRecord[][];
 		flat: StockOutRecord[];
 		uniqueGroups: StockOutRecord[][][];
@@ -527,7 +499,7 @@ const StockOuts: React.FC = () => {
 					mutate();
 					setFileUploadModalOpen(false);
 				}}
-				onConfirm={test}
+				onConfirm={handleConfirm}
 				onParseExcelFile={handleParseExcelFile}
 			/>
 		</div>
