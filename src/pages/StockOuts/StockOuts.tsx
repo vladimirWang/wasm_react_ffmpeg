@@ -476,7 +476,6 @@ const StockOuts: React.FC = () => {
 					}}
 				/>
 			</section>
-			<button onClick={test}>test</button>
 			<StockOperationUploadModal<StockOutRecord>
 				results={results}
 				columns={batchOperationColumns}
