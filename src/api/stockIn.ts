@@ -59,6 +59,7 @@ export interface StockInRecord extends StockOperationRecord {
 }
 
 export interface IStockInCreateParams {
+	createdAt?: string;
 	productJoinStockIn: IProductJoinStockIn[];
 	remark?: string;
 }

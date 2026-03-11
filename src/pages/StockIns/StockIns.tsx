@@ -29,6 +29,7 @@ import {
 	composePromise,
 	composePromise2,
 	getBitMask,
+	groupByUniqueElements,
 	paramsToSearchParams,
 } from "../../utils/common";
 import SearchBox from "../../components/SearchBox";
@@ -223,9 +224,37 @@ const StockIns: React.FC = () => {
 	const [selectedRowKeys, setSelectedRowKeys] = useState<React.Key[]>([]);
 
 	const [results, setResults] = useState<number[]>([]);
-
+	const handleConfirm = async () => {
+		const serialTasks = uniqueGroups.map((group, groupIndex) => {
+			return async () => {
+				const concurrentTasks = group.map(recordSet => {
+					const params = {
+						createdAt: recordSet[0].createdAt,
+						productJoinStockIn: recordSet,
+					};
+					return createStockIn(params as IStockInCreateParams, {
+						showSuccessMessage: false,
+					})
+						.then(res => {
+							console.log("----createStockOut success res----: ", res);
+							return res;
+						})
+						.catch(err => {
+							console.log("----createStockOut error err----: ", err);
+							return Promise.reject(err);
+						});
+				});
+				const result = await Promise.all(concurrentTasks);
+				console.log("----并发执行完毕----: ", `groupIndex: ${groupIndex}`, `result: ${result}`);
+				return result;
+			};
+			// return () => Promise.all(concurrentTasks);
+		});
+		await composePromise2(...serialTasks);
+		message.success("success： " + serialTasks.length);
+	};
 	// 确认导入（串行调用 createStockIn，避免并发过多）
-	const handleConfirm = async (data: {
+	const test = async (data: {
 		group: StockInRecord[][];
 		flat: StockInRecord[];
 		uniqueGroups: StockInRecord[][][];
@@ -247,28 +276,36 @@ const StockIns: React.FC = () => {
 			// };
 			// return createStockIn(params as IStockInCreateParams, { showSuccessMessage: false });
 			// 并发执行的任务
-			const concurrentTasks = uniqueGroup.map((recordSet, recordSetIndex) => {
-				const params = {
-					createdAt: recordSet[0].createdAt,
-					productJoinStockIn: recordSet,
-				};
-				return createStockIn(params as IStockInCreateParams, { showSuccessMessage: false })
-					.then(res => {
-						const mask = getBitMask<StockInRecord>(recordSet, r => r.productId);
-						const groupIndex = maskToGroupIndexMap.get(mask);
-						if (groupIndex !== undefined) {
-							setResults(prev => {
-								return prev.map((item, index) => (index === groupIndex ? res.id : item));
-							});
-						}
-						stockOperationUploadModalRef.current?.onItemFinish(recordSetIndex, true);
-						return res;
-					})
-					.catch(err => {
-						stockOperationUploadModalRef.current?.onItemFinish(recordSetIndex, false);
-						return Promise.reject(err);
-					});
-			});
+			// const concurrentTasks = uniqueGroup.map((recordSet, recordSetIndex) => {
+			// 	const params = {
+			// 		createdAt: recordSet[0].createdAt,
+			// 		productJoinStockIn: recordSet,
+			// 	};
+			// 	return createStockIn(params as IStockInCreateParams, { showSuccessMessage: false })
+			// 		.then(res => {
+			// 			const mask = getBitMask<StockInRecord>(recordSet, r => r.productId);
+			// 			const groupIndex = maskToGroupIndexMap.get(mask);
+			// 			if (groupIndex !== undefined) {
+			// 				setResults(prev => {
+			// 					return prev.map((item, index) => (index === groupIndex ? res.id : item));
+			// 				});
+			// 			}
+			// 			stockOperationUploadModalRef.current?.onItemFinish(recordSetIndex, true);
+			// 			return res;
+			// 		})
+			// 		.catch(err => {
+			// 			stockOperationUploadModalRef.current?.onItemFinish(recordSetIndex, false);
+			// 			return Promise.reject(err);
+			// 		});
+			// });
+			const concurrentTasks = [
+				new Promise(r => {
+					r(10);
+				}),
+				new Promise(r => {
+					r(20);
+				}),
+			];
 			return Promise.all(concurrentTasks);
 		});
 		try {
@@ -336,6 +373,28 @@ const StockIns: React.FC = () => {
 			/>
 		</div>
 	);
+	const [groupedRecords, setGroupedRecords] = useState<StockInRecord[][]>([]);
+	const [uniqueGroups, setUniqueGroups] = useState<StockInRecord[][][]>([]);
+	const handleParseExcelFile = async (data: StockInRecord[]) => {
+		// 分组处理, 同一个平台订单号分一组
+		const createdAtAndVendorIdMap: Record<string, StockInRecord[]> = {};
+		data.forEach(record => {
+			const createdAtAndVendorId = `${record.createdAt}-${record.vendorId}`;
+
+			if (!createdAtAndVendorIdMap[createdAtAndVendorId]) {
+				createdAtAndVendorIdMap[createdAtAndVendorId] = [];
+			}
+			createdAtAndVendorIdMap[createdAtAndVendorId].push(record);
+		});
+		const groupRecords = Object.values(createdAtAndVendorIdMap);
+		const uniqueGroupsResult = groupByUniqueElements<StockInRecord>(groupRecords, data => {
+			return data.productId;
+		});
+		console.log("----groupRecords----: ", groupRecords);
+		console.log("----uniqueGroupsResult----: ", uniqueGroupsResult);
+		setGroupedRecords(groupRecords);
+		setUniqueGroups(uniqueGroupsResult);
+	};
 	return (
 		<div className="py-2 px-3">
 			{toolBar}
@@ -399,7 +458,8 @@ const StockIns: React.FC = () => {
 			<StockOperationUploadModal<StockInRecord>
 				results={results}
 				columns={batchOperationColumns}
-				requiredFields={["productId", "vendorId", "count", "cost"]}
+				requiredFields={["productId", "vendorId", "count", "cost", "createdAt"]}
+				dateFields={["createdAt"]}
 				ref={stockOperationUploadModalRef}
 				operationType="stockIn"
 				open={fileUploadModalOpen}
@@ -409,6 +469,7 @@ const StockIns: React.FC = () => {
 					setFileUploadModalOpen(false);
 				}}
 				onConfirm={handleConfirm}
+				onParseExcelFile={handleParseExcelFile}
 			/>
 		</div>
 	);
