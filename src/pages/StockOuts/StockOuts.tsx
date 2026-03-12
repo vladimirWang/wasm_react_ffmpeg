@@ -293,7 +293,7 @@ const StockOuts: React.FC = () => {
 							return Promise.reject(err);
 						});
 				});
-				const result = await Promise.all(concurrentTasks);
+				const result = await Promise.allSettled(concurrentTasks);
 				console.log("----并发执行完毕----: ", `groupIndex: ${groupIndex}`, `result: ${result}`);
 				return result;
 			};
