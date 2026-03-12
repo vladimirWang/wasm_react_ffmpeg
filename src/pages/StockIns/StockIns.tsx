@@ -121,9 +121,9 @@ const StockIns: React.FC = () => {
 		// 	key: "name",
 		// },
 		{
-			title: "进货单id",
-			dataIndex: "id",
-			key: "id",
+			title: "进货单号",
+			dataIndex: "stockInCode",
+			key: "stockInCode",
 		},
 		{
 			title: "进货单总金额",

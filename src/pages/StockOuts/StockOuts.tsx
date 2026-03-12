@@ -71,9 +71,9 @@ const StockOuts: React.FC = () => {
 		// 	key: "name",
 		// },
 		{
-			title: "出货单id",
-			dataIndex: "id",
-			key: "id",
+			title: "出货单号",
+			dataIndex: "stockOutCode",
+			key: "stockOutCode",
 		},
 		{
 			title: "出货单总金额",
