@@ -214,63 +214,6 @@ const StockOuts: React.FC = () => {
 	];
 
 	const handleConfirm = async () => {
-		const data2: StockOutRecord[][][] = [
-			[
-				[
-					{
-						productId: 3,
-						count: 5,
-						price: 100,
-						vendorId: 2,
-						clientId: 10,
-						platformId: 1,
-						platformOrderNo: "XY001",
-						createdAt: "2020-01-01 00:00:00",
-						rowIndex: 3,
-					},
-					{
-						productId: 2,
-						count: 2,
-						price: 120,
-						vendorId: 1,
-						clientId: 10,
-						platformId: 1,
-						platformOrderNo: "XY001",
-						createdAt: "2020-01-01 00:00:00",
-						rowIndex: 4,
-					},
-				],
-				[
-					{
-						productId: 4,
-						count: 10,
-						price: 200,
-						vendorId: 2,
-						clientId: 4,
-						platformId: 2,
-						platformOrderNo: "PDD003",
-						createdAt: "2020-01-01 00:00:00",
-						rowIndex: 6,
-					},
-				],
-			],
-			[
-				[
-					{
-						productId: 3,
-						count: 1,
-						price: 100,
-						vendorId: 2,
-						clientId: 3,
-						platformId: 2,
-						platformOrderNo: "PDD002",
-						createdAt: "2020-01-01 00:00:00",
-						rowIndex: 5,
-					},
-				],
-			],
-		];
-
 		const serialTasks = uniqueGroups.map((group, groupIndex) => {
 			return async () => {
 				const concurrentTasks = group.map(recordSet => {
@@ -281,14 +224,21 @@ const StockOuts: React.FC = () => {
 						platformOrderNo: recordSet[0].platformOrderNo,
 						clientId: recordSet[0].clientId,
 					};
+					const recordIndexes = platformOrderNoAndIndexMap[recordSet[0].platformOrderNo];
 					return createStockOut(params as IStockOutCreateParams, {
 						showSuccessMessage: false,
 					})
 						.then(res => {
+							recordIndexes?.forEach(recordIndex => {
+								stockOperationUploadModalRef.current?.onItemFinish(recordIndex, res.stockOutCode);
+							});
 							console.log("----createStockOut success res----: ", res);
 							return res;
 						})
 						.catch(err => {
+							recordIndexes?.forEach(recordIndex => {
+								stockOperationUploadModalRef.current?.onItemFinish(recordIndex, err.message);
+							});
 							console.log("----createStockOut error err----: ", err);
 							return Promise.reject(err);
 						});
@@ -401,15 +351,29 @@ const StockOuts: React.FC = () => {
 
 	const [groupedRecords, setGroupedRecords] = useState<StockOutRecord[][]>([]);
 	const [uniqueGroups, setUniqueGroups] = useState<StockOutRecord[][][]>([]);
+	const [platformOrderNoAndIndexMap, setPlatformOrderNoAndIndexMap] = useState<
+		Record<string, number[]>
+	>({});
 
 	const handleParseExcelFile = async (data: StockOutRecord[]): Promise<void> => {
 		// 分组处理, 同一个平台订单号分一组
 		const platformOrderNoMap: Record<string, StockOutRecord[]> = {};
-		data.forEach(record => {
+		data.forEach((record, recordIndex) => {
+			// 同一个平台订单号，分到一组
 			if (!platformOrderNoMap[record.platformOrderNo]) {
 				platformOrderNoMap[record.platformOrderNo] = [];
 			}
 			platformOrderNoMap[record.platformOrderNo].push(record);
+
+			// 同一个平台订单号，记录索引
+			setPlatformOrderNoAndIndexMap(prev => {
+				const newMap = { ...prev };
+				if (!newMap[record.platformOrderNo]) {
+					newMap[record.platformOrderNo] = [];
+				}
+				newMap[record.platformOrderNo].push(recordIndex);
+				return newMap;
+			});
 		});
 		const groupRecords = Object.values(platformOrderNoMap);
 		const uniqueGroupsResult = groupByUniqueElements<StockOutRecord>(groupRecords, data => {

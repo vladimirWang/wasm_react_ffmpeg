@@ -11,6 +11,7 @@ import {
 // 进货单状态
 export type StockInStatus = "PENDING" | "COMPLETED";
 export interface IStockIn {
+	stockInCode: string;
 	totalCost: number;
 	remark?: string;
 	readonly id: number;

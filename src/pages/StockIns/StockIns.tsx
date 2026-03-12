@@ -232,15 +232,22 @@ const StockIns: React.FC = () => {
 						createdAt: recordSet[0].createdAt,
 						productJoinStockIn: recordSet,
 					};
+					const recordIndexes =
+						createdAtVendorIdAndIndexMap[`${recordSet[0].createdAt}-${recordSet[0].vendorId}`];
 					return createStockIn(params as IStockInCreateParams, {
 						showSuccessMessage: false,
 					})
 						.then(res => {
-							console.log("----createStockOut success res----: ", res);
+							recordIndexes?.forEach(recordIndex => {
+								stockOperationUploadModalRef.current?.onItemFinish(recordIndex, res.stockInCode);
+							});
 							return res;
 						})
 						.catch(err => {
-							console.log("----createStockOut error err----: ", err);
+							recordIndexes?.forEach(recordIndex => {
+								stockOperationUploadModalRef.current?.onItemFinish(recordIndex, err.message);
+							});
+							console.log("----createStockIn error err----: ", err);
 							return Promise.reject(err);
 						});
 				});
@@ -253,97 +260,7 @@ const StockIns: React.FC = () => {
 		await composePromise2(...serialTasks);
 		message.success("success： " + serialTasks.length);
 	};
-	// 确认导入（串行调用 createStockIn，避免并发过多）
-	const test = async (data: {
-		group: StockInRecord[][];
-		flat: StockInRecord[];
-		uniqueGroups: StockInRecord[][][];
-	}) => {
-		// 逻辑为并发执行产品id不同的产品进货单
-		// 一组并发执行完毕后，执行下一个分组
-		setResults(Array.from({ length: data.group.length }, () => -1));
-		// 把productId与所在group的index映射起来
-		const maskToGroupIndexMap: Map<number, number> = data.group.reduce((a, c, i) => {
-			const mask = getBitMask<StockInRecord>(c, r => r.productId);
-			a.set(mask, i);
-			return a;
-		}, new Map());
-		// 串行执行的任务
-		const tasks = data.uniqueGroups.map((uniqueGroup, uniqueGroupIndex) => () => {
-			// const params = {
-			// 	createdAt: uniqueGroup[0].createdAt,
-			// 	productJoinStockIn: uniqueGroup,
-			// };
-			// return createStockIn(params as IStockInCreateParams, { showSuccessMessage: false });
-			// 并发执行的任务
-			// const concurrentTasks = uniqueGroup.map((recordSet, recordSetIndex) => {
-			// 	const params = {
-			// 		createdAt: recordSet[0].createdAt,
-			// 		productJoinStockIn: recordSet,
-			// 	};
-			// 	return createStockIn(params as IStockInCreateParams, { showSuccessMessage: false })
-			// 		.then(res => {
-			// 			const mask = getBitMask<StockInRecord>(recordSet, r => r.productId);
-			// 			const groupIndex = maskToGroupIndexMap.get(mask);
-			// 			if (groupIndex !== undefined) {
-			// 				setResults(prev => {
-			// 					return prev.map((item, index) => (index === groupIndex ? res.id : item));
-			// 				});
-			// 			}
-			// 			stockOperationUploadModalRef.current?.onItemFinish(recordSetIndex, true);
-			// 			return res;
-			// 		})
-			// 		.catch(err => {
-			// 			stockOperationUploadModalRef.current?.onItemFinish(recordSetIndex, false);
-			// 			return Promise.reject(err);
-			// 		});
-			// });
-			const concurrentTasks = [
-				new Promise(r => {
-					r(10);
-				}),
-				new Promise(r => {
-					r(20);
-				}),
-			];
-			return Promise.all(concurrentTasks);
-		});
-		try {
-			await composePromise2(...tasks);
-			message.success(`成功导入进货单${data.uniqueGroups.length}笔，包含商品${data.flat.length}件`);
-		} catch (error) {
-			console.error(error);
-		} finally {
-			return Promise.resolve();
-		}
 
-		// 没有并发的处理方式
-		// const tasks = data.group.map((recordSet, recordSetIndex) => () => {
-		// 	const params = {
-		// 		createdAt: recordSet[0].createdAt,
-		// 		productJoinStockIn: recordSet,
-		// 	};
-		// 	return (
-		// 		createStockIn(params as IStockInCreateParams, { showSuccessMessage: false })
-		// 			// 处理成功与失败情况的导入结果展示
-		// 			.then(res => {
-		// 				setResults(prev => [...prev, res.id]);
-		// 				stockOperationUploadModalRef.current?.onItemFinish(recordSetIndex, true);
-		// 				return res;
-		// 			})
-		// 			.catch(e => {
-		// 				stockOperationUploadModalRef.current?.onItemFinish(recordSetIndex, false);
-		// 				return Promise.reject(e);
-		// 			})
-		// 	);
-		// });
-		// try {
-		// 	await composePromise(...tasks);
-		// 	message.success(`成功导入进货单${data.group.length}笔，包含商品${data.flat.length}件`);
-		// } finally {
-		// 	return Promise.resolve();
-		// }
-	};
 	const toolBar = (
 		<div className="flex flex-col gap-2">
 			<section className="flex justify-end gap-5">
@@ -375,16 +292,32 @@ const StockIns: React.FC = () => {
 	);
 	const [groupedRecords, setGroupedRecords] = useState<StockInRecord[][]>([]);
 	const [uniqueGroups, setUniqueGroups] = useState<StockInRecord[][][]>([]);
+
+	// 同一个创建日期和供应商的进货单，记录索引
+	const [createdAtVendorIdAndIndexMap, setCreatedAtVendorIdAndIndexMap] = useState<
+		Record<string, number[]>
+	>({});
 	const handleParseExcelFile = async (data: StockInRecord[]) => {
 		// 分组处理, 同一个平台订单号分一组
 		const createdAtAndVendorIdMap: Record<string, StockInRecord[]> = {};
-		data.forEach(record => {
+		data.forEach((record, recordIndex) => {
 			const createdAtAndVendorId = `${record.createdAt}-${record.vendorId}`;
 
+			// 同一个创建日期和供应商的进货单，分到一组
 			if (!createdAtAndVendorIdMap[createdAtAndVendorId]) {
 				createdAtAndVendorIdMap[createdAtAndVendorId] = [];
 			}
 			createdAtAndVendorIdMap[createdAtAndVendorId].push(record);
+
+			// 同一个创建日期和供应商的进货单，记录索引
+			setCreatedAtVendorIdAndIndexMap(prev => {
+				const newMap = { ...prev };
+				if (!newMap[createdAtAndVendorId]) {
+					newMap[createdAtAndVendorId] = [];
+				}
+				newMap[createdAtAndVendorId].push(recordIndex);
+				return newMap;
+			});
 		});
 		const groupRecords = Object.values(createdAtAndVendorIdMap);
 		const uniqueGroupsResult = groupByUniqueElements<StockInRecord>(groupRecords, data => {

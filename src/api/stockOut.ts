@@ -19,6 +19,7 @@ export interface IStockOut {
 	remark?: string;
 	status: StockInStatus;
 	productsJoinStock: [];
+	stockOutCode: string;
 }
 
 export interface IProductJoinStockOut extends IProductJoinStockOperation {

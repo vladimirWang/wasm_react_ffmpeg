@@ -39,7 +39,7 @@ interface ImportedRecordBatch {
 }
 
 export interface StockOperationUploadModalRefProps {
-	onItemFinish: (idx: number, success: boolean) => void;
+	onItemFinish: (idx: number, result: string) => void;
 }
 
 const StockOperationUploadModal = <T extends StockOperationRecord>(
@@ -74,18 +74,24 @@ const StockOperationUploadModal = <T extends StockOperationRecord>(
 	const [createStockInSuccessCount, setCreateStockInSuccessCount] = useState(0);
 	useImperativeHandle(ref, () => {
 		return {
-			onItemFinish(idx, success) {
-				console.log("onItemFinish: ", idx, success);
-				if (success) {
-					setCreateStockInSuccessCount(prev => prev + 1);
-				}
-				// 这一批次是哪条到那条的
-				const [start, end] = importedRecordBatch[idx];
-				setParsedRecords(prev =>
-					prev.map((item, index) => {
-						return index >= start && index < end ? { ...item, success } : item;
-					})
-				);
+			onItemFinish(idx, result) {
+				console.log("useImperativeHandle StockOperationUploadModal onItemFinish: ", idx, result);
+				setParsedRecords((prev: any) => {
+					const newResults = prev.map((item: any, index: number) => {
+						return index === idx ? { ...item, result } : item;
+					});
+					return newResults;
+				});
+				// if (success) {
+				// 	setCreateStockInSuccessCount(prev => prev + 1);
+				// }
+				// // 这一批次是哪条到那条的
+				// const [start, end] = importedRecordBatch[idx];
+				// setParsedRecords(prev =>
+				// 	prev.map((item, index) => {
+				// 		return index >= start && index < end ? { ...item, success } : item;
+				// 	})
+				// );
 			},
 		};
 	});
@@ -346,6 +352,8 @@ const StockOperationUploadModal = <T extends StockOperationRecord>(
 
 			setProducts(productsRes.list);
 			setVendors(vendorsRes.list);
+		} catch (err) {
+			message.success("产品和供应商数据加载失败: " + (err as Error).message);
 		} finally {
 			setLoadingData(false);
 		}
@@ -548,15 +556,18 @@ const StockOperationUploadModal = <T extends StockOperationRecord>(
 		},
 		{
 			title: "导入结果",
-			key: "success",
+			key: "result",
+			dataIndex: "result",
 			fixed: "right",
-			width: 60,
+			width: 100,
 			render: (_, record) => {
-				if (record.success === undefined) return null;
-				return record.success ? (
-					<CheckCircleOutlined style={{ color: "#52c41a", fontSize: 18 }} />
-				) : (
-					<CloseCircleOutlined style={{ color: "#ff4d4f", fontSize: 18 }} />
+				if (record.result === undefined) return null;
+				return (
+					<Tooltip title={record.result}>
+						<span className="block overflow-hidden text-ellipsis whitespace-nowrap">
+							{record.result}
+						</span>
+					</Tooltip>
 				);
 			},
 		},

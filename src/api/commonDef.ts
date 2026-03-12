@@ -35,7 +35,7 @@ export interface StockOperationRecord {
 	vendorId: number;
 	count: number;
 	rowIndex?: number; // Excel 中的原始行号（用于保持顺序）
-	success?: boolean; //
+	result?: string; // 导入数据库结果， 业务单号或者失败原因
 }
 
 // 进出库表单中的表格数据类型
