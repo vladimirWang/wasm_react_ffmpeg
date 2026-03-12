@@ -1,18 +1,17 @@
-import { Button, Card, Form, Input, Select, Space, Divider, message, DatePicker } from "antd";
-import type { DatePickerProps, TableProps } from "antd";
+import { Button, Form, Input, Select, Space, Divider, message, DatePicker } from "antd";
+import type { TableProps } from "antd";
 import { IVendorUpdateParams } from "../../api/vendor";
 import { useEffect, useMemo, useState } from "react";
 import { IProductJoinStockOut, IStockOut, IStockOutCreateParams } from "../../api/stockOut";
-import { PlusOutlined, PlusSquareOutlined } from "@ant-design/icons";
 import { getProductDetailById, getProducts, IProduct } from "../../api/product";
 import { PageOperation } from "../../enum";
 import { PositiveInputNumber } from "../../components/PositiveInputNumber";
-import { useDistinctProducts } from "../../hooks/useDistinctProducts";
 import StockOperationTable from "../../components/StockOperationTable";
 import { disabledFuture } from "../../utils/common";
 import dayjs from "dayjs";
 import { getPlatforms, IPlatform } from "../../api/platform";
 import { getClients, IClient } from "../../api/client";
+import { PlusOutlined } from "@ant-design/icons";
 import { useNavigate } from "react-router-dom";
 // import VendorProductTree from "../../components/VendorProductTree";
 
@@ -45,10 +44,6 @@ export default function StockOutForm(props: StockInFormProps) {
 	const editable = useMemo(() => {
 		return props.pageOperation !== "view";
 	}, [props.pageOperation]);
-
-	type StockInFormValues = IVendorUpdateParams & {
-		productJoinStockOut: IProductJoinStockOut[];
-	};
 
 	type JoinFieldRow = { key: number; name: number };
 
@@ -162,7 +157,7 @@ export default function StockOutForm(props: StockInFormProps) {
 				if (!props.onFinishCallback) return;
 				setLoading(true);
 				try {
-					const { productJoinStockOut, remark } = values;
+					const { productJoinStockOut, remark, clientId } = values;
 					// 找出产品对应的供应商信息
 					for (const item of productJoinStockOut) {
 						let vendorId = productVendorMap[item.productId];
@@ -171,9 +166,13 @@ export default function StockOutForm(props: StockInFormProps) {
 						}
 						item.vendorId = vendorId;
 					}
-					if (remark === null) {
-						values.remark = undefined;
-					}
+					console.log("----clientId----: ", clientId);
+					// if (!clientId) {
+					// 	values.clientId = null;
+					// }
+					// if (remark === null) {
+					// 	values.remark = undefined;
+					// }
 					await props.onFinishCallback(values);
 				} catch (e: unknown) {
 				} finally {
@@ -229,7 +228,15 @@ export default function StockOutForm(props: StockInFormProps) {
 			<Form.Item label="客户" rules={[{ required: true, message: "请选择客户" }]}>
 				<div className="flex items-center gap-2">
 					<Form.Item name="clientId" noStyle>
-						<Select options={clients} fieldNames={{ label: "name", value: "id" }} />
+						<Select
+							options={clients}
+							fieldNames={{ label: "name", value: "id" }}
+							onChange={val => {
+								if (val === undefined) {
+									form.setFieldValue("clientId", null);
+								}
+							}}
+						/>
 					</Form.Item>
 					<Button
 						type="primary"

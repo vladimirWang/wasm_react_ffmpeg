@@ -41,7 +41,7 @@ export interface IStockOutCreateParams {
 	createdAt?: string;
 	platformId: number;
 	platformOrderNo: string;
-	clientId: number;
+	clientId: number | null;
 }
 
 type IStockOutsQueryResponse = IPaginationResp<IStockOut>;
