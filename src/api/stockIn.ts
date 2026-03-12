@@ -7,6 +7,7 @@ import {
 	StockOperationRecord,
 	IProductJoinStockOperation,
 } from "./commonDef";
+// import { IProduct } from "./product";
 
 // 进货单状态
 export type StockInStatus = "PENDING" | "COMPLETED";
@@ -26,7 +27,7 @@ export interface IStockInWithProducts {
 	totalCost: number;
 	remark?: string;
 	readonly id: number;
-	products: IProduct[];
+	products: Array<{productName: string}>;
 	status: StockInStatus;
 	createdAt: Date;
 	completedAt?: Date;

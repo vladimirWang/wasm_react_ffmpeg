@@ -81,6 +81,27 @@ const StockOuts: React.FC = () => {
 			key: "totalPrice",
 		},
 		{
+			title: "产品名称",
+			key: "productNames",
+			render: (_, record) => {
+				const len = record.products.length;
+				if (len === 0) {
+					return "-";
+				}
+
+				const productNames = record.products.map(p => p.productName);
+				return (
+					<Tooltip title={productNames.join(",")}>
+						<span>
+							{len > 1
+								? `${productNames.slice(0, 5).join(",")}...`
+								: record.products[0].productName}
+						</span>
+					</Tooltip>
+				);
+			},
+		},
+		{
 			title: "平台订单号",
 			dataIndex: "platformOrderNo",
 			key: "platformOrderNo",

@@ -8,6 +8,7 @@ import {
 	IProductJoinStockOperation,
 } from "./commonDef";
 import { StockInStatus } from "./stockIn";
+import { IProduct } from "./product";
 
 export interface IStockOut {
 	readonly id: number;
@@ -18,7 +19,7 @@ export interface IStockOut {
 	totalPrice: number;
 	remark?: string;
 	status: StockInStatus;
-	productsJoinStock: [];
+	products: Array<{productName: string}>;
 	stockOutCode: string;
 }
 
