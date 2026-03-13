@@ -1,5 +1,6 @@
-import { Button, Form, Input, Select, Space, Divider, message, DatePicker } from "antd";
+import { Button, Form, Input, Select, Space, Divider, message, DatePicker, Upload } from "antd";
 import type { TableProps } from "antd";
+import type { RcFile } from "antd/es/upload";
 import { IVendorUpdateParams } from "../../api/vendor";
 import { useEffect, useMemo, useState } from "react";
 import { IProductJoinStockOut, IStockOut, IStockOutCreateParams } from "../../api/stockOut";
@@ -11,8 +12,10 @@ import { disabledFuture } from "../../utils/common";
 import dayjs from "dayjs";
 import { getPlatforms, IPlatform } from "../../api/platform";
 import { getClients, IClient } from "../../api/client";
-import { PlusOutlined } from "@ant-design/icons";
+import { PlusOutlined, UploadOutlined, DeleteOutlined } from "@ant-design/icons";
 import { useNavigate } from "react-router-dom";
+import { uploadFile } from "../../api/util";
+import ImageUpload from "../../components/ImageUpload";
 // import VendorProductTree from "../../components/VendorProductTree";
 
 interface StockInFormProps {
@@ -266,6 +269,9 @@ export default function StockOutForm(props: StockInFormProps) {
 						<PlusOutlined />
 					</Button>
 				</div>
+			</Form.Item>
+			<Form.Item name="docs" label="单据（文件）">
+				<ImageUpload maxCount={1} />
 			</Form.Item>
 			<Form.Item<IVendorUpdateParams> label="备注" name="remark" style={{ marginBottom: 24 }}>
 				<Input.TextArea

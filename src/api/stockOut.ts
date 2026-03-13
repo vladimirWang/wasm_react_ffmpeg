@@ -21,6 +21,8 @@ export interface IStockOut {
 	status: StockInStatus;
 	products: Array<{ productName: string }>;
 	stockOutCode: string;
+	/** 单据：多个文件地址 */
+	docs?: string[];
 }
 
 export interface IProductJoinStockOut extends IProductJoinStockOperation {
@@ -42,6 +44,8 @@ export interface IStockOutCreateParams {
 	platformId: number;
 	platformOrderNo?: string;
 	clientId: number | null;
+	/** 单据：多个文件地址 */
+	docs?: string[];
 }
 
 type IStockOutsQueryResponse = IPaginationResp<IStockOut>;

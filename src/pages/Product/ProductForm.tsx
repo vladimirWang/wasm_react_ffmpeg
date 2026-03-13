@@ -1,4 +1,4 @@
-import { useContext, useMemo, useRef, useState } from "react";
+import { useContext, useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import useSWR from "swr";
 import debounce from "lodash/debounce";
@@ -62,8 +62,6 @@ export default function ProductForm({
 	const [form] = Form.useForm();
 	const { id } = useParams();
 
-	const [imageUrl, setImageUrl] = useState<string | undefined>(initialValues?.img);
-	const [uploading, setUploading] = useState(false);
 	const [submitting, setSubmitting] = useState(false);
 	const [costDrawerOpen, setCostDrawerOpen] = useState(false);
 	const [hash, setHash] = useState<string>();
@@ -253,7 +251,10 @@ export default function ProductForm({
 				disabled={pageOperation === "view"}
 				form={form}
 				name="basic"
-				initialValues={initialValues}
+				initialValues={{
+					...initialValues,
+					img: initialValues?.img ? [initialValues.img] : undefined,
+				}}
 				labelCol={{ span: 6 }}
 				wrapperCol={{ span: 18 }}
 				onFinish={async values => {
@@ -267,6 +268,7 @@ export default function ProductForm({
 						const incrementalValues = pick(values, updated);
 						await onFinishCallback({
 							...incrementalValues,
+							img: incrementalValues.img ? incrementalValues.img[0] : undefined,
 							salePrice: incrementalValues.salePrice
 								? Number(incrementalValues.salePrice)
 								: undefined,

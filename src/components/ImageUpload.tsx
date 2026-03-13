@@ -8,15 +8,15 @@ import { checkAndUploadFile } from "../api/util";
 import type { GetProps } from "antd";
 
 interface ImageUploadProps {
-	onChange?: (url: string) => void;
-	value?: string;
+	onChange?: (url: string[]) => void;
+	value?: string[];
 }
 export default function ImageUpload({
 	onChange,
 	value,
 }: ImageUploadProps & GetProps<typeof Upload>) {
 	const [uploading, setUploading] = useState(false);
-	const [imageUrl, setImageUrl] = useState<string | undefined>(value);
+	const [imageUrl, setImageUrl] = useState<string[] | undefined>(value);
 
 	const uploadButton = (
 		<button style={{ border: 0, background: "none" }} type="button">
@@ -37,7 +37,7 @@ export default function ImageUpload({
 		setUploading(status === "uploading");
 		const fileObj = info?.file?.originFileObj as RcFile | undefined;
 		if (!fileObj) return;
-		setImageUrl(URL.createObjectURL(fileObj));
+		setImageUrl([URL.createObjectURL(fileObj)]);
 	};
 	const handleCustomRequest = async (options: any) => {
 		try {
@@ -53,7 +53,7 @@ export default function ImageUpload({
 			// form.setFieldsValue({
 			// 	img: `${res.filePath}`,
 			// });
-			onChange?.(res.filePath);
+			onChange?.([res.filePath]);
 		} catch (e) {
 			message.error("上传失败: " + (e as Error).message);
 		}
@@ -70,11 +70,11 @@ export default function ImageUpload({
 			beforeUpload={beforeUpload}
 			onChange={handleChange}
 		>
-			{imageUrl ? (
+			{imageUrl && imageUrl.length > 0 ? (
 				<div className="w-[100px] h-[100px] overflow-hidden flex justify-center items-center">
 					<img
 						draggable={false}
-						src={imageUrl}
+						src={imageUrl[0]}
 						alt="avatar"
 						style={{ width: "100%", objectFit: "cover" }}
 					/>
