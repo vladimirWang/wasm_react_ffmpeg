@@ -72,30 +72,6 @@ export default function ProductForm({
 	const [workerResult, setWorkerResult] = useState<string>();
 	const workerFileInputRef = useRef<HTMLInputElement>(null);
 
-	const beforeUpload = (file: RcFile) => {
-		return true;
-		// const isJpgOrPng = file.type === "image/jpeg" || file.type === "image/png";
-		// if (!isJpgOrPng) {
-		// 	message.error("You can only upload JPG/PNG file!");
-		// }
-		// return isJpgOrPng;
-	};
-	const handleChange = (info: any) => {
-		const status = info?.file?.status as string | undefined;
-		setUploading(status === "uploading");
-		const fileObj = info?.file?.originFileObj as RcFile | undefined;
-		if (fileObj) {
-			setImageUrl(URL.createObjectURL(fileObj));
-		}
-	};
-
-	const uploadButton = (
-		<button style={{ border: 0, background: "none" }} type="button">
-			{uploading ? <LoadingOutlined /> : <PlusOutlined />}
-			<div style={{ marginTop: 8 }}>Upload</div>
-		</button>
-	);
-
 	// const [vendors, setVendors] = useState<IVendor[]>([]);
 
 	const vendorsFetch = async () => {
@@ -122,29 +98,6 @@ export default function ProductForm({
 		[form]
 	);
 
-	const testUploadFile = async (options: any) => {
-		try {
-			const { file } = options;
-			const blob = file.slice(0, file.size);
-			const trueType = getTrueType(blob);
-			console.log("---trueType: ", trueType);
-			const fileType = getTrueType(file);
-			console.log("---fileType: ", fileType);
-			const md5 = await md5File(file);
-			const res = await checkAndUploadFile(md5, file);
-			const formData = new FormData();
-			formData.append("file", file);
-
-			formData.append("hash", md5);
-			// const res = await uploadFile(formData);
-			console.log("---res---: ", res);
-			form.setFieldsValue({
-				img: `${res.filePath}`,
-			});
-		} catch (e) {
-			message.error("上传失败: " + (e as Error).message);
-		}
-	};
 	const testUploadChunk = async (file: File) => {
 		// 分片上传
 		try {
@@ -409,7 +362,7 @@ export default function ProductForm({
 					</section>
 					<section className="flex-1 space-y-4">
 						<Form.Item<IProductUpdateParams> label="产品图片" name="img">
-							<ImageUpload />
+							<ImageUpload maxCount={1} />
 							{/* <Upload
 								accept={".jpg,.jpeg,.png,.gif,.bmp,.webp"}
 								name="file"
