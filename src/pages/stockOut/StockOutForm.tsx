@@ -140,6 +140,13 @@ export default function StockOutForm(props: StockInFormProps) {
 		form
 	);
 
+	const platformId = Form.useWatch("platformId", form);
+
+	useEffect(() => {
+		if (platformId === undefined) return;
+		form.validateFields(["platformOrderNo"]);
+	}, [platformId, form]);
+
 	return (
 		<Form
 			disabled={!editable}
@@ -157,7 +164,7 @@ export default function StockOutForm(props: StockInFormProps) {
 				if (!props.onFinishCallback) return;
 				setLoading(true);
 				try {
-					const { productJoinStockOut, remark, clientId } = values;
+					const { productJoinStockOut, platformId, platformOrderNo } = values;
 					// 找出产品对应的供应商信息
 					for (const item of productJoinStockOut) {
 						let vendorId = productVendorMap[item.productId];
@@ -166,14 +173,18 @@ export default function StockOutForm(props: StockInFormProps) {
 						}
 						item.vendorId = vendorId;
 					}
-					console.log("----clientId----: ", clientId);
 					// if (!clientId) {
 					// 	values.clientId = null;
 					// }
 					// if (remark === null) {
 					// 	values.remark = undefined;
 					// }
-					await props.onFinishCallback(values);
+					await props.onFinishCallback({
+						...values,
+						productJoinStockOut,
+						platformId,
+						platformOrderNo: platformId === 1 ? undefined : platformOrderNo,
+					});
 				} catch (e: unknown) {
 				} finally {
 					setLoading(false);
@@ -216,19 +227,27 @@ export default function StockOutForm(props: StockInFormProps) {
 				<DatePicker placeholder="请选择创建日期" disabledDate={disabledFuture} />
 			</Form.Item>
 			<Form.Item name="platformId" label="平台" rules={[{ required: true, message: "请选择平台" }]}>
-				<Select options={platforms} fieldNames={{ label: "name", value: "id" }} />
+				<Select
+					options={platforms}
+					fieldNames={{ label: "name", value: "id" }}
+					placeholder="请选择平台"
+				/>
 			</Form.Item>
-			<Form.Item
-				name="platformOrderNo"
-				label="平台订单号"
-				rules={[{ required: true, message: "请填写平台订单号" }]}
-			>
-				<Input placeholder="请填写平台订单号" />
-			</Form.Item>
+			{platformId !== 1 && (
+				<Form.Item
+					name="platformOrderNo"
+					label="平台订单号"
+					rules={[{ required: true, message: "请填写平台订单号" }]}
+				>
+					<Input placeholder="请填写平台订单号" />
+				</Form.Item>
+			)}
+
 			<Form.Item label="客户" rules={[{ required: true, message: "请选择客户" }]}>
 				<div className="flex items-center gap-2">
 					<Form.Item name="clientId" noStyle>
 						<Select
+							placeholder="请选择客户"
 							options={clients}
 							fieldNames={{ label: "name", value: "id" }}
 							onChange={val => {

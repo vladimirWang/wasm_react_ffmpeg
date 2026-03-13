@@ -19,7 +19,7 @@ export interface IStockOut {
 	totalPrice: number;
 	remark?: string;
 	status: StockInStatus;
-	products: Array<{productName: string}>;
+	products: Array<{ productName: string }>;
 	stockOutCode: string;
 }
 
@@ -40,7 +40,7 @@ export interface IStockOutCreateParams {
 	productJoinStockOut: IProductJoinStockOut[];
 	createdAt?: string;
 	platformId: number;
-	platformOrderNo: string;
+	platformOrderNo?: string;
 	clientId: number | null;
 }
 
@@ -59,7 +59,7 @@ export const getStockOutDetailById = async (id: number): Promise<IStockOut> => {
 // 更新出货记录
 export const updateStockOut = async (
 	id: number,
-	data?: IStockOutCreateParams
+	data?: Partial<IStockOutCreateParams>
 ): Promise<IStockOutsQueryResponse> => {
 	return nodejsRequest.put<IStockOut>("/stockout/" + id, data);
 };
