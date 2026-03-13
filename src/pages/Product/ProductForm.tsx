@@ -36,6 +36,7 @@ import { getTrueType, pickIncrementalFields } from "../../utils/common";
 import ExampleWorker from "../../workers/example.worker?worker";
 import type { WorkerResult } from "../../workers/example.worker";
 import { pick } from "lodash";
+import ImageUpload from "../../components/ImageUpload";
 
 function createChunks(file: File, chunkSize: number) {
 	const chunks = [];
@@ -317,6 +318,9 @@ export default function ProductForm({
 								? Number(incrementalValues.salePrice)
 								: undefined,
 						});
+					} catch (e) {
+						// message.error("提交失败: " + (e as Error).message);
+						console.error("---submit error---: ", e);
 					} finally {
 						setSubmitting(false);
 					}
@@ -405,7 +409,8 @@ export default function ProductForm({
 					</section>
 					<section className="flex-1 space-y-4">
 						<Form.Item<IProductUpdateParams> label="产品图片" name="img">
-							<Upload
+							<ImageUpload />
+							{/* <Upload
 								accept={".jpg,.jpeg,.png,.gif,.bmp,.webp"}
 								name="file"
 								listType="picture-card"
@@ -427,7 +432,7 @@ export default function ProductForm({
 								) : (
 									uploadButton
 								)}
-							</Upload>
+							</Upload> */}
 						</Form.Item>
 					</section>
 				</div>

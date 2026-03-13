@@ -57,7 +57,9 @@ interface changedFields<T> {
 	same: Array<keyof T>;
 }
 // TODO: 支持深层比较
-export function pickIncrementalFields<T extends {}>(newData: T, oldData: T): changedFields<T> {
+export function pickIncrementalFields<T extends {}>(newData: T, oldData: T | undefined
+): changedFields<T> {
+	if (!oldData) return { created: [], updated: Object.keys(newData) as Array<keyof T>, deleted: [], same: [] };
 	const newKeys = Object.keys(newData) as Array<keyof T>,
 		oldKeys = Object.keys(oldData) as Array<keyof T>;
 	const created: Array<keyof T> = difference(newKeys, oldKeys);
