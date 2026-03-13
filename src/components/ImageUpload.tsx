@@ -5,12 +5,16 @@ import { useState } from "react";
 import { md5File } from "../utils/file";
 import { getTrueType } from "../utils/common";
 import { checkAndUploadFile } from "../api/util";
+import type { GetProps } from "antd";
 
 interface ImageUploadProps {
 	onChange?: (url: string) => void;
 	value?: string;
 }
-export default function ImageUpload({ onChange, value }: ImageUploadProps) {
+export default function ImageUpload({
+	onChange,
+	value,
+}: ImageUploadProps & GetProps<typeof Upload>) {
 	const [uploading, setUploading] = useState(false);
 	const [imageUrl, setImageUrl] = useState<string | undefined>(value);
 
