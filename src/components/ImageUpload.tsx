@@ -1,4 +1,4 @@
-import { LoadingOutlined, PlusOutlined } from "@ant-design/icons";
+import { LoadingOutlined, PlusOutlined, DeleteOutlined, EyeOutlined } from "@ant-design/icons";
 import { message, Upload } from "antd";
 import { RcFile } from "antd/es/upload";
 import { useEffect, useRef, useState } from "react";
@@ -66,14 +66,26 @@ export default function ImageUpload({
 				return (
 					<div
 						key={url}
-						className="w-[100px] h-[100px] shrink-0 overflow-hidden flex justify-center items-center rounded border border-gray-200 bg-gray-50"
+						className="group relative w-[100px] h-[100px] shrink-0 overflow-hidden rounded border border-gray-200 bg-gray-50 cursor-pointer"
 					>
-						<img
-							draggable={false}
-							src={url}
-							alt="avatar"
-							style={{ width: "100%", height: "100%", objectFit: "cover" }}
-						/>
+						<img draggable={false} src={url} alt="avatar" className="w-full h-full object-cover" />
+						{/* hover 时显示的遮罩与图标 */}
+						<div className="absolute inset-0 bg-black/40 flex items-center justify-center gap-3 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+							{/* <span className="w-8 h-8 flex items-center justify-center rounded-full bg-white/90 text-gray-700 hover:bg-white hover:text-blue-500 transition-colors">
+								<EyeOutlined className="text-base" onClick={() => {
+								}}/>
+							</span> */}
+							<span className="w-8 h-8 flex items-center justify-center rounded-full bg-white/90 text-gray-700 hover:bg-white hover:text-red-500 transition-colors">
+								<DeleteOutlined
+									className="text-base"
+									onClick={() => {
+										const newImageUrl = imageUrl.filter(item => item !== url);
+										setImageUrl(newImageUrl);
+										onChange?.(newImageUrl);
+									}}
+								/>
+							</span>
+						</div>
 					</div>
 				);
 			})}
