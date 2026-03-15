@@ -55,6 +55,7 @@ export type IProductQueryParams = IPagination & {
 	vendorName?: string;
 	completedStart?: string;
 	completedEnd?: string;
+	isDeleted: 1 | 0;
 };
 
 // 定义注册请求参数类型

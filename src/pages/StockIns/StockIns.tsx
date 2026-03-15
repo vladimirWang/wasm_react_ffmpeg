@@ -17,6 +17,7 @@ import {
 	createStockIn,
 	IStockInCreateParams,
 	IStockInWithProducts,
+	restoreDeletedStockIn,
 } from "../../api/stockIn";
 import useSWR from "swr";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
@@ -47,6 +48,7 @@ const StockIns: React.FC = () => {
 		vendorName: searchParams.get("vendorName") || undefined,
 		completedStart: searchParams.get("completedStart") || undefined,
 		completedEnd: searchParams.get("completedEnd") || undefined,
+		isDeleted: Number(searchParams.get("isDeleted")) === 1 ? 1 : 0,
 	});
 
 	const swrKey = useMemo(
@@ -61,6 +63,7 @@ const StockIns: React.FC = () => {
 				queryParams.vendorName,
 				queryParams.completedStart,
 				queryParams.completedEnd,
+				queryParams.isDeleted,
 			] as const,
 		[
 			queryParams.page,
@@ -71,6 +74,7 @@ const StockIns: React.FC = () => {
 			queryParams.vendorName,
 			queryParams.completedStart,
 			queryParams.completedEnd,
+			queryParams.isDeleted,
 		]
 	);
 
@@ -85,6 +89,7 @@ const StockIns: React.FC = () => {
 		vendorName,
 		completedStart,
 		completedEnd,
+		isDeleted,
 	]: typeof swrKey) => {
 		const res = await getStockIns({
 			page,
@@ -95,6 +100,7 @@ const StockIns: React.FC = () => {
 			vendorName: vendorName ? vendorName : undefined,
 			completedStart: completedStart ? dayjs(completedStart).format("YYYY-MM-DD") : undefined,
 			completedEnd: completedEnd ? dayjs(completedEnd).format("YYYY-MM-DD") : undefined,
+			isDeleted,
 		});
 		return res; // 若你的getProducts返回的是响应体（如res.data），则这里取res.data
 	};
@@ -183,7 +189,7 @@ const StockIns: React.FC = () => {
 			width: 150,
 			render: (_, record) => (
 				<Space size="middle">
-					{record.status === "COMPLETED" && <Link to={`/stockin/${record.id}`}>查看</Link>}
+					<Link to={`/stockin/${record.id}`}>查看</Link>
 					{record.status === "PENDING" && record.deletedAt === null && (
 						<>
 							<Link to={`/stockin/update/${record.id}`}>编辑</Link>
@@ -328,6 +334,13 @@ const StockIns: React.FC = () => {
 		setGroupedRecords(groupRecords);
 		setUniqueGroups(uniqueGroupsResult);
 	};
+
+	// 当前选中的行是否是已删除的
+	const selectedRowIsDeleted = useMemo(() => {
+		if (selectedRowKeys.length === 0) return false;
+		const firstRecordDeletedAt = stockIns?.list?.[0]?.deletedAt;
+		return firstRecordDeletedAt !== null;
+	}, [selectedRowKeys]);
 	return (
 		<div className="py-2 px-3">
 			{toolBar}
@@ -343,7 +356,7 @@ const StockIns: React.FC = () => {
 					selectedRowKeys,
 					getCheckboxProps: record => {
 						return {
-							disabled: record.status === "COMPLETED" || record.deletedAt !== null,
+							disabled: record.status === "COMPLETED",
 						};
 					},
 					onChange: values => {
@@ -360,18 +373,23 @@ const StockIns: React.FC = () => {
 			<br />
 			<section className="flex justify-between">
 				<Button
+					disabled={selectedRowKeys.length === 0}
 					danger
 					size="small"
 					onClick={async () => {
 						try {
-							await batchDeleteStockIn(selectedRowKeys as number[]);
+							if (selectedRowIsDeleted) {
+								await restoreDeletedStockIn(selectedRowKeys as number[]);
+							} else {
+								await batchDeleteStockIn(selectedRowKeys as number[]);
+							}
 							setSelectedRowKeys([]);
 						} finally {
 							mutate();
 						}
 					}}
 				>
-					删除选中 ({selectedRowKeys.length})
+					{selectedRowIsDeleted ? "恢复" : "删除"}选中 ({selectedRowKeys.length})
 				</Button>
 				<Pagination
 					size="small"

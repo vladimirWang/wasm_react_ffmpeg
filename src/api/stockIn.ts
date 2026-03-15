@@ -27,7 +27,7 @@ export interface IStockInWithProducts {
 	totalCost: number;
 	remark?: string;
 	readonly id: number;
-	products: Array<{productName: string}>;
+	products: Array<{ productName: string }>;
 	status: StockInStatus;
 	createdAt: Date;
 	completedAt?: Date;
@@ -44,6 +44,7 @@ export const getStockIns = async (
 		vendorName?: string;
 		completedStart?: string;
 		completedEnd?: string;
+		isDeleted: 1 | 0;
 	} & IPagination
 ): Promise<IStockInsQueryResponse> => {
 	return nodejsRequest.get<IStockInsQueryResponse>("/stockin", { params: data });
@@ -127,4 +128,9 @@ export const batchDeleteStockIn = async (ids: number[]): Promise<IStockIn[]> => 
 		return a;
 	}, new URLSearchParams());
 	return nodejsRequest.delete<IStockIn[]>("/stockin/batchDelete", { params: p });
+};
+
+// 恢复已删除的进货单
+export const restoreDeletedStockIn = async (ids: number[]): Promise<IStockIn[]> => {
+	return nodejsRequest.post<IStockIn[]>("/stockin/restoreDeleted", { ids });
 };

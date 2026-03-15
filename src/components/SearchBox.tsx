@@ -1,7 +1,7 @@
 import { Dayjs } from "dayjs";
 import React, { useState } from "react";
 import { IProductQueryParams } from "../api/product";
-import { Button, DatePicker, Input } from "antd";
+import { Button, Checkbox, DatePicker, Input } from "antd";
 import { ArrowDownOutlined } from "@ant-design/icons";
 
 type SearchBoxProps = {
@@ -14,6 +14,7 @@ export default function SearchBox(props: SearchBoxProps) {
 	const [productName, setProductName] = useState<string>(queryParams.productName || "");
 	const [vendorName, setVendorName] = useState<string>(queryParams.vendorName || "");
 	const [dateRange, setDateRange] = useState<[Dayjs | null, Dayjs | null] | null>(null);
+	const [isDeleted, setIsDeleted] = useState(false);
 	const [completedDateRange, setCompletedDateRange] = useState<[Dayjs | null, Dayjs | null] | null>(
 		null
 	);
@@ -23,6 +24,7 @@ export default function SearchBox(props: SearchBoxProps) {
 			vendorName,
 			page: 1,
 			limit: 20,
+			isDeleted: isDeleted ? 1 : 0,
 		};
 		if (Array.isArray(dateRange)) {
 			const [start, end] = dateRange;
@@ -77,11 +79,18 @@ export default function SearchBox(props: SearchBoxProps) {
 			)}
 			{moreVisible && (
 				<div className="flex gap-5 items-center">
-					<DatePicker.RangePicker
-						placeholder={["删除开始日期", "删除结束日期"]}
-						value={dateRange}
-						onChange={setDateRange}
-					/>
+					<section className="flex items-center gap-2">
+						<Checkbox checked={isDeleted} onChange={e => setIsDeleted(e.target.checked)}></Checkbox>
+						<DatePicker.RangePicker
+							placeholder={["删除开始日期", "删除结束日期"]}
+							value={dateRange}
+							allowClear
+							onChange={val => {
+								setDateRange(val);
+								setIsDeleted(val !== null);
+							}}
+						/>
+					</section>
 					<Button
 						type="primary"
 						size="small"
