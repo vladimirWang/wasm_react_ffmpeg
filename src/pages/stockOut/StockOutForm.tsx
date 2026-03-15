@@ -270,8 +270,8 @@ export default function StockOutForm(props: StockInFormProps) {
 					</Button>
 				</div>
 			</Form.Item>
-			<Form.Item name="docs" label="单据（文件）">
-				<ImageUpload maxCount={1} />
+			<Form.Item name="docs" label="单据">
+				<ImageUpload maxCount={3} />
 			</Form.Item>
 			<Form.Item<IVendorUpdateParams> label="备注" name="remark" style={{ marginBottom: 24 }}>
 				<Input.TextArea
