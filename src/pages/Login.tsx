@@ -45,7 +45,6 @@ const Login: React.FC = () => {
 			}
 			values.captchaId = captchaId;
 			values.nonce = nonce;
-			values.password = await hashPassword(values.password, nonce);
 			const token = await userLogin(values);
 			localStorage.setItem("access_token", token);
 			// 清除旧的用户缓存，让 authLoader 重新获取用户信息
