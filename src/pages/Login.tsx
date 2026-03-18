@@ -94,6 +94,7 @@ const Login: React.FC = () => {
 			form.resetFields(["captchaText"]);
 			// 登录失败刷新验证码
 			loadCaptcha();
+			loadNonce();
 		}
 	};
 	const loadCaptcha = async () => {
