@@ -83,10 +83,16 @@ export const confirmStockOutCompleted = (id: number) => {
 	return nodejsRequest.patch("/stockout/confirmCompleted/" + id);
 };
 
-export const batchDeleteStockOut = async (ids: number[]): Promise<IStockIn[]> => {
+export const batchDeleteStockOut = async (ids: number[]): Promise<IStockOut[]> => {
 	const p = ids.reduce((a, c) => {
 		a.append("id", c);
 		return a;
 	}, new URLSearchParams());
-	return nodejsRequest.delete<IStockIn[]>("/stockout/batchDelete", { params: p });
+	return nodejsRequest.delete<IStockOut[]>("/stockout/batchDelete", { params: p });
 };
+
+// 恢复已删除的进货单
+export const restoreDeletedStockOut = async (ids: number[]): Promise<IStockOut[]> => {
+	return nodejsRequest.post<IStockOut[]>("/stockout/restoreDeleted", { ids });
+};
+

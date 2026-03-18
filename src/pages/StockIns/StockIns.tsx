@@ -34,6 +34,7 @@ import {
 	paramsToSearchParams,
 } from "../../utils/common";
 import SearchBox from "../../components/SearchBox";
+import { useSelectedRowsAreDeleted } from "../../hooks/useSelectedRowsAreDeleted";
 
 const StockIns: React.FC = () => {
 	const [fileUploadModalOpen, setFileUploadModalOpen] = useState(false);
@@ -229,6 +230,11 @@ const StockIns: React.FC = () => {
 
 	const [selectedRowKeys, setSelectedRowKeys] = useState<React.Key[]>([]);
 
+	const selectedRowIsDeleted = useSelectedRowsAreDeleted<IStockInWithProducts>(
+		selectedRowKeys,
+		stockIns
+	);
+
 	const [results, setResults] = useState<number[]>([]);
 	const handleConfirm = async () => {
 		const serialTasks = uniqueGroups.map((group, groupIndex) => {
@@ -335,12 +341,6 @@ const StockIns: React.FC = () => {
 		setUniqueGroups(uniqueGroupsResult);
 	};
 
-	// 当前选中的行是否是已删除的
-	const selectedRowIsDeleted = useMemo(() => {
-		if (selectedRowKeys.length === 0) return false;
-		const firstRecordDeletedAt = stockIns?.list?.[0]?.deletedAt;
-		return firstRecordDeletedAt !== null;
-	}, [selectedRowKeys]);
 	return (
 		<div className="py-2 px-3">
 			{toolBar}

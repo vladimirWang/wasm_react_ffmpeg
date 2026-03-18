@@ -15,6 +15,7 @@ import {
 	createStockOut,
 	batchDeleteStockOut,
 	IStockOutCreateParams,
+	restoreDeletedStockOut,
 } from "../../api/stockOut";
 import useSWR from "swr";
 import { Link, useNavigate } from "react-router-dom";
@@ -27,6 +28,7 @@ import { composePromise, composePromise2, groupByUniqueElements } from "../../ut
 import SearchBox from "../../components/SearchBox";
 import { getClients, IClient } from "../../api/client";
 import { getPlatforms, IPlatform } from "../../api/platform";
+import { useSelectedRowsAreDeleted } from "../../hooks/useSelectedRowsAreDeleted";
 
 const StockOuts: React.FC = () => {
 	const [fileUploadModalOpen, setFileUploadModalOpen] = useState(false);
@@ -43,6 +45,7 @@ const StockOuts: React.FC = () => {
 		vendorName: "",
 		completedStart: undefined,
 		completedEnd: undefined,
+		isDeleted: 0,
 	});
 	// 2. 定义SWR的fetcher函数：接收参数，调用getStockIns
 	const fetcher = async (params: IProductQueryParams) => {
@@ -63,6 +66,8 @@ const StockOuts: React.FC = () => {
 			revalidateOnFocus: false,
 		}
 	);
+
+	const selectedRowIsDeleted = useSelectedRowsAreDeleted<IStockOut>(selectedRowKeys, stockIns);
 
 	const columns: TableProps<IStockOut>["columns"] = [
 		// {
@@ -155,7 +160,7 @@ const StockOuts: React.FC = () => {
 					{record.status === "PENDING" && record.deletedAt === null && (
 						<>
 							<Link to={`/stockout/update/${record.id}`}>编辑</Link>
-							<Tooltip title="确认进货完成">
+							<Tooltip title="确认出货完成">
 								<Button
 									onClick={async () => {
 										await confirmStockOutCompleted(record.id);
@@ -417,7 +422,7 @@ const StockOuts: React.FC = () => {
 					selectedRowKeys,
 					getCheckboxProps: record => {
 						return {
-							disabled: record.status === "COMPLETED" || record.deletedAt !== null,
+							disabled: record.status === "COMPLETED",
 						};
 					},
 					onChange: values => {
@@ -438,7 +443,11 @@ const StockOuts: React.FC = () => {
 					size="small"
 					onClick={async () => {
 						try {
-							await batchDeleteStockOut(selectedRowKeys as number[]);
+							if (selectedRowIsDeleted) {
+								await restoreDeletedStockOut(selectedRowKeys as number[]);
+							} else {
+								await batchDeleteStockOut(selectedRowKeys as number[]);
+							}
 							setSelectedRowKeys([]);
 						} finally {
 							mutate();
