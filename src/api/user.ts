@@ -19,6 +19,7 @@ export interface LoginParams {
 	password: string;
 	captchaText: string;
 	captchaId: string;
+	nonce: string;
 }
 
 // 定义注册请求参数类型
@@ -75,6 +76,9 @@ export const logout = (): Promise<void> => {
 };
 
 export const checkEmailExisted = (email: string): Promise<boolean> => {
-	console.log("checkEmailExisted: ", email);
 	return nodejsRequest.get<boolean>("/user/checkEmailExisted/" + email);
+};
+
+export const getNonce = (): Promise<string> => {
+	return nodejsRequest.get<string>("/user/get-nonce");
 };

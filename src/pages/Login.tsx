@@ -1,14 +1,26 @@
 import React, { useEffect, useRef, useState } from "react";
 import { LockOutlined, MailOutlined } from "@ant-design/icons";
 import { Button, Flex, Form, Input, message } from "antd";
-import { getCaptcha, userLogin, type LoginParams, type LoginResponse } from "../api/user";
+import { getCaptcha, getNonce, userLogin, type LoginParams, type LoginResponse } from "../api/user";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import Box from "../components/Box";
 import { clearUserCache } from "../routes";
 
+function hashPassword(password: string, nonce: string) {
+	// 拼接密码和盐，避免彩虹表攻击
+	const str = password + "_" + nonce;
+	// 使用SHA256生成哈希（生产环境建议用更安全的Argon2/Bcrypt）
+	return crypto.subtle.digest("SHA-256", new TextEncoder().encode(str)).then(hashBuffer => {
+		// 转换为十六进制字符串
+		return Array.from(new Uint8Array(hashBuffer))
+			.map(b => b.toString(16).padStart(2, "0"))
+			.join("");
+	});
+}
+
 const loginFormInitialValues = {
-	// email: "aachen2012@outlook.com",
-	// password: "123456",
+	email: "aachen2012@outlook.com",
+	password: "123456",
 	remember: true,
 };
 
@@ -27,7 +39,13 @@ const Login: React.FC = () => {
 				message.error("验证码获取异常");
 				return;
 			}
+			if (!nonce) {
+				message.error("nonce获取异常");
+				return;
+			}
 			values.captchaId = captchaId;
+			values.nonce = nonce;
+			values.password = await hashPassword(values.password, nonce);
 			const token = await userLogin(values);
 			localStorage.setItem("access_token", token);
 			// 清除旧的用户缓存，让 authLoader 重新获取用户信息
@@ -58,8 +76,17 @@ const Login: React.FC = () => {
 		setCaptchaSrc(src.image);
 		setCaptchaId(src.captchaId);
 	};
+
+	const [nonce, setNonce] = useState<string>();
+	const loadNonce = async () => {
+		const nonce = await getNonce();
+		console.log("nonce: ", nonce);
+		setNonce(nonce);
+	};
 	useEffect(() => {
 		loadCaptcha();
+
+		loadNonce();
 	}, []);
 
 	return (
