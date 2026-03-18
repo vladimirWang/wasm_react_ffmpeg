@@ -1,19 +1,26 @@
 import React, { useEffect, useRef, useState } from "react";
 import { LockOutlined, MailOutlined } from "@ant-design/icons";
 import { Button, Flex, Form, Input, message } from "antd";
-import { getCaptcha, getNonce, userLogin, type LoginParams, type LoginResponse } from "../api/user";
+import {
+	getCaptcha,
+	getNonce,
+	getUserSaltByEmail,
+	userLogin,
+	type LoginParams,
+	type LoginResponse,
+} from "../api/user";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import Box from "../components/Box";
 import { clearUserCache } from "../routes";
 
-function hashPassword(password: string, nonce: string) {
-	// 拼接密码和盐，避免彩虹表攻击
-	const str = password + "_" + nonce;
-	// 使用SHA256生成哈希（生产环境建议用更安全的Argon2/Bcrypt）
+function hashPassword(password: string, nonce: string, salt: string) {
+	if (!salt || !nonce) {
+		throw new Error("salt或nonce不能为空");
+	}
+	const str = password + "_" + salt + "_" + nonce;
 	return crypto.subtle.digest("SHA-256", new TextEncoder().encode(str)).then(hashBuffer => {
-		// 转换为十六进制字符串
 		return Array.from(new Uint8Array(hashBuffer))
-			.map(b => b.toString(16).padStart(2, "0"))
+			.map(b => b.toString(16).padStart(2, "0")) // 转小写十六进制，和后端一致
 			.join("");
 	});
 }
@@ -43,8 +50,15 @@ const Login: React.FC = () => {
 				message.error("nonce获取异常");
 				return;
 			}
+			const salt = await loadUserSalt(values.email);
+			console.log("salt: ", salt);
+			if (!salt) {
+				message.error("请确认邮箱是否正确，或重新输入邮箱");
+				return;
+			}
 			values.captchaId = captchaId;
 			values.nonce = nonce;
+			values.password = await hashPassword(values.password, nonce, salt);
 			const token = await userLogin(values);
 			localStorage.setItem("access_token", token);
 			// 清除旧的用户缓存，让 authLoader 重新获取用户信息
@@ -82,9 +96,18 @@ const Login: React.FC = () => {
 		console.log("nonce: ", nonce);
 		setNonce(nonce);
 	};
+	const loadUserSalt = async (email: string) => {
+		if (!email) {
+			message.error("请输入邮箱");
+			return;
+		}
+		const salt = await getUserSaltByEmail(email);
+		console.log("salt: ", salt);
+		// setSalt(salt);
+		return salt;
+	};
 	useEffect(() => {
 		loadCaptcha();
-
 		loadNonce();
 	}, []);
 
