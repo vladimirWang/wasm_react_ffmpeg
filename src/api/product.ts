@@ -66,7 +66,7 @@ export interface RegisterParams {
 
 // 获取产品列表
 export const getProducts = async (
-	data?: IProductQueryParams | { pagination: false }
+	data?: IProductQueryParams | { pagination: 0 | 1 }
 ): Promise<IProductsQueryResponse> => {
 	return nodejsRequest.get<IProductsQueryResponse>("/product", { params: data });
 };
