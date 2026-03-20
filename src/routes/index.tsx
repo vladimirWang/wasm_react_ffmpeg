@@ -32,6 +32,8 @@ const StockOuts = lazy(() => import("../pages/StockOuts/StockOuts"));
 const Clients = lazy(() => import("../pages/Clients/Clients"));
 const ClientCreate = lazy(() => import("../pages/Client/ClientCreate"));
 const ClientUpdate = lazy(() => import("../pages/Client/ClientUpdate"));
+const ChangePassword = lazy(() => import("../pages/ChangePassword"));
+const ForgetPassword = lazy(() => import("../pages/ForgetPassword"));
 import { getCurrentUser, type IUser } from "../api/user";
 import { useUserStore } from "../store/userStore";
 
@@ -439,6 +441,22 @@ export const routeConfig: ExtendedRouteObject[] = [
 				},
 			},
 		],
+	},
+	{
+		path: "/change-password",
+		Component: ChangePassword,
+		meta: {
+			hidden: true,
+			auth: "free",
+		},
+	},
+	{
+		path: "/forget-password",
+		Component: ForgetPassword,
+		meta: {
+			hidden: true,
+			auth: "free",
+		},
 	},
 	{
 		path: "/about",

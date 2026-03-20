@@ -197,7 +197,7 @@ const Login: React.FC = () => {
 						{/* <Form.Item name="remember" valuePropName="checked" noStyle>
 							<Checkbox>Remember me</Checkbox>
 						</Form.Item> */}
-						<a href="">忘记密码</a>
+						<Link to="/forget-password">忘记密码</Link>
 						<Link to="/landing/register">去注册!</Link>
 					</Flex>
 				</Form.Item>

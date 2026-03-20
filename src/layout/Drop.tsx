@@ -27,9 +27,12 @@ export default function Drop() {
 
 	const items: MenuProps["items"] = [
 		{
-			label: "个人中心",
+			label: "修改密码",
 			key: "profile",
 			icon: <UserOutlined />,
+			onClick: () => {
+				navigate("/change-password");
+			},
 		},
 		{
 			type: "divider",
