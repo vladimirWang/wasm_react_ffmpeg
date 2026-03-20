@@ -43,8 +43,8 @@ const registerFormInitialValues = {
 	email: "",
 	verifyCode: "",
 	username: "",
-	password: "123456",
-	confirm: "123456",
+	password: "",
+	confirm: "",
 	agreement: true,
 };
 

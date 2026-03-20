@@ -38,8 +38,8 @@ async function hashPassword(password: string, nonce: string, salt: string) {
 }
 
 const loginFormInitialValues = {
-	email: "aachen2012@outlook.com",
-	password: "123456",
+	email: "",
+	password: "",
 	remember: true,
 };
 
