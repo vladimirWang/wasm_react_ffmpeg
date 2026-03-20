@@ -5,6 +5,7 @@ on:
     branches:
       - main
       - master
+      - test
   workflow_dispatch: # 允许手动触发
 
 permissions:
@@ -49,4 +50,10 @@ jobs:
           SERVER_PASSWORD: ${{ secrets.SERVER_PASSWORD }}
         run: |
           export SSHPASS="$SERVER_PASSWORD"
-          sshpass -e scp -r -o StrictHostKeyChecking=no ./dist/. root@139.224.68.145:/root/galleryrepo_server/frontend-dist/
+          if [ "${GITHUB_REF_NAME}" = "test" ]; then
+            TARGET_DIR="/root/galleryrepo_server/frontend-dist-test"
+          else
+            TARGET_DIR="/root/galleryrepo_server/frontend-dist-prod"
+          fi
+          sshpass -e ssh -o StrictHostKeyChecking=no root@139.224.68.145 "mkdir -p ${TARGET_DIR}"
+          sshpass -e scp -r -o StrictHostKeyChecking=no ./dist/. root@139.224.68.145:${TARGET_DIR}/
