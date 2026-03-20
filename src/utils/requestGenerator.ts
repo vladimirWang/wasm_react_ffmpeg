@@ -107,7 +107,7 @@ export const requestGenerator = (baseUrl: string) => {
 						message.error("登录过期，请重新登录");
 						// 使用 setTimeout 延迟跳转，确保消息提示有时间显示
 						await sleep(2000);
-						window.location.href = `/landing/login?redirect=${redirectUrl}`;
+						window.location.href = `/#/landing/login?redirect=${redirectUrl}`;
 					}
 					// 401 错误已经处理，直接 reject
 					return Promise.reject({
