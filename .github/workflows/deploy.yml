@@ -51,9 +51,9 @@ jobs:
         run: |
           export SSHPASS="$SERVER_PASSWORD"
           if [ "${GITHUB_REF_NAME}" = "test" ]; then
-            TARGET_DIR="/root/galleryrepo_server/frontend-dist-test"
+            TARGET_DIR="/root/gallery/test/frontend-dist"
           else
-            TARGET_DIR="/root/galleryrepo_server/frontend-dist-prod"
+            TARGET_DIR="/root/gallery/production/frontend-dist"
           fi
           sshpass -e ssh -o StrictHostKeyChecking=no root@139.224.68.145 "mkdir -p ${TARGET_DIR}"
           sshpass -e scp -r -o StrictHostKeyChecking=no ./dist/. root@139.224.68.145:${TARGET_DIR}/
