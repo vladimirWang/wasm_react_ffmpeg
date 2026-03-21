@@ -264,6 +264,7 @@ const Register: React.FC = () => {
 							</>
 						)}
 					</Form>
+					<Link to="/landing/login">已有账号？去登录</Link>
 				</div>
 			</Card>
 			{confettiVisible && <Confetti width={width} height={height} />}
