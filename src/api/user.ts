@@ -98,3 +98,13 @@ export const getUserSaltByEmail = (email: string): Promise<string> => {
 export const resetPassword = (data: { email: string }): Promise<void> => {
 	return nodejsRequest.post<void>("/user/resetPassword", data);
 };
+
+export interface IUpdatePasswordParams {
+	current: string;
+	password: string;
+	nonce: string;
+}
+// 修改密码
+export const updatePassword = (data: IUpdatePasswordParams): Promise<void> => {
+	return nodejsRequest.post<void>("/user/updatePassword", data);
+};

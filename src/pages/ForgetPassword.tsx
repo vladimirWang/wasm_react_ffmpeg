@@ -3,6 +3,7 @@ import type { FormItemProps, FormProps } from "antd";
 import { Button, Card, Form } from "antd";
 import { checkEmailExisted, resetPassword } from "../api/user";
 import EmailVerification from "../components/EmailVerification";
+import { useNavigate } from "react-router-dom";
 
 /** 垂直布局：标签与输入均占满一行，避免右侧留白 */
 const formItemLayout: FormProps = {
@@ -22,6 +23,7 @@ const resetPwdFormInitialValues = {
 };
 
 const ForgetPassword: React.FC = () => {
+	const navigate = useNavigate();
 	const [form] = Form.useForm();
 	const [step1Loading, setStep1Loading] = useState(false);
 
@@ -32,6 +34,7 @@ const ForgetPassword: React.FC = () => {
 			await form.validateFields(["email", "emailVerified"]);
 			const values = form.getFieldsValue();
 			await resetPassword(values);
+			navigate("/landing/login");
 			// await resetPassword({ email: form.getFieldValue("email") });
 		} finally {
 			setStep1Loading(false);
