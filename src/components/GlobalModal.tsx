@@ -1,14 +1,22 @@
 import { Alert, AlertProps } from "antd";
-import React, { PropsWithChildren, useEffect, useRef, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 
-interface IAlertState {
+export interface GlobalModalOpenConfig {
+	/** 弹窗标题（与 Alert 模式或自定义内容搭配使用） */
+	title?: string;
+	/** 弹窗主体：可传 JSX、字符串、任意 React 节点 */
+	content?: React.ReactNode;
+	onClose?: () => void;
+	type?: AlertProps["type"];
+	/** 显示时长（ms），到时自动关闭；设为 0 或 undefined 表示不自动关闭 */
+	duration?: number;
+}
+
+interface IAlertState extends GlobalModalOpenConfig {
 	visible: boolean;
 	title: string;
-	// content: React.ReactNode;
 	onClose: () => void;
-	type: AlertProps["type"];
-	duration?: number;
 }
 
 // 1. 定义全局弹窗的默认配置（独立于组件，维护全局状态）
@@ -17,17 +25,17 @@ let modalState: IAlertState = {
 	title: "默认标题", // 弹窗标题
 	type: "success",
 	duration: 3000,
-	// content: "默认内容", // 弹窗内容
+	content: undefined,
 	onClose: () => {}, // 关闭后的回调函数
 };
 
 // 2. 定义状态更新回调（用于通知组件更新状态）
-let onModalStateChange = (newState: IAlertState) => {};
+let onModalStateChange = (_newState: IAlertState) => {};
 
 // 3. 暴露全局命令式 API（核心：供外部调用，修改全局状态）
 export const GlobalModal = {
 	// 打开弹窗（支持传入配置项覆盖默认值）
-	open: (config = {}) => {
+	open: (config: GlobalModalOpenConfig = {}) => {
 		modalState = {
 			...modalState,
 			visible: true,
@@ -51,7 +59,7 @@ export const GlobalModal = {
 			visible: false,
 			title: "默认标题",
 			type: undefined,
-			// content: "默认内容",
+			content: undefined,
 			onClose: () => {},
 		};
 		onModalStateChange(modalState);
@@ -73,14 +81,27 @@ export const ModalComponent = () => {
 		};
 	}, []);
 
+	// 打开后按 duration 自动关闭（duration 为 0 或未设置则不自动关）
 	useEffect(() => {
-		if (localState.visible) return;
+		if (timerRef.current) {
+			clearTimeout(timerRef.current);
+			timerRef.current = null;
+		}
+		if (!localState.visible) return;
+		const ms = localState.duration;
+		if (ms == null || ms <= 0) return;
 
 		timerRef.current = setTimeout(() => {
-			localState.visible = false;
-			onModalStateChange(localState);
-		}, localState.duration);
-	}, [localState.visible]);
+			GlobalModal.close();
+		}, ms);
+
+		return () => {
+			if (timerRef.current) {
+				clearTimeout(timerRef.current);
+				timerRef.current = null;
+			}
+		};
+	}, [localState.visible, localState.duration]);
 
 	// 获取 Portal 挂载目标 DOM 节点（对应 index.html 中的 portal-root）
 	const portalRoot = document.getElementById("portal-root");
@@ -106,7 +127,7 @@ export const ModalComponent = () => {
 			<div
 				style={{
 					position: "fixed",
-					top: "10%",
+					top: "50%",
 					left: "50%",
 					transform: "translate(-50%, -50%)",
 					padding: "20px",
@@ -116,8 +137,24 @@ export const ModalComponent = () => {
 				}}
 				onClick={e => e.stopPropagation()}
 			>
-				{/* {children} */}
-				<Alert title={localState.title} type={localState.type} />
+				{localState.content != null ? (
+					<>
+						{localState.title ? (
+							<div
+								style={{
+									fontWeight: 600,
+									marginBottom: 12,
+									fontSize: 16,
+								}}
+							>
+								{localState.title}
+							</div>
+						) : null}
+						{localState.content}
+					</>
+				) : (
+					<Alert title={localState.title} type={localState.type} />
+				)}
 			</div>
 		</div>,
 		portalRoot
