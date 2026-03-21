@@ -63,12 +63,19 @@ export const sendEmailVerificationCode = (email: string): Promise<void> => {
 	return nodejsRequest.post<void>("/util/sendEmailVerificationCode", { email });
 };
 
+interface ICheckEmailVerificationCodeResponse {
+	email: string;
+	verified: boolean;
+}
 // 验证邮箱
 export const checkEmailVerificationCode = (data: {
 	email: string;
 	verifyCode: string;
-}): Promise<void> => {
-	return nodejsRequest.post<void>("/util/checkEmailValidation", data);
+}): Promise<ICheckEmailVerificationCodeResponse> => {
+	return nodejsRequest.post<ICheckEmailVerificationCodeResponse>(
+		"/util/checkEmailValidation",
+		data
+	);
 };
 
 export const logout = (): Promise<void> => {
@@ -85,4 +92,9 @@ export const getNonce = (): Promise<string> => {
 
 export const getUserSaltByEmail = (email: string): Promise<string> => {
 	return nodejsRequest.get<string>("/user/getSalt/" + email);
+};
+
+// 重置密码
+export const resetPassword = (data: { email: string }): Promise<void> => {
+	return nodejsRequest.post<void>("/user/resetPassword", data);
 };
