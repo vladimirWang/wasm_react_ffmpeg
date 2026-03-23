@@ -13,6 +13,7 @@ import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import Box from "../components/Box";
 import { clearUserCache } from "../routes";
 import { hashPassword, sha256 } from "../utils/algo";
+import Captcha, { CaptchaHandle } from "../components/Captcha";
 
 const loginFormInitialValues = {
 	email: "",
@@ -24,11 +25,10 @@ const Login: React.FC = () => {
 	const [form] = Form.useForm();
 	const navigate = useNavigate();
 	const [searchParams] = useSearchParams();
+	const captchaRef = useRef<CaptchaHandle>(null);
 
-	const [captchaSrc, setCaptchaSrc] = useState<string>();
-	const [captchaId, setCaptchaId] = useState<string>();
 	const [loading, setLoading] = useState(false);
-
+	const [captchaId, setCaptchaId] = useState<string>();
 	const onFinish = async (values: LoginParams) => {
 		try {
 			// 响应拦截器已经处理了 IResponse 格式，直接返回 token (string)
@@ -62,28 +62,14 @@ const Login: React.FC = () => {
 				navigate("/", { replace: true });
 			}
 		} catch (error: unknown) {
+			captchaRef.current?.refreshCaptcha();
 			// 错误提示已由响应拦截器统一处理
-			message.error(error instanceof Error ? error.message : "登录失败");
+			// message.error(error instanceof Error ? error.message : "登录失败");
 			form.resetFields(["captchaText"]);
-			// 登录失败刷新验证码
-			loadCaptcha();
-			// loadNonce();
 		} finally {
 			setLoading(false);
 		}
 	};
-	const loadCaptcha = async () => {
-		// if (document.visibilityState !== "visible") return;
-		const src = await getCaptcha();
-		setCaptchaSrc(src.image);
-		setCaptchaId(src.captchaId);
-	};
-
-	useEffect(() => {
-		if (location.pathname !== "/landing/login") {
-			loadCaptcha();
-		}
-	}, [location.pathname]);
 
 	const loadUserSalt = async (email: string) => {
 		if (!email) {
@@ -95,18 +81,6 @@ const Login: React.FC = () => {
 		// setSalt(salt);
 		return salt;
 	};
-
-	function loadCaptchaWhenVisible() {
-		if (document.visibilityState !== "visible") return;
-		loadCaptcha();
-	}
-	useEffect(() => {
-		document.addEventListener("visibilitychange", loadCaptchaWhenVisible, false);
-		return () => {
-			document.removeEventListener("visibilitychange", loadCaptchaWhenVisible, false);
-			// window.removeEventListener("load", loadCaptcha, false);
-		};
-	}, []);
 
 	return (
 		<div
@@ -162,13 +136,11 @@ const Login: React.FC = () => {
 				<Form.Item name="captchaText" rules={[{ required: true, message: "请输入验证码" }]}>
 					<Flex gap={10}>
 						<Input placeholder="请输入验证码" />
-						<img
-							src={captchaSrc}
-							width={100}
-							height={40}
-							alt="验证码"
-							onClick={loadCaptcha}
-							style={{ background: "white" }}
+						<Captcha
+							onChange={setCaptchaId}
+							pathname={location.pathname}
+							pathnamesRefresh={["/landing/login"]}
+							ref={captchaRef}
 						/>
 					</Flex>
 				</Form.Item>
