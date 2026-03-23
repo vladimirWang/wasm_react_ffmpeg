@@ -27,6 +27,7 @@ const Login: React.FC = () => {
 
 	const [captchaSrc, setCaptchaSrc] = useState<string>();
 	const [captchaId, setCaptchaId] = useState<string>();
+	const [loading, setLoading] = useState(false);
 
 	const onFinish = async (values: LoginParams) => {
 		try {
@@ -35,13 +36,12 @@ const Login: React.FC = () => {
 				message.error("验证码获取异常");
 				return;
 			}
-			if (!nonce) {
-				message.error("nonce获取异常");
-				return;
-			}
+			setLoading(true);
+			const nonce = await getNonce();
 			const salt = await loadUserSalt(values.email);
 			console.log("salt: ", salt);
 			if (!salt) {
+				setLoading(false);
 				message.error("请确认邮箱是否正确，或重新输入邮箱");
 				return;
 			}
@@ -63,29 +63,28 @@ const Login: React.FC = () => {
 			}
 		} catch (error: unknown) {
 			// 错误提示已由响应拦截器统一处理
-			if (error instanceof Error) {
-				console.error(error.message);
-			} else {
-				console.error("Unknown error: ", error);
-			}
+			message.error(error instanceof Error ? error.message : "登录失败");
 			form.resetFields(["captchaText"]);
 			// 登录失败刷新验证码
 			loadCaptcha();
-			loadNonce();
+			// loadNonce();
+		} finally {
+			setLoading(false);
 		}
 	};
 	const loadCaptcha = async () => {
+		// if (document.visibilityState !== "visible") return;
 		const src = await getCaptcha();
 		setCaptchaSrc(src.image);
 		setCaptchaId(src.captchaId);
 	};
 
-	const [nonce, setNonce] = useState<string>();
-	const loadNonce = async () => {
-		const nonce = await getNonce();
-		console.log("nonce: ", nonce);
-		setNonce(nonce);
-	};
+	useEffect(() => {
+		if (location.pathname !== "/landing/login") {
+			loadCaptcha();
+		}
+	}, [location.pathname]);
+
 	const loadUserSalt = async (email: string) => {
 		if (!email) {
 			message.error("请输入邮箱");
@@ -96,9 +95,17 @@ const Login: React.FC = () => {
 		// setSalt(salt);
 		return salt;
 	};
-	useEffect(() => {
+
+	function loadCaptchaWhenVisible() {
+		if (document.visibilityState !== "visible") return;
 		loadCaptcha();
-		loadNonce();
+	}
+	useEffect(() => {
+		document.addEventListener("visibilitychange", loadCaptchaWhenVisible, false);
+		return () => {
+			document.removeEventListener("visibilitychange", loadCaptchaWhenVisible, false);
+			// window.removeEventListener("load", loadCaptcha, false);
+		};
 	}, []);
 
 	return (
@@ -166,7 +173,7 @@ const Login: React.FC = () => {
 					</Flex>
 				</Form.Item>
 				<Form.Item>
-					<Button block type="primary" htmlType="submit">
+					<Button block type="primary" htmlType="submit" loading={loading}>
 						登录
 					</Button>
 
