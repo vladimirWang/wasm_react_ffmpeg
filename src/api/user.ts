@@ -86,6 +86,10 @@ export const checkEmailExisted = (email: string): Promise<boolean> => {
 	return nodejsRequest.get<boolean>("/user/checkEmailExisted/" + email);
 };
 
+export const checkEmailNotExisted = (email: string): Promise<boolean> => {
+	return nodejsRequest.get<boolean>("/user/checkEmailNotExisted/" + email);
+};
+
 export const getNonce = (): Promise<string> => {
 	return nodejsRequest.get<string>("/user/get-nonce");
 };

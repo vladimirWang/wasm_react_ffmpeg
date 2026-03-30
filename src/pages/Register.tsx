@@ -7,7 +7,7 @@ import {
 	type RegisterResponse,
 	sendEmailVerificationCode,
 	checkEmailVerificationCode,
-	checkEmailExisted,
+	checkEmailNotExisted,
 } from "../api/user";
 import { Link, useNavigate } from "react-router-dom";
 import { useWindowSize } from "react-use";
@@ -32,6 +32,8 @@ const stepItems = [
 
 const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
+const passwordRegex = /^[0-9a-zA-Z!@#$%^&*()_+\-=\[\]{}|;:,.<>?~]{6,8}$/;
+
 const registerFormInitialValues = {
 	// email: "aachen2012@outlook.com",
 	// email: "184594923@qq.com",
@@ -40,7 +42,7 @@ const registerFormInitialValues = {
 	// password: "123456",
 	// confirm: "123456",
 	// agreement: true,
-	email: "",
+	email: "413114463@qq.com",
 	verifyCode: "",
 	username: "",
 	password: "",
@@ -123,8 +125,8 @@ const Register: React.FC = () => {
 		() =>
 			debounce(email => {
 				if (!emailRegex.test(email)) return;
-				checkEmailExisted(email).then(existed => {
-					form.setFields([{ name: "email", errors: existed ? ["邮箱已存在"] : [] }]);
+				checkEmailNotExisted(email).then(existed => {
+					form.setFields([{ name: "email", errors: !existed ? ["邮箱已存在"] : [] }]);
 				});
 			}, 500),
 		[form]
@@ -161,8 +163,8 @@ const Register: React.FC = () => {
 												if (!emailRegex.test(value)) {
 													return Promise.reject(new Error("请输入有效的邮箱地址！"));
 												}
-												const existed = await checkEmailExisted(value);
-												return existed
+												const existed = await checkEmailNotExisted(value);
+												return !existed
 													? Promise.reject(new Error("邮箱已存在"))
 													: Promise.resolve();
 											},
@@ -211,8 +213,10 @@ const Register: React.FC = () => {
 									label="密码"
 									rules={[
 										{ required: true, message: "请输入密码！" },
-										{ min: 6, message: "密码长度不能小于6位" },
-										{ max: 8, message: "密码长度不能大于8位" },
+										{
+											pattern: passwordRegex,
+											message: "密码长度为6-8位，只能包含数字、字母、特殊字符",
+										},
 									]}
 									hasFeedback
 								>
