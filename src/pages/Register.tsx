@@ -42,7 +42,7 @@ const registerFormInitialValues = {
 	// password: "123456",
 	// confirm: "123456",
 	// agreement: true,
-	email: "413114463@qq.com",
+	email: "",
 	verifyCode: "",
 	username: "",
 	password: "",
