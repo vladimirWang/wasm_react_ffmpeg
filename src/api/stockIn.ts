@@ -18,7 +18,7 @@ export interface IStockIn {
 	readonly id: number;
 	productJoinStockIn: IProductJoinStockIn[];
 	status: StockInStatus;
-	createdAt: Date;
+	submittedAt: Date;
 	completedAt?: Date;
 	deletedAt?: Date;
 }
@@ -29,7 +29,7 @@ export interface IStockInWithProducts {
 	readonly id: number;
 	products: Array<{ productName: string }>;
 	status: StockInStatus;
-	createdAt: Date;
+	submittedAt: Date;
 	completedAt?: Date;
 	deletedAt?: Date;
 }
@@ -62,7 +62,7 @@ export interface StockInRecord extends StockOperationRecord {
 }
 
 export interface IStockInCreateParams {
-	createdAt?: string;
+	submittedAt?: string;
 	productJoinStockIn: IProductJoinStockIn[];
 	remark?: string;
 }

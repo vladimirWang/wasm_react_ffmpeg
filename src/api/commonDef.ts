@@ -30,7 +30,7 @@ export type AtLeastOne<T> = {
 
 // Excel 解析后的数据格式
 export interface StockOperationRecord {
-	createdAt: string;
+	submittedAt: string;
 	productId: number;
 	vendorId: number;
 	count: number;

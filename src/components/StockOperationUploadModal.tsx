@@ -167,9 +167,9 @@ const StockOperationUploadModal = <T extends StockOperationRecord>(
 							const value = row[colIndex];
 							if (dateFields.includes(field)) {
 								const createdAtSerial = value || dateToMsSince1900(new Date());
-								const createdAt = excelSerialToDate(createdAtSerial);
-								const formatCreatedAt = dayjs.utc(createdAt).format("YYYY-MM-DD");
-								console.log("----createdAt value----: ", value, formatCreatedAt);
+								const submittedAt = excelSerialToDate(createdAtSerial);
+								const formatCreatedAt = dayjs.utc(submittedAt).format("YYYY-MM-DD");
+								console.log("----submittedAt value----: ", value, formatCreatedAt);
 								requiredValues[field] = formatCreatedAt as T[keyof T];
 							} else {
 								requiredValues[field] = value as T[keyof T];
@@ -181,11 +181,6 @@ const StockOperationUploadModal = <T extends StockOperationRecord>(
 							// 	return;
 							// }
 						}
-
-						// if (!createdAtMap[formatCreatedAt]) {
-						// 	createdAtMap[formatCreatedAt] = [];
-						// }
-						// requiredValues.createdAt = formatCreatedAt;
 						requiredValues.rowIndex = i + 1;
 						flatRecords.push(requiredValues);
 						// createdAtMap[formatCreatedAt].push(requiredValues);
@@ -500,8 +495,8 @@ const StockOperationUploadModal = <T extends StockOperationRecord>(
 		},
 		{
 			title: "创建日期",
-			dataIndex: "createdAt",
-			key: "createdAt",
+			dataIndex: "submittedAt",
+			key: "submittedAt",
 			width: 100,
 		},
 		{

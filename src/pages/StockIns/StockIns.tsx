@@ -169,10 +169,10 @@ const StockIns: React.FC = () => {
 		},
 		{
 			title: "创建日期",
-			dataIndex: "createdAt",
-			key: "createdAt",
+			dataIndex: "submittedAt",
+			key: "submittedAt",
 			render: (_, record) => {
-				return dayjs(record.createdAt).format("YYYY-MM-DD HH:mm:ss");
+				return dayjs(record.submittedAt).format("YYYY-MM-DD HH:mm:ss");
 			},
 		},
 		{
@@ -244,11 +244,11 @@ const StockIns: React.FC = () => {
 				// 并发执行的多个任务，每个任务创建一个进货单
 				const concurrentTasks = group.map(recordSet => {
 					const params = {
-						createdAt: recordSet[0].createdAt,
+						submittedAt: recordSet[0].submittedAt,
 						productJoinStockIn: recordSet,
 					};
 					const recordIndexes =
-						createdAtVendorIdAndIndexMap[`${recordSet[0].createdAt}-${recordSet[0].vendorId}`];
+						createdAtVendorIdAndIndexMap[`${recordSet[0].submittedAt}-${recordSet[0].vendorId}`];
 					return createStockIn(params as IStockInCreateParams, {
 						showSuccessMessage: false,
 					})
@@ -316,7 +316,7 @@ const StockIns: React.FC = () => {
 		// 分组处理, 同一个平台订单号分一组
 		const createdAtAndVendorIdMap: Record<string, StockInRecord[]> = {};
 		data.forEach((record, recordIndex) => {
-			const createdAtAndVendorId = `${record.createdAt}-${record.vendorId}`;
+			const createdAtAndVendorId = `${record.submittedAt}-${record.vendorId}`;
 
 			// 同一个创建日期和供应商的进货单，分到一组
 			if (!createdAtAndVendorIdMap[createdAtAndVendorId]) {
@@ -412,8 +412,8 @@ const StockIns: React.FC = () => {
 			<StockOperationUploadModal<StockInRecord>
 				results={results}
 				columns={batchOperationColumns}
-				requiredFields={["productId", "vendorId", "count", "cost", "createdAt"]}
-				dateFields={["createdAt"]}
+				requiredFields={["productId", "vendorId", "count", "cost", "submittedAt"]}
+				dateFields={["submittedAt"]}
 				ref={stockOperationUploadModalRef}
 				operationType="stockIn"
 				open={fileUploadModalOpen}

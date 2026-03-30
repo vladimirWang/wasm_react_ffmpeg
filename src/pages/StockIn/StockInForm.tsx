@@ -156,8 +156,8 @@ export default function StockInForm(props: StockInFormProps) {
 			name="basic"
 			initialValues={{
 				...props.initialValues,
-				createdAt: props.initialValues?.createdAt
-					? dayjs(props.initialValues.createdAt)
+				submittedAt: props.initialValues?.submittedAt
+					? dayjs(props.initialValues.submittedAt)
 					: undefined,
 			}}
 			labelCol={{ span: 2 }}
@@ -216,7 +216,7 @@ export default function StockInForm(props: StockInFormProps) {
 				)}
 			</Form.List>
 			<Divider />
-			<Form.Item name="createdAt" label="创建日期">
+			<Form.Item name="submittedAt" label="创建日期">
 				<DatePicker placeholder="请选择创建日期" disabledDate={disabledFuture} />
 			</Form.Item>
 			<Form.Item<IVendorUpdateParams> label="备注" name="remark" style={{ marginBottom: 24 }}>
