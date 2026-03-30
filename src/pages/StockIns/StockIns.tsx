@@ -31,6 +31,7 @@ import {
 	composePromise2,
 	getBitMask,
 	groupByUniqueElements,
+	groupByUniqueElements2,
 	paramsToSearchParams,
 } from "../../utils/common";
 import SearchBox from "../../components/SearchBox";
@@ -129,8 +130,8 @@ const StockIns: React.FC = () => {
 		// },
 		{
 			title: "进货单号",
-			dataIndex: "stockInCode",
-			key: "stockInCode",
+			dataIndex: "serviceCode",
+			key: "serviceCode",
 		},
 		{
 			title: "进货单总金额",
@@ -238,7 +239,9 @@ const StockIns: React.FC = () => {
 	const [results, setResults] = useState<number[]>([]);
 	const handleConfirm = async () => {
 		const serialTasks = uniqueGroups.map((group, groupIndex) => {
+			console.log("----group----: ", group, groupIndex);
 			return async () => {
+				// 并发执行的多个任务，每个任务创建一个进货单
 				const concurrentTasks = group.map(recordSet => {
 					const params = {
 						createdAt: recordSet[0].createdAt,
@@ -251,7 +254,7 @@ const StockIns: React.FC = () => {
 					})
 						.then(res => {
 							recordIndexes?.forEach(recordIndex => {
-								stockOperationUploadModalRef.current?.onItemFinish(recordIndex, res.stockInCode);
+								stockOperationUploadModalRef.current?.onItemFinish(recordIndex, res.serviceCode);
 							});
 							return res;
 						})
@@ -332,7 +335,7 @@ const StockIns: React.FC = () => {
 			});
 		});
 		const groupRecords = Object.values(createdAtAndVendorIdMap);
-		const uniqueGroupsResult = groupByUniqueElements<StockInRecord>(groupRecords, data => {
+		const uniqueGroupsResult = groupByUniqueElements2<StockInRecord>(groupRecords, data => {
 			return data.productId;
 		});
 		console.log("----groupRecords----: ", groupRecords);

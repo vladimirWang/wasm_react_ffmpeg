@@ -12,7 +12,7 @@ import {
 // 进货单状态
 export type StockInStatus = "PENDING" | "COMPLETED";
 export interface IStockIn {
-	stockInCode: string;
+	serviceCode: string;
 	totalCost: number;
 	remark?: string;
 	readonly id: number;
@@ -124,7 +124,7 @@ export const confirmStockInCompleted = async (id: number): Promise<IStockIn> => 
 // 进货单批量删除
 export const batchDeleteStockIn = async (ids: number[]): Promise<IStockIn[]> => {
 	const p = ids.reduce((a, c) => {
-		a.append("id", c);
+		a.append("id", c + "");
 		return a;
 	}, new URLSearchParams());
 	return nodejsRequest.delete<IStockIn[]>("/stockin/batchDelete", { params: p });

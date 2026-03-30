@@ -168,7 +168,7 @@ const StockOperationUploadModal = <T extends StockOperationRecord>(
 							if (dateFields.includes(field)) {
 								const createdAtSerial = value || dateToMsSince1900(new Date());
 								const createdAt = excelSerialToDate(createdAtSerial);
-								const formatCreatedAt = dayjs(createdAt).format("YYYY-MM-DD");
+								const formatCreatedAt = dayjs.utc(createdAt).format("YYYY-MM-DD");
 								console.log("----createdAt value----: ", value, formatCreatedAt);
 								requiredValues[field] = formatCreatedAt as T[keyof T];
 							} else {
