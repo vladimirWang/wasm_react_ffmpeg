@@ -2,6 +2,7 @@ import difference from "lodash/difference";
 import intersection from "lodash/intersection";
 import isEqual from "lodash/isEqual";
 import dayjs from "dayjs";
+import type { Dayjs } from "dayjs";
 import type { DatePickerProps } from "antd";
 import SparkMD5 from "spark-md5";
 
@@ -20,13 +21,14 @@ export function excelSerialToDate(serial: number): Date {
 	}
 	let s = Math.floor(serial);
 	if (s >= 60) s -= 1; // Excel 1900 闰年 bug
-	const base = new Date(1900, 0, 1);
+	// 必须用 UTC 日历日累加：本地 new Date(1900,0,1) 在部分时区（如上海）对应 1899-12-31 的 UTC，
+	// 与「整天」86400000ms 相加会产生漂移，出现少一天（如 46073 -> 2/19）。
 	const oneDay = 86400000;
-	return new Date(base.getTime() + (s - 1) * oneDay);
+	return new Date(Date.UTC(1900, 0, 1) + (s - 1) * oneDay);
 }
 
-/** 1900-01-01 00:00:00（本地时区）的时间戳（毫秒） */
-const MS_EPOCH_1900 = new Date(1900, 0, 1).getTime();
+/** 1900-01-01 00:00:00 UTC 的时间戳（毫秒），与 excelSerialToDate 使用同一基准 */
+const MS_EPOCH_1900 = Date.UTC(1900, 0, 1);
 
 /** 一天的毫秒数 */
 const ONE_DAY_MS = 86400000;
@@ -39,7 +41,10 @@ const ONE_DAY_MS = 86400000;
  * @returns 第几天（正整数），早于 1900-01-01 时可能 ≤ 0
  */
 export function dateToMsSince1900(date: Date): number {
-	const dayCount = Math.floor((date.getTime() - MS_EPOCH_1900) / ONE_DAY_MS);
+	// 按「本地日历日」与 1900-01-01 的间隔计天，避免仅用 getTime 差在 UTC 与本地跨日时少/多一天
+	const dayCount = Math.floor(
+		(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()) - MS_EPOCH_1900) / ONE_DAY_MS
+	);
 
 	// Excel 错误地把 1900 当成闰年，多算了一个不存在的 1900-02-29
 	// 与 excelSerialToDate 逆运算：第 58 天（1900-02-28）对应 Excel 序列 60
@@ -57,9 +62,12 @@ interface changedFields<T> {
 	same: Array<keyof T>;
 }
 // TODO: 支持深层比较
-export function pickIncrementalFields<T extends {}>(newData: T, oldData: T | undefined
+export function pickIncrementalFields<T extends {}>(
+	newData: T,
+	oldData: T | undefined
 ): changedFields<T> {
-	if (!oldData) return { created: [], updated: Object.keys(newData) as Array<keyof T>, deleted: [], same: [] };
+	if (!oldData)
+		return { created: [], updated: Object.keys(newData) as Array<keyof T>, deleted: [], same: [] };
 	const newKeys = Object.keys(newData) as Array<keyof T>,
 		oldKeys = Object.keys(oldData) as Array<keyof T>;
 	const created: Array<keyof T> = difference(newKeys, oldKeys);
@@ -200,7 +208,7 @@ export function getBitMask<T>(arr: T[], extractor: (item: T) => number): number 
  */
 interface IUniqueGroup<T> {
 	mask: number;
-	items: T[];
+	items: T[][];
 }
 export function groupByUniqueElements<T>(source: T[][], extractor: (item: T) => number): T[][][] {
 	// 存储分组：每个元素是 { mask: 分组总掩码, items: 分组内的子数组 }
@@ -240,10 +248,73 @@ export function groupByUniqueElements<T>(source: T[][], extractor: (item: T) => 
 	}
 
 	// 4. 提取分组的 items 作为最终结果（去掉 mask 字段）
-	return groups.map(group => group.items);
+	const result = groups.map(group => group.items);
+	console.log("----result----: ", result);
+	// return [];
+	return result;
 }
 
-function createHash(chunks: Blob[]): string {
+export function groupByUniqueElements2<T>(source: T[][], extractor: (item: T) => number): T[][][] {
+	/**
+	 * 把「任务列表」分成若干个可并发执行的批次。
+	 *
+	 * - **入参 `source`**：`T[][]`
+	 *   - 外层数组的每个元素 `subArr: T[]` 表示“一笔进货数据 / 一个最小任务单元”
+	 *   - 这个最小单位必须保持原样进出（不能把 `T[]` 展平成 `T`）
+	 *
+	 * - **出参**：`T[][][]`
+	 *   - 第一层：并发批次（第 0 组、第 1 组……）
+	 *   - 第二层：该批次内要并发执行的任务（每个任务仍是原始的 `T[]`）
+	 *   - 第三层：任务内的元素（`T`）
+	 *
+	 * - **并发约束**：
+	 *   - 对任意一个批次，批次内所有任务中由 `extractor(item)` 提取出的 key（例如 `productId`）**不能重复**
+	 *   - 若 `subArr` 内部就存在重复 key，该任务本身无法满足约束，当前实现会“当作正常任务”参与分组；
+	 *     若你希望这种输入直接报错/跳过，可在这里改成显式校验。
+	 *
+	 * - **实现策略**：
+	 *   - 使用 `Set<number>` 记录每个批次已占用的 key
+	 *   - 采用贪心：按输入顺序，把任务放入第一个不冲突的批次，否则新建批次
+	 *
+	 * - **为什么不用位运算掩码**：
+	 *   - JS 位运算基于 32 位整数，`1 << productId` 在 `productId >= 31` 时会溢出/碰撞（例如 99），导致错误分组
+	 */
+	type Group = { keys: Set<number>; items: T[][] };
+
+	const groups: Group[] = [];
+
+	for (const subArr of source) {
+		const subKeys = new Set<number>();
+		for (const item of subArr) {
+			subKeys.add(extractor(item));
+		}
+
+		let placed = false;
+		for (const group of groups) {
+			let conflict = false;
+			for (const k of subKeys) {
+				if (group.keys.has(k)) {
+					conflict = true;
+					break;
+				}
+			}
+			if (!conflict) {
+				group.items.push(subArr);
+				for (const k of subKeys) group.keys.add(k);
+				placed = true;
+				break;
+			}
+		}
+
+		if (!placed) {
+			groups.push({ keys: subKeys, items: [subArr] });
+		}
+	}
+
+	return groups.map(g => g.items);
+}
+
+function createHash(chunks: Blob[]): Promise<string> {
 	return new Promise(resolve => {
 		const spark = new SparkMD5();
 		function _read(index: number) {
