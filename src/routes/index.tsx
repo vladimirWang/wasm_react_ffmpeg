@@ -34,6 +34,7 @@ const ClientCreate = lazy(() => import("../pages/Client/ClientCreate"));
 const ClientUpdate = lazy(() => import("../pages/Client/ClientUpdate"));
 const ChangePassword = lazy(() => import("../pages/ChangePassword"));
 const ForgetPassword = lazy(() => import("../pages/ForgetPassword"));
+const OpenAIChatDemo = lazy(() => import("../pages/OpenAIChatDemo"));
 import { getCurrentUser, type IUser } from "../api/user";
 import { useUserStore } from "../store/userStore";
 
@@ -383,6 +384,15 @@ export const routeConfig: ExtendedRouteObject[] = [
 					icon: <DesktopOutlined />,
 					order: 4,
 					title: "出货记录详情",
+				},
+			},
+			{
+				path: "openai",
+				Component: OpenAIChatDemo,
+				meta: {
+					title: "AI Demo",
+					icon: <FileOutlined />,
+					order: 99,
 				},
 			},
 			{
