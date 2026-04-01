@@ -1,5 +1,5 @@
 import React, { forwardRef, useEffect, useImperativeHandle, useState } from "react";
-import { getCaptcha } from "../api/user";
+import { getCaptcha } from "../api/util";
 import { useLocation } from "react-router-dom";
 
 export type CaptchaHandle = {

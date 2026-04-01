@@ -5,13 +5,9 @@ import {
 	userRegister,
 	type RegisterParams,
 	type RegisterResponse,
-	sendEmailVerificationCode,
-	checkEmailVerificationCode,
 	checkEmailExisted,
 	updatePassword,
 	type IUpdatePasswordParams,
-	getNonce,
-	getUserSaltByEmail,
 } from "../api/user";
 import { Link, useNavigate } from "react-router-dom";
 import { useWindowSize } from "react-use";
@@ -21,6 +17,8 @@ import { debounce } from "lodash";
 import { useUserStore } from "../store/userStore";
 import { useLoadNonceAndSalt } from "../hooks/useLoadNonceAndSalt";
 import { hashPassword } from "../utils/algo";
+import { adminUpdatePassword } from "../api/adminUser";
+import { checkEmailVerificationCode } from "../api/util";
 
 /** 垂直布局：标签与输入均占满一行，避免右侧留白 */
 const formItemLayout: FormProps = {
@@ -51,6 +49,7 @@ const registerFormInitialValues = {
 };
 
 const ChangePassword: React.FC = () => {
+	const { user } = useUserStore();
 	const [form] = Form.useForm();
 	const navigate = useNavigate();
 	const [loading, setLoading] = useState(false);
@@ -58,6 +57,9 @@ const ChangePassword: React.FC = () => {
 	const { nonce, userSalt, loadNonce } = useLoadNonceAndSalt();
 
 	const onFinish = async (values: IUpdatePasswordParams) => {
+		if (!user) {
+			return;
+		}
 		if (!nonce) {
 			message.error("nonce获取异常");
 			return;
@@ -71,9 +73,15 @@ const ChangePassword: React.FC = () => {
 			values.nonce = nonce;
 			values.current = await hashPassword(values.current, nonce, userSalt);
 			// values.password = await hashPassword(values.password, nonce, userSalt);
-			await updatePassword(values);
-			await sleep(500);
-			navigate("/landing/login");
+			if (user.role === "merchant") {
+				await updatePassword(values);
+				await sleep(500);
+				navigate("/landing/login");
+			} else {
+				await adminUpdatePassword(values);
+				await sleep(500);
+				navigate("/admin/login");
+			}
 		} catch {
 			loadNonce();
 		} finally {

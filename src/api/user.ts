@@ -1,14 +1,12 @@
 import { nodejsRequest } from "../request";
 import { IResponse } from "./commonDef";
 
-// 定义登录响应类型
-export type LoginResponse = IResponse<string>;
-
 export type IUser = {
 	id: string;
 	email: string;
 	username?: string;
 	createdAt: string;
+	role: "merchant" | "admin";
 };
 // 定义注册响应类型
 export type RegisterResponse = IResponse<IUser>;
@@ -34,7 +32,7 @@ export const userLogin = (
 	data: LoginParams,
 	config?: { showSuccessMessage?: boolean }
 ): Promise<string> => {
-	return nodejsRequest.post<LoginResponse>("/user/login", data, {
+	return nodejsRequest.post<string>("/user/login", data, {
 		showSuccessMessage: config?.showSuccessMessage, // 登录成功默认显示提示
 	});
 };
@@ -48,36 +46,6 @@ export const getCurrentUser = (): Promise<IUser> => {
 	return nodejsRequest.get<IUser>("/user/current");
 };
 
-export interface ICaptcha {
-	image: string;
-	captchaId: string;
-}
-export const getCaptcha = (): Promise<ICaptcha> => {
-	const rnd = Math.random();
-	const rndStr = (rnd + "").slice(2);
-	return nodejsRequest.get<ICaptcha>("/user/captcha?q=" + rndStr);
-};
-
-// 发送邮箱验证码
-export const sendEmailVerificationCode = (email: string): Promise<void> => {
-	return nodejsRequest.post<void>("/util/sendEmailVerificationCode", { email });
-};
-
-interface ICheckEmailVerificationCodeResponse {
-	email: string;
-	verified: boolean;
-}
-// 验证邮箱
-export const checkEmailVerificationCode = (data: {
-	email: string;
-	verifyCode: string;
-}): Promise<ICheckEmailVerificationCodeResponse> => {
-	return nodejsRequest.post<ICheckEmailVerificationCodeResponse>(
-		"/util/checkEmailValidation",
-		data
-	);
-};
-
 export const logout = (): Promise<void> => {
 	return nodejsRequest.post<void>("/user/logout");
 };
@@ -88,10 +56,6 @@ export const checkEmailExisted = (email: string): Promise<boolean> => {
 
 export const checkEmailNotExisted = (email: string): Promise<boolean> => {
 	return nodejsRequest.get<boolean>("/user/checkEmailNotExisted/" + email);
-};
-
-export const getNonce = (): Promise<string> => {
-	return nodejsRequest.get<string>("/user/get-nonce");
 };
 
 export const getUserSaltByEmail = (email: string): Promise<string> => {

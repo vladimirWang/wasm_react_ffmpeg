@@ -1,21 +1,22 @@
 import React, { useEffect, useRef, useState } from "react";
 import { LockOutlined, MailOutlined } from "@ant-design/icons";
 import { Button, Flex, Form, Input, message } from "antd";
-import { getUserSaltByEmail, userLogin, type LoginParams } from "../api/user";
+import { adminGetUserSaltByEmail, adminUserLogin } from "../api/adminUser";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import Box from "../components/Box";
 import { clearUserCache } from "../routes";
 import { hashPassword, sha256 } from "../utils/algo";
 import Captcha, { CaptchaHandle } from "../components/Captcha";
 import { getNonce } from "../api/util";
+import { LoginParams } from "../api/user";
 
 const loginFormInitialValues = {
-	email: "",
-	password: "",
+	email: "413114463@qq.com",
+	password: "123456",
 	remember: true,
 };
 
-const Login: React.FC = () => {
+const AdminLogin: React.FC = () => {
 	const [form] = Form.useForm();
 	const navigate = useNavigate();
 	const [searchParams] = useSearchParams();
@@ -42,7 +43,7 @@ const Login: React.FC = () => {
 			values.captchaId = captchaId;
 			values.nonce = nonce;
 			values.password = await hashPassword(values.password, nonce, salt);
-			const token = await userLogin(values);
+			const token = await adminUserLogin(values);
 			localStorage.setItem("access_token", token);
 			// 清除旧的用户缓存，让 authLoader 重新获取用户信息
 			clearUserCache();
@@ -70,7 +71,7 @@ const Login: React.FC = () => {
 			message.error("请输入邮箱");
 			return;
 		}
-		const salt = await getUserSaltByEmail(email);
+		const salt = await adminGetUserSaltByEmail(email);
 		console.log("salt: ", salt);
 		// setSalt(salt);
 		return salt;
@@ -82,29 +83,16 @@ const Login: React.FC = () => {
 				minHeight: "100vh",
 				width: "100vw",
 				display: "flex",
+				flexDirection: "column",
 				alignItems: "center",
 				justifyContent: "center",
 				gap: 40,
 				padding: 0,
 				flexWrap: "wrap",
-				background:
-					"radial-gradient(1200px 600px at 20% 20%, rgba(99, 102, 241, 0.35), transparent 60%), radial-gradient(900px 500px at 80% 70%, rgba(236, 72, 153, 0.28), transparent 55%), linear-gradient(180deg, #0b1020, #070a14)",
+				background: "white",
 			}}
 		>
-			<div
-				style={{
-					width: 420,
-					height: 420,
-					display: "flex",
-					alignItems: "center",
-					justifyContent: "center",
-					// 轻微光晕，让立方体更融入背景（canvas 仍然透明）
-					filter: "drop-shadow(0 24px 60px rgba(0,0,0,0.45))",
-				}}
-			>
-				<Box width={420} height={420} />
-			</div>
-
+			<h3 className="text-3xl font-bold text-orange-400">后管平台</h3>
 			<Form
 				form={form}
 				initialValues={{ ...loginFormInitialValues }}
@@ -113,12 +101,12 @@ const Login: React.FC = () => {
 					width: 360,
 					padding: 20,
 					borderRadius: 14,
-					border: "1px solid rgba(255,255,255,0.10)",
-					background: "rgba(255,102,0,0.6)",
+					// border: "1px solid rgba(255,255,255,0.10)",
 					boxShadow: "0 20px 60px rgba(0,0,0,0.45)",
 					backdropFilter: "blur(10px)",
 					WebkitBackdropFilter: "blur(10px)",
 				}}
+				className="bg-orange-400"
 				onFinish={onFinish}
 			>
 				<Form.Item name="email" rules={[{ required: true, message: "请输入邮箱" }]}>
@@ -133,7 +121,7 @@ const Login: React.FC = () => {
 						<Captcha
 							onChange={setCaptchaId}
 							pathname={location.pathname}
-							pathnamesRefresh={["/landing/login"]}
+							pathnamesRefresh={["/admin/login"]}
 							ref={captchaRef}
 						/>
 					</Flex>
@@ -147,14 +135,13 @@ const Login: React.FC = () => {
 						{/* <Form.Item name="remember" valuePropName="checked" noStyle>
 							<Checkbox>Remember me</Checkbox>
 						</Form.Item> */}
-						<Link to="/forget-password">忘记密码</Link>
-						<Link to="/landing/register">去注册!</Link>
+						<Link to="/admin/forget-password">忘记密码</Link>
+						<Link to="/admin/register">去注册!</Link>
 					</Flex>
-					<Link to="/admin/login">去后管平台</Link>
 				</Form.Item>
 			</Form>
 		</div>
 	);
 };
 
-export default Login;
+export default AdminLogin;

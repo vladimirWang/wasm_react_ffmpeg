@@ -8,6 +8,7 @@ const Home = lazy(() => import("../pages/Home"));
 const About = lazy(() => import("../pages/About"));
 const NotFound = lazy(() => import("../pages/NotFound"));
 const Login = lazy(() => import("../pages/Login"));
+const AdminLogin = lazy(() => import("../pages/AdminLogin"));
 const Register = lazy(() => import("../pages/Register"));
 const Landing = lazy(() => import("../pages/Landing"));
 const LayoutComponent = lazy(() => import("../layout").then(m => ({ default: m.LayoutComponent })));
@@ -37,6 +38,8 @@ const ForgetPassword = lazy(() => import("../pages/ForgetPassword"));
 const OpenAIChatDemo = lazy(() => import("../pages/OpenAIChatDemo"));
 import { getCurrentUser, type IUser } from "../api/user";
 import { useUserStore } from "../store/userStore";
+const AdminRegister = lazy(() => import("../pages/AdminRegister"));
+const AdminForgetPassword = lazy(() => import("../pages/AdminForgetPassword"));
 
 // 用户信息缓存
 let cachedUser: IUser | null = null;
@@ -122,6 +125,7 @@ const fetchCurrentUser = async (): Promise<IUser | null> => {
 					email: res.email,
 					username: res.username,
 					createdAt: res.createdAt,
+					role: res.role,
 				};
 				saveCachedUser(user);
 				// 更新 zustand store
@@ -475,6 +479,30 @@ export const routeConfig: ExtendedRouteObject[] = [
 			title: "关于",
 			icon: <FileOutlined />,
 			order: 4,
+			hidden: true,
+			auth: "free",
+		},
+	},
+	{
+		path: "/admin/login",
+		Component: AdminLogin,
+		meta: {
+			hidden: true,
+			auth: "free",
+		},
+	},
+	{
+		path: "/admin/register",
+		Component: AdminRegister,
+		meta: {
+			hidden: true,
+			auth: "free",
+		},
+	},
+	{
+		path: "/admin/forget-password",
+		Component: AdminForgetPassword,
+		meta: {
 			hidden: true,
 			auth: "free",
 		},

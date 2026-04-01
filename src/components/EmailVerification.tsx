@@ -1,12 +1,9 @@
 import { Button, Flex, Form, Input, message, Modal, Space } from "antd";
 import type { FormInstance } from "antd/es/form";
 import React, { forwardRef, useEffect, useImperativeHandle, useMemo, useState } from "react";
-import {
-	checkEmailExisted,
-	checkEmailVerificationCode,
-	sendEmailVerificationCode,
-} from "../api/user";
+import { checkEmailExisted } from "../api/user";
 import { CheckCircleFilled } from "@ant-design/icons";
+import { checkEmailVerificationCode, sendEmailVerificationCode } from "../api/util";
 
 export type EmailVerificationHandle = {
 	/** 当前邮箱是否已在弹窗内通过服务端校验 */
@@ -19,6 +16,7 @@ export type EmailVerificationHandle = {
 };
 
 export interface EmailVerificationProps {
+	api?: (email: string) => Promise<boolean>;
 	/** 父级 `Form.Item name="email"` 注入 */
 	value?: string;
 	onChange?: (e: React.ChangeEvent<HTMLInputElement>) => void;
@@ -136,7 +134,8 @@ const EmailVerification = forwardRef<EmailVerificationHandle, EmailVerificationP
 				message.warning("请先填写邮箱");
 				return;
 			}
-			const existed = await checkEmailExisted(emailStr);
+			const api = props.api ?? checkEmailExisted;
+			const existed = await api(emailStr);
 			if (!existed) {
 				message.warning("该邮箱未注册");
 				return;

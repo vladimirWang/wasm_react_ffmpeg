@@ -1,6 +1,8 @@
 import { goRequest, nodejsRequest } from "../request";
 import { IResponse } from "./commonDef";
 
+const prefix = "/util";
+
 interface IUploadFileParams {
 	file: File;
 }
@@ -34,7 +36,10 @@ export const checkFileExistedByHash = (
 };
 
 // 检查文件是否存在，不存在则上传
-export const checkAndUploadFile = async (hash: string, file: File): Promise<IUploadFileResponse> => {
+export const checkAndUploadFile = async (
+	hash: string,
+	file: File
+): Promise<IUploadFileResponse> => {
 	const existed = await checkFileExistedByHash(hash);
 	if (existed.filePath) {
 		return { ...existed, hash };
@@ -62,4 +67,38 @@ export const mergeChunkFiles = async (
 ): Promise<IUploadFileResponse> => {
 	// return goRequest.post<IUploadFileResponse>("/user/mergeChunks", data);
 	return nodejsRequest.post<IUploadFileResponse>("/user/mergeChunks", data);
+};
+
+export interface ICaptcha {
+	image: string;
+	captchaId: string;
+}
+export const getCaptcha = (): Promise<ICaptcha> => {
+	const rnd = Math.random();
+	const rndStr = (rnd + "").slice(2);
+	return nodejsRequest.get<ICaptcha>(`${prefix}/captcha?q=${rndStr}`);
+};
+
+export const getNonce = (): Promise<string> => {
+	return nodejsRequest.get<string>(`${prefix}/get-nonce`);
+};
+
+// 发送邮箱验证码
+export const sendEmailVerificationCode = (email: string): Promise<void> => {
+	return nodejsRequest.post<void>(`${prefix}/sendEmailVerificationCode`, { email });
+};
+
+export interface ICheckEmailVerificationCodeResponse {
+	email: string;
+	verified: boolean;
+}
+// 验证邮箱
+export const checkEmailVerificationCode = (data: {
+	email: string;
+	verifyCode: string;
+}): Promise<ICheckEmailVerificationCodeResponse> => {
+	return nodejsRequest.post<ICheckEmailVerificationCodeResponse>(
+		`${prefix}/checkEmailValidation`,
+		data
+	);
 };

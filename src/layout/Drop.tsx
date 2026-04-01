@@ -13,6 +13,8 @@ export default function Drop() {
 	const { user, clearUser } = useUserStore();
 
 	const handleLogout = async () => {
+		console.log("handleLogout user: ", user);
+
 		await logout();
 		await sleep(500);
 		// 清除 token
@@ -22,7 +24,9 @@ export default function Drop() {
 		// 清除 zustand store
 		clearUser();
 		// 跳转到登录页
-		navigate("/landing/login", { replace: true });
+		user?.role === "merchant"
+			? navigate("/landing/login", { replace: true })
+			: navigate("/admin/login", { replace: true });
 	};
 
 	const items: MenuProps["items"] = [

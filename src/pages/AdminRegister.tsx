@@ -1,18 +1,14 @@
 import React, { useMemo, useRef, useState } from "react";
 import type { FormItemProps, FormProps } from "antd";
 import { Button, Card, Checkbox, Form, Input, Space, Steps } from "antd";
-import {
-	userRegister,
-	type RegisterParams,
-	type RegisterResponse,
-	checkEmailNotExisted,
-} from "../api/user";
+import { adminUserRegister, adminCheckEmailNotExisted } from "../api/adminUser";
 import { Link, useNavigate } from "react-router-dom";
 import { useWindowSize } from "react-use";
 import Confetti from "react-confetti";
 import { sleep } from "../utils/common";
 import { debounce } from "lodash";
 import { checkEmailVerificationCode, sendEmailVerificationCode } from "../api/util";
+import { RegisterParams, RegisterResponse } from "../api/user";
 
 /** 垂直布局：标签与输入均占满一行，避免右侧留白 */
 const formItemLayout: FormProps = {
@@ -49,7 +45,7 @@ const registerFormInitialValues = {
 	agreement: true,
 };
 
-const Register: React.FC = () => {
+const AdminRegister: React.FC = () => {
 	const [form] = Form.useForm();
 	const navigate = useNavigate();
 	const [email, setEmail] = useState("");
@@ -106,13 +102,20 @@ const Register: React.FC = () => {
 		try {
 			setStep2Loading(true);
 			const { password, username } = values;
-			const res: RegisterResponse = await userRegister({ email, password, username, verifyCode });
+			const res: RegisterResponse = await adminUserRegister({
+				email,
+				password,
+				username,
+				verifyCode,
+			});
 			setConfettiVisible(true);
 			await sleep(4500);
 			setConfettiVisible(false);
 			if (res.code === 200) {
-				console.log("注册成功:", res.message);
 				navigate("/landing/login");
+			}
+			if (res.message) {
+				console.log("注册成功:", res.message);
 			}
 		} finally {
 			setStep2Loading(false);
@@ -122,7 +125,7 @@ const Register: React.FC = () => {
 		() =>
 			debounce(email => {
 				if (!emailRegex.test(email)) return;
-				checkEmailNotExisted(email).then(existed => {
+				adminCheckEmailNotExisted(email).then(existed => {
 					form.setFields([{ name: "email", errors: !existed ? ["邮箱已存在"] : [] }]);
 				});
 			}, 500),
@@ -160,7 +163,7 @@ const Register: React.FC = () => {
 												if (!emailRegex.test(value)) {
 													return Promise.reject(new Error("请输入有效的邮箱地址！"));
 												}
-												const existed = await checkEmailNotExisted(value);
+												const existed = await adminCheckEmailNotExisted(value);
 												return !existed
 													? Promise.reject(new Error("邮箱已存在"))
 													: Promise.resolve();
@@ -273,4 +276,4 @@ const Register: React.FC = () => {
 	);
 };
 
-export default Register;
+export default AdminRegister;
