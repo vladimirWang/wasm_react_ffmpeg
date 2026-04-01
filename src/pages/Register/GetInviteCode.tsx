@@ -1,8 +1,13 @@
 import { Button, Form, Input } from "antd";
 import React, { useState } from "react";
-import { checkEmailNotExisted, getInviteCode, ParamEmail } from "../../api/user";
+import { checkEmailNotExisted, ParamEmail } from "../../api/user";
 import { RegisterCommonProps } from "./VerifyEmail";
 import { emailRegex } from "./Register";
+import { getInviteCode } from "../../api/util";
+
+const initialValues = {
+	email: "aachen2012@outlook.com",
+};
 
 export default function GetInviteCode(props: RegisterCommonProps) {
 	const { onNextStep } = props;
@@ -16,7 +21,7 @@ export default function GetInviteCode(props: RegisterCommonProps) {
 		}
 	};
 	return (
-		<Form onFinish={onGetInviteCode} className="w-full">
+		<Form onFinish={onGetInviteCode} className="w-full" initialValues={initialValues}>
 			<Form.Item
 				name="email"
 				label="邮箱"

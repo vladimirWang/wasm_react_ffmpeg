@@ -1,5 +1,6 @@
 import { goRequest, nodejsRequest } from "../request";
 import { IResponse } from "./commonDef";
+import { ParamEmail } from "./user";
 
 const prefix = "/util";
 
@@ -101,4 +102,13 @@ export const checkEmailVerificationCode = (data: {
 		`${prefix}/checkEmailValidation`,
 		data
 	);
+};
+
+export const checkInviteCode = (data: { email: string; inviteCode: string }): Promise<void> => {
+	return nodejsRequest.post<void>(`${prefix}/checkInviteCode`, data);
+};
+
+// 获取邀请码
+export const getInviteCode = (data: ParamEmail): Promise<void> => {
+	return nodejsRequest.post<void>(`${prefix}/getInviteCode`, data);
 };

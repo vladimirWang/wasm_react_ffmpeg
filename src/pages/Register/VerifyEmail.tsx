@@ -1,9 +1,13 @@
 import { debounce } from "lodash";
 import React, { useMemo, useState } from "react";
-import { Button, Form, Input, Space } from "antd";
+import { Button, Flex, Form, Input, Space } from "antd";
 import { emailRegex, tailFormItemLayout } from "./Register";
 import { checkEmailNotExisted } from "../../api/user";
-import { checkEmailVerificationCode, sendEmailVerificationCode } from "../../api/util";
+import {
+	checkEmailVerificationCode,
+	checkInviteCode,
+	sendEmailVerificationCode,
+} from "../../api/util";
 
 export interface RegisterCommonProps {
 	onNextStep?: () => void;
@@ -19,7 +23,7 @@ const initialValues = {
 	verifyCode: "123123",
 };
 export default function VerifyEmail(props: VerifyEmailProps) {
-	const { onNextStep, onGetVerifyValues } = props;
+	const { onNextStep, onGetVerifyValues, onPrevStep } = props;
 	const [form] = Form.useForm();
 	const [loading, setLoading] = useState(false);
 
@@ -40,7 +44,11 @@ export default function VerifyEmail(props: VerifyEmailProps) {
 			setLoading(true);
 			await form.validateFields(["email", "verifyCode"]);
 			const values = form.getFieldsValue();
-			const { email, verifyCode } = values;
+			const { email, verifyCode, inviteCode } = values;
+
+			// 校验邀请码
+			await checkInviteCode({ email, inviteCode });
+			// 校验邮箱验证码
 			await checkEmailVerificationCode({ email, verifyCode });
 			// setCurrentStep(1);
 			onGetVerifyValues(values);
@@ -100,6 +108,13 @@ export default function VerifyEmail(props: VerifyEmailProps) {
 				<Input placeholder="请输入邮箱" onChange={e => debounceCheckEmail(e.target.value)} />
 			</Form.Item>
 			<Form.Item
+				name="inviteCode"
+				label="邀请码"
+				rules={[{ required: true, message: "请输入邀请码！" }]}
+			>
+				<Input placeholder="请输入邀请码" />
+			</Form.Item>
+			<Form.Item
 				name="verifyCode"
 				label="邮箱验证码"
 				rules={[{ required: true, message: "请输入验证码！" }]}
@@ -111,11 +126,15 @@ export default function VerifyEmail(props: VerifyEmailProps) {
 					</Button>
 				</Space.Compact>
 			</Form.Item>
-			<Form.Item {...tailFormItemLayout}>
+			<Flex justify="space-center" gap={20}>
+				<Button onClick={() => onPrevStep?.()}>上一步</Button>
 				<Button block type="primary" htmlType="submit" loading={loading}>
 					下一步
 				</Button>
-			</Form.Item>
+			</Flex>
+			{/* <Form.Item {...tailFormItemLayout}>
+
+			</Form.Item> */}
 		</Form>
 	);
 }

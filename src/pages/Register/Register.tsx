@@ -1,20 +1,9 @@
 import React, { useMemo, useRef, useState } from "react";
 import type { FormItemProps, FormProps } from "antd";
 import { Button, Card, Checkbox, Form, Input, Space, Steps } from "antd";
-import {
-	userRegister,
-	type RegisterParams,
-	type RegisterResponse,
-	checkEmailNotExisted,
-	ParamEmail,
-	getInviteCode,
-} from "../../api/user";
 import { Link, useNavigate } from "react-router-dom";
 import { useWindowSize } from "react-use";
 import Confetti from "react-confetti";
-import { sleep } from "../../utils/common";
-import { debounce } from "lodash";
-import { checkEmailVerificationCode, sendEmailVerificationCode } from "../../api/util";
 import GetInviteCode from "./GetInviteCode";
 import VerifyEmail from "./VerifyEmail";
 import Submit from "./Submit";
@@ -40,21 +29,10 @@ export const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 export const passwordRegex = /^[0-9a-zA-Z!@#$%^&*()_+\-=\[\]{}|;:,.<>?~]{6,8}$/;
 
 const Register: React.FC = () => {
-	const [form] = Form.useForm();
-	const navigate = useNavigate();
-	const [email, setEmail] = useState("");
-	const [verifyCode, setVerifyCode] = useState("");
 	const [currentStep, setCurrentStep] = useState(0);
-	const [step1Loading, setStep1Loading] = useState(false);
-	const [step2Loading, setStep2Loading] = useState(false);
 	const { width, height } = useWindowSize();
 	const [confettiVisible, setConfettiVisible] = useState(false);
 
-	const onPrevStep = () => {
-		setCurrentStep(0);
-	};
-
-	const [step0Loading, setStep0Loading] = useState(false);
 	const [verifyValues, setVerifyValues] = useState({ email: "", verifyCode: "" });
 
 	return (
@@ -64,7 +42,11 @@ const Register: React.FC = () => {
 					<Steps current={currentStep} items={stepItems} style={{ marginBottom: 24 }} />
 					{currentStep === 0 && <GetInviteCode onNextStep={() => setCurrentStep(1)} />}
 					{currentStep === 1 && (
-						<VerifyEmail onNextStep={() => setCurrentStep(2)} onGetVerifyValues={setVerifyValues} />
+						<VerifyEmail
+							onNextStep={() => setCurrentStep(2)}
+							onPrevStep={() => setCurrentStep(0)}
+							onGetVerifyValues={setVerifyValues}
+						/>
 					)}
 					{currentStep === 2 && (
 						<Submit

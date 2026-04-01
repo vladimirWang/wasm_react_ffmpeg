@@ -79,8 +79,3 @@ export interface IUpdatePasswordParams {
 export const updatePassword = (data: IUpdatePasswordParams): Promise<void> => {
 	return nodejsRequest.post<void>("/user/updatePassword", data);
 };
-
-// 获取邀请码
-export const getInviteCode = (data: ParamEmail): Promise<void> => {
-	return nodejsRequest.post<void>("/user/getInviteCode", data);
-};
