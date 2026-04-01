@@ -179,7 +179,7 @@ const AdminRegister: React.FC = () => {
 								</Form.Item>
 								<Form.Item
 									name="verifyCode"
-									label="验证码"
+									label="邮箱验证码"
 									rules={[{ required: true, message: "请输入验证码！" }]}
 								>
 									<Space.Compact style={{ width: "100%" }}>

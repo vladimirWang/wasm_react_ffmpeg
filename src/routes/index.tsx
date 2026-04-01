@@ -9,7 +9,7 @@ const About = lazy(() => import("../pages/About"));
 const NotFound = lazy(() => import("../pages/NotFound"));
 const Login = lazy(() => import("../pages/Login"));
 const AdminLogin = lazy(() => import("../pages/AdminLogin"));
-const Register = lazy(() => import("../pages/Register"));
+const Register = lazy(() => import("../pages/Register/Register"));
 const Landing = lazy(() => import("../pages/Landing"));
 const LayoutComponent = lazy(() => import("../layout").then(m => ({ default: m.LayoutComponent })));
 const VendorCreate = lazy(() => import("../pages/Vendor/VendorCreate"));

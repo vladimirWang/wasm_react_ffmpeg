@@ -62,8 +62,11 @@ export const getUserSaltByEmail = (email: string): Promise<string> => {
 	return nodejsRequest.get<string>("/user/getSalt/" + email);
 };
 
+export type ParamEmail = {
+	email: string;
+};
 // 重置密码
-export const resetPassword = (data: { email: string }): Promise<void> => {
+export const resetPassword = (data: ParamEmail): Promise<void> => {
 	return nodejsRequest.post<void>("/user/resetPassword", data);
 };
 
@@ -75,4 +78,9 @@ export interface IUpdatePasswordParams {
 // 修改密码
 export const updatePassword = (data: IUpdatePasswordParams): Promise<void> => {
 	return nodejsRequest.post<void>("/user/updatePassword", data);
+};
+
+// 获取邀请码
+export const getInviteCode = (data: ParamEmail): Promise<void> => {
+	return nodejsRequest.post<void>("/user/getInviteCode", data);
 };
