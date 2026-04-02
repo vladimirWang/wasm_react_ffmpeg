@@ -1,13 +1,13 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useRef, useState } from "react";
 import { LockOutlined, MailOutlined } from "@ant-design/icons";
 import { Button, Flex, Form, Input, message } from "antd";
 import { getUserSaltByEmail, userLogin, type LoginParams } from "../api/user";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
-import Box from "../components/Box";
 import { clearUserCache } from "../routes";
-import { hashPassword, sha256 } from "../utils/algo";
+import { hashPassword } from "../utils/algo";
 import Captcha, { CaptchaHandle } from "../components/Captcha";
 import { getNonce } from "../api/util";
+import cartoonPng from "../assets/cartoon.png";
 
 const loginFormInitialValues = {
 	email: "",
@@ -77,48 +77,56 @@ const Login: React.FC = () => {
 	};
 
 	return (
-		<div
-			style={{
-				minHeight: "100vh",
-				width: "100vw",
-				display: "flex",
-				alignItems: "center",
-				justifyContent: "center",
-				gap: 40,
-				padding: 0,
-				flexWrap: "wrap",
-				background:
-					"radial-gradient(1200px 600px at 20% 20%, rgba(99, 102, 241, 0.35), transparent 60%), radial-gradient(900px 500px at 80% 70%, rgba(236, 72, 153, 0.28), transparent 55%), linear-gradient(180deg, #0b1020, #070a14)",
-			}}
-		>
-			<div
-				style={{
-					width: 420,
-					height: 420,
-					display: "flex",
-					alignItems: "center",
-					justifyContent: "center",
-					// 轻微光晕，让立方体更融入背景（canvas 仍然透明）
-					filter: "drop-shadow(0 24px 60px rgba(0,0,0,0.45))",
-				}}
-			>
-				<Box width={420} height={420} />
+		<div className="loginPage">
+			<style>{`
+				.loginPage{
+					min-height:100vh;
+					width:100vw;
+					display:flex;
+					align-items:center;
+					justify-content:center;
+					gap:clamp(16px, 4vw, 44px);
+					padding:clamp(16px, 3.5vw, 48px);
+					flex-wrap:wrap;
+					background: #eee;
+				}
+				.loginVisual{
+					width:400px;
+					display:flex;
+					align-items:center;
+					justify-content:center;
+					filter: drop-shadow(0 24px 60px rgba(0,0,0,0.45));
+					user-select:none;
+				}
+				.loginVisual img{
+					width:100%;
+					height:auto;
+					max-height:min(420px, 48vh);
+					object-fit:contain;
+				}
+				.loginForm{
+					width:min(360px, 92vw);
+					max-width:360px;
+					padding:20px;
+					border-radius:14px;
+					border:1px solid rgba(0,0,0,0.08);
+					background: #fff;
+					box-shadow: 0 20px 60px rgba(0,0,0,0.14);
+				}
+				@media (max-width: 768px){
+					.loginVisual{ display:none; }
+					.loginForm{ padding:16px; }
+				}
+			`}</style>
+
+			<div className="loginVisual" aria-hidden="true">
+				<img src={cartoonPng} alt="" loading="eager" decoding="async" />
 			</div>
 
 			<Form
 				form={form}
 				initialValues={{ ...loginFormInitialValues }}
-				style={{
-					maxWidth: 360,
-					width: 360,
-					padding: 20,
-					borderRadius: 14,
-					border: "1px solid rgba(255,255,255,0.10)",
-					background: "rgba(255,102,0,0.6)",
-					boxShadow: "0 20px 60px rgba(0,0,0,0.45)",
-					backdropFilter: "blur(10px)",
-					WebkitBackdropFilter: "blur(10px)",
-				}}
+				className="loginForm"
 				onFinish={onFinish}
 			>
 				<Form.Item name="email" rules={[{ required: true, message: "请输入邮箱" }]}>
