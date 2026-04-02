@@ -6,16 +6,11 @@ import { IProduct, IProductQueryParams, getProducts } from "../api/product";
 import useSWR from "swr";
 import { Link, useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import mockBarcode from "../assets/barcode.jpg";
-import { GlobalModal } from "../components/GlobalModal";
 import dayjs from "dayjs";
 import { paramsToSearchParams } from "../utils/common";
 
 const Products: React.FC = () => {
 	const [isModalOpen, setIsModalOpen] = useState(false);
-
-	const showModal = () => {
-		setIsModalOpen(true);
-	};
 
 	const handleOk = () => {
 		setIsModalOpen(false);
@@ -118,6 +113,7 @@ const Products: React.FC = () => {
 		page: Number(searchParams.get("page")) || 1,
 		limit: Number(searchParams.get("limit")) || 20,
 		productName: searchParams.get("productName") || "",
+		isDeleted: "0" as const,
 		// productName: "",
 	});
 
@@ -132,6 +128,7 @@ const Products: React.FC = () => {
 			page,
 			limit,
 			productName: productName === "" ? undefined : productName,
+			isDeleted: "0" as const,
 		});
 		return res; // 若你的getProducts返回的是响应体（如res.data），则这里取res.data
 	};
@@ -177,6 +174,7 @@ const Products: React.FC = () => {
 							productName: keyword,
 							page: 1,
 							limit: 20,
+							isDeleted: "0" as const,
 						};
 						setQueryParams(params);
 						setSearchParams(paramsToSearchParams(params));
