@@ -30,6 +30,7 @@ export interface IProduct {
 	stockOutPending: number;
 	salePrice: number;
 	vendor?: IVendor;
+	desc?: string;
 }
 
 // 定义登录响应类型
@@ -55,7 +56,7 @@ export type IProductQueryParams = IPagination & {
 	vendorName?: string;
 	completedStart?: string;
 	completedEnd?: string;
-	isDeleted: 1 | 0;
+	isDeleted: "1" | "0";
 };
 
 // 定义注册请求参数类型
@@ -81,10 +82,7 @@ export type IProductUpdateParams = Partial<
 >;
 
 // 更新产品详情
-export const patchProductById = (
-	id: number,
-	data: IProductUpdateParams
-): Promise<IResponse<IProduct>> => {
+export const patchProductById = (id: number, data: IProductUpdateParams): Promise<IProduct> => {
 	return nodejsRequest.patch<IProduct>("/product/" + id, data);
 };
 

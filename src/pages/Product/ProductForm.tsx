@@ -30,6 +30,8 @@ import {
 	uploadFile,
 } from "../../api/util";
 import { chunkFileWithWasm, md5File } from "../../utils/file";
+import { useLexicalComposerContext } from "@lexical/react/LexicalComposerContext";
+
 import { EmscriptenModule } from "../../types/wasm";
 import { ModuleContext } from "../../context/moduleContext";
 import { getTrueType, pickIncrementalFields } from "../../utils/common";
@@ -37,6 +39,60 @@ import ExampleWorker from "../../workers/example.worker?worker";
 import type { WorkerResult } from "../../workers/example.worker";
 import { pick } from "lodash";
 import ImageUpload from "../../components/ImageUpload";
+import { LexicalComposer } from "@lexical/react/LexicalComposer";
+import { RichTextPlugin } from "@lexical/react/LexicalRichTextPlugin";
+import { ContentEditable } from "@lexical/react/LexicalContentEditable";
+import { HistoryPlugin } from "@lexical/react/LexicalHistoryPlugin";
+import { OnChangePlugin } from "@lexical/react/LexicalOnChangePlugin";
+import { ListPlugin } from "@lexical/react/LexicalListPlugin";
+import { LinkPlugin } from "@lexical/react/LexicalLinkPlugin";
+import { AutoLinkPlugin } from "@lexical/react/LexicalAutoLinkPlugin";
+import { CodeHighlightNode, CodeNode } from "@lexical/code";
+import { AutoLinkNode, LinkNode } from "@lexical/link";
+import { ListItemNode, ListNode } from "@lexical/list";
+import { $getRoot, $createParagraphNode, $createTextNode, EditorState } from "lexical";
+import { htmlToLexicalJson, lexicalDescToHtml } from "../../utils/lexicalHtml";
+
+function SyncValuePlugin({ value }: { value?: string }) {
+	const [editor] = useLexicalComposerContext();
+	const lastAppliedRef = useRef<string | null>(null);
+	useEffect(() => {
+		const raw = (value ?? "").trim();
+		if (!raw) return;
+		if (lastAppliedRef.current === raw) return;
+		// 注意：不要在 editor.update() 内调用 editor.setEditorState()，否则容易被忽略/嵌套更新失效。
+		// 这里按内容类型分别处理。
+		try {
+			// HTML
+			if (raw.startsWith("<") && raw.endsWith(">")) {
+				const json = htmlToLexicalJson(raw);
+				editor.setEditorState(editor.parseEditorState(json));
+				lastAppliedRef.current = raw;
+				return;
+			}
+
+			// Lexical JSON
+			if (raw.startsWith("{") && raw.endsWith("}")) {
+				editor.setEditorState(editor.parseEditorState(raw));
+				lastAppliedRef.current = raw;
+				return;
+			}
+		} catch (e) {
+			console.warn("SyncValuePlugin apply failed, fallback to plain text:", e);
+		}
+
+		// 纯文本
+		editor.update(() => {
+			const root = $getRoot();
+			root.clear();
+			const p = $createParagraphNode();
+			p.append($createTextNode(raw));
+			root.append(p);
+		});
+		lastAppliedRef.current = raw;
+	}, [editor, value]);
+	return null;
+}
 
 function createChunks(file: File, chunkSize: number) {
 	const chunks = [];
@@ -45,6 +101,81 @@ function createChunks(file: File, chunkSize: number) {
 		chunks.push(chunk);
 	}
 	return chunks;
+}
+
+function ProductDescEditor({
+	value,
+	onChange,
+	disabled,
+}: {
+	value?: string;
+	onChange: (next: string) => void;
+	disabled?: boolean;
+}) {
+	const initialConfig = useMemo(() => {
+		const theme = {
+			paragraph: "m-0",
+		};
+
+		const config = {
+			namespace: "product-desc",
+			theme,
+			editable: !disabled,
+			nodes: [ListNode, ListItemNode, LinkNode, AutoLinkNode, CodeNode, CodeHighlightNode],
+			onError(error: Error) {
+				console.error("Lexical error:", error);
+			},
+		} as const;
+
+		return config;
+		// 初始值不要依赖 editorState（只执行一次），统一交给 SyncValuePlugin 处理异步回显
+	}, [disabled]);
+
+	const placeholder = (
+		<div style={{ position: "absolute", top: 10, left: 12, color: "#999", pointerEvents: "none" }}>
+			请输入产品描述…
+		</div>
+	);
+
+	return (
+		<div
+			style={{
+				border: "1px solid #d9d9d9",
+				borderRadius: 8,
+				padding: 12,
+				minHeight: 140,
+				position: "relative",
+				background: disabled ? "#fafafa" : "#fff",
+			}}
+		>
+			<LexicalComposer initialConfig={initialConfig}>
+				<SyncValuePlugin value={value} />
+				<RichTextPlugin
+					contentEditable={
+						<ContentEditable
+							style={{
+								outline: "none",
+								minHeight: 116,
+								whiteSpace: "pre-wrap",
+								wordBreak: "break-word",
+							}}
+						/>
+					}
+					placeholder={placeholder}
+					ErrorBoundary={({ children }) => <>{children}</>}
+				/>
+				<HistoryPlugin />
+				<ListPlugin />
+				<LinkPlugin />
+				<AutoLinkPlugin matchers={[]} />
+				<OnChangePlugin
+					onChange={(editorState: EditorState) => {
+						onChange(JSON.stringify(editorState.toJSON()));
+					}}
+				/>
+			</LexicalComposer>
+		</div>
+	);
 }
 
 export default function ProductForm({
@@ -69,6 +200,36 @@ export default function ProductForm({
 	const [workerLoading, setWorkerLoading] = useState(false);
 	const [workerResult, setWorkerResult] = useState<string>();
 	const workerFileInputRef = useRef<HTMLInputElement>(null);
+
+	function isEmptyLexicalJson(maybeJson: string): boolean {
+		const s = (maybeJson ?? "").trim();
+		if (!(s.startsWith("{") && s.endsWith("}"))) return false;
+		try {
+			const obj = JSON.parse(s);
+			const children = obj?.root?.children;
+			return Array.isArray(children) && children.length === 0;
+		} catch {
+			return false;
+		}
+	}
+
+	// 接口返回的 desc 为 HTML：转成 Lexical JSON 写回表单字段，确保编辑器能在异步场景下渲染详情
+	useEffect(() => {
+		const rawHtml = (initialValues?.desc ?? "").toString().trim();
+		if (!rawHtml) return;
+		if (!(rawHtml.startsWith("<") && rawHtml.endsWith(">"))) return;
+
+		const current = (form.getFieldValue("desc") ?? "").toString().trim();
+
+		// 如果用户已经编辑过（当前是非空、非“空 editorState”的 JSON），不要覆盖
+		if (current && current.startsWith("{") && current.endsWith("}") && !isEmptyLexicalJson(current)) {
+			return;
+		}
+
+		// 其余情况（空值/空 editorState/仍是 HTML）都用接口 HTML 覆盖成 JSON
+		const json = htmlToLexicalJson(rawHtml);
+		form.setFieldsValue({ desc: json });
+	}, [form, initialValues?.desc]);
 
 	// const [vendors, setVendors] = useState<IVendor[]>([]);
 
@@ -243,10 +404,67 @@ export default function ProductForm({
 	};
 
 	const navigate = useNavigate();
-
+	const descValue = Form.useWatch("desc", form);
+	console.log("---descValue---: ", descValue);
+	const [descHtml, setDescHtml] = useState<string>();
+	const genHtml = async () => {
+		const values = form.getFieldsValue();
+		const { created, updated } = pickIncrementalFields<IProductUpdateParams>(
+			values,
+			initialValues as IProductUpdateParams
+		);
+		if (created.length === 0) {
+			message.error("没有变化");
+			return;
+		}
+		const descValue = values[created[0]];
+		console.log("---descValue---: ", descValue);
+		const descHtmlTxt = await lexicalDescToHtml(descValue);
+		setDescHtml(descHtmlTxt);
+		// console.log("---values---: ", pick(values, [...(created as any), ...(updated as any)]));
+		// console.log("---created---: ", created);
+		// console.log("---updated---: ", updated);
+		// setDescHtml(await lexicalDescToHtml(descValue));
+	};
+	const genJson = () => {
+		// const str = "<p>123</p>";
+		const str = '<p><span style="white-space: pre-wrap;">12312300099</span></p>';
+		const json = htmlToLexicalJson(str);
+		console.log("---json---: ", json);
+	};
+	const json = {
+		root: {
+			children: [
+				{
+					children: [
+						{
+							detail: 0,
+							format: 0,
+							mode: "normal",
+							style: "",
+							text: "12",
+							type: "text",
+							version: 1,
+						},
+					],
+					direction: null,
+					format: "",
+					indent: 0,
+					type: "paragraph",
+					version: 1,
+					textFormat: 0,
+					textStyle: "",
+				},
+			],
+			direction: null,
+			format: "",
+			indent: 0,
+			type: "root",
+			version: 1,
+		},
+	};
 	return (
 		<div className="p-6">
-			{/* <strong>{typeof theme.ccall}</strong> */}
 			<Form
 				disabled={pageOperation === "view"}
 				form={form}
@@ -261,11 +479,22 @@ export default function ProductForm({
 					if (!onFinishCallback) return;
 					setSubmitting(true);
 					try {
-						const { updated } = pickIncrementalFields<IProductUpdateParams>(
+						// 提交时：把 desc（Lexical JSON/纯文本/HTML）统一转成 HTML
+						// 注意：initialValues 是 Partial，可能没有 desc 这个 key；
+						// 此时 desc 会落在 created，而不是 updated，所以需要合并 created+updated。
+						const { created, updated } = pickIncrementalFields<IProductUpdateParams>(
 							values,
 							initialValues as IProductUpdateParams
 						);
-						const incrementalValues = pick(values, updated);
+						console.log("---created---: ", created);
+						console.log("---updated---: ", updated);
+						const changedKeys = Array.from(new Set([...(created as any), ...(updated as any)]));
+						const incrementalValues = pick(values, changedKeys);
+						console.log("---incrementalValues 1---: ", values.desc, incrementalValues);
+						if (incrementalValues.desc) {
+							const descHtml = await lexicalDescToHtml(incrementalValues.desc);
+							incrementalValues.desc = descHtml;
+						}
 						await onFinishCallback({
 							...incrementalValues,
 							img: incrementalValues.img ? incrementalValues.img[0] : undefined,
@@ -337,10 +566,12 @@ export default function ProductForm({
 						<Form.Item<IProductUpdateParams>
 							label="售价"
 							name="salePrice"
-							rules={[
-								// { required: true, message: "请输入上架价格" },
-								{ max: 9999, message: "价格不能超过9999元" },
-							]}
+							rules={
+								[
+									// { required: true, message: "请输入上架价格" },
+									// { max: 9999, message: "价格不能超过9999元" },
+								]
+							}
 						>
 							<div className="flex items-center gap-2">
 								<PositiveInputNumber
@@ -363,6 +594,18 @@ export default function ProductForm({
 						</Form.Item>
 					</section>
 					<section className="flex-1 space-y-4">
+						{/* 用 Lexical 作为描述编辑器；desc 字段仍保存为 string（Lexical JSON 或旧纯文本） */}
+						<Form.Item<IProductUpdateParams> name="desc" hidden>
+							<Input />
+						</Form.Item>
+						<Form.Item label="描述">
+							<ProductDescEditor
+								disabled={pageOperation === "view"}
+								value={descValue}
+								// value={json}
+								onChange={next => form.setFieldValue("desc", next)}
+							/>
+						</Form.Item>
 						<Form.Item<IProductUpdateParams> label="产品图片" name="img">
 							<ImageUpload maxCount={1} />
 							{/* <Upload
