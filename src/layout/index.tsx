@@ -17,10 +17,16 @@ const LayoutComponent: React.FC = () => {
 	const location = useLocation();
 	const isPageSwitching = navigation.state === "loading" || navigation.state === "submitting";
 
-	const breadcrumbItems = getBreadcrumbItems(location.pathname).map((item, i) => ({
-		...item,
-		title: item.href ? <Link to={item.href}>{item.title}</Link> : item.title,
-	}));
+	const breadcrumbItems = getBreadcrumbItems(location.pathname).map(item =>
+		item.href
+			? {
+					...item,
+					// 避免 antd 额外包一层 <a> 造成 <a> 嵌套 <a>（hydration 警告）
+					href: undefined,
+					title: <Link to={item.href}>{item.title}</Link>,
+				}
+			: item
+	);
 
 	return (
 		<Layout style={{ minHeight: "100vh" }}>
