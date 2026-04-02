@@ -1,6 +1,12 @@
 import { createHashRouter, type RouteObject, redirect } from "react-router-dom";
 import { ReactNode, lazy } from "react";
-import { PieChartOutlined, DesktopOutlined, TeamOutlined, FileOutlined } from "@ant-design/icons";
+import {
+	PieChartOutlined,
+	DesktopOutlined,
+	TeamOutlined,
+	FileOutlined,
+	UserOutlined,
+} from "@ant-design/icons";
 import RouteErrorPage from "../pages/RouteErrorPage";
 
 // 懒加载页面，减少首屏体积
@@ -40,6 +46,7 @@ import { getCurrentUser, type IUser } from "../api/user";
 import { useUserStore } from "../store/userStore";
 const AdminRegister = lazy(() => import("../pages/AdminRegister"));
 const AdminForgetPassword = lazy(() => import("../pages/AdminForgetPassword"));
+const ApplicationPending = lazy(() => import("../pages/Applicants"));
 
 // 用户信息缓存
 let cachedUser: IUser | null = null;
@@ -516,11 +523,28 @@ export const routeConfig: ExtendedRouteObject[] = [
 	},
 ];
 
+export const adminRouteConfig: ExtendedRouteObject[] = [
+	{
+		path: "/admin",
+		Component: LayoutComponent,
+		children: [
+			{
+				path: "applicants",
+				Component: ApplicationPending,
+				meta: {
+					icon: <UserOutlined />,
+					title: "申请人",
+				},
+			},
+		],
+	},
+];
 // 创建路由（应用 auth loader）
-export const router = createHashRouter(addAuthLoader(routeConfig));
+export const router = createHashRouter(addAuthLoader([...routeConfig, ...adminRouteConfig]));
 
 // 主布局下的子路由（用于面包屑）
 const layoutChildren = routeConfig[0].children ?? [];
+const adminLayoutChildren = adminRouteConfig[0]?.children ?? [];
 
 export type BreadcrumbItem = { key?: string; title: ReactNode; href?: string };
 
@@ -577,11 +601,13 @@ function getRouteBreadcrumbTitle(route: ExtendedRouteObject): string {
  * 根据当前 pathname 和主布局子路由配置生成面包屑项
  */
 export function getBreadcrumbItems(pathname: string): BreadcrumbItem[] {
+	const isAdminPath = pathname.startsWith("/admin");
+	const children = isAdminPath ? adminLayoutChildren : layoutChildren;
 	const hierarchy = pathnameToHierarchy(pathname);
 	const items: BreadcrumbItem[] = [];
 	for (let i = 0; i < hierarchy.length; i++) {
 		const path = hierarchy[i];
-		const route = findMatchingRoute(layoutChildren, path);
+		const route = findMatchingRoute(children, path);
 		if (!route) continue;
 		const title = getRouteBreadcrumbTitle(route);
 		const isLast = i === hierarchy.length - 1;

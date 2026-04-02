@@ -1,8 +1,7 @@
-import { ReactNode } from "react";
 import type { MenuProps } from "antd";
 import { ExtendedRouteObject } from "../routes";
 
-type MenuItem = Required<MenuProps>["items"][number];
+type MenuItem = NonNullable<NonNullable<Required<MenuProps>["items"]>[number]>;
 
 /**
  * 从路由配置中提取菜单项

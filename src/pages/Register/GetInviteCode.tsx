@@ -3,7 +3,7 @@ import React, { useState } from "react";
 import { checkEmailNotExisted, ParamEmail } from "../../api/user";
 import { RegisterCommonProps } from "./VerifyEmail";
 import { emailRegex } from "./Register";
-import { getInviteCode } from "../../api/util";
+import { sendInviteCode } from "../../api/applicant";
 
 const initialValues = {
 	email: "aachen2012@outlook.com",
@@ -15,7 +15,7 @@ export default function GetInviteCode(props: RegisterCommonProps) {
 	const onGetInviteCode = async (values: ParamEmail) => {
 		try {
 			setLoading(true);
-			await getInviteCode(values);
+			await sendInviteCode(values);
 		} finally {
 			setLoading(false);
 		}

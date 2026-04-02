@@ -3,11 +3,8 @@ import React, { useMemo, useState } from "react";
 import { Button, Flex, Form, Input, Space } from "antd";
 import { emailRegex, tailFormItemLayout } from "./Register";
 import { checkEmailNotExisted } from "../../api/user";
-import {
-	checkEmailVerificationCode,
-	checkInviteCode,
-	sendEmailVerificationCode,
-} from "../../api/util";
+import { checkEmailVerificationCode, sendEmailVerificationCode } from "../../api/util";
+import { checkInviteCode } from "../../api/applicant";
 
 export interface RegisterCommonProps {
 	onNextStep?: () => void;
