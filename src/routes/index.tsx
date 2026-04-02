@@ -254,7 +254,8 @@ export const routeConfig: ExtendedRouteObject[] = [
 		errorElement: <RouteErrorPage />,
 		children: [
 			{
-				index: true,
+				// index: true,
+				path: "dashboard",
 				Component: Home,
 				meta: {
 					title: "仪表盘",
@@ -568,7 +569,12 @@ function pathnameMatchesRoute(path: string | undefined, index: boolean, pathname
 	const pathSegs = (path ?? "").split("/").filter(Boolean);
 	const nameSegs = normalized.split("/").filter(Boolean);
 	if (pathSegs.length !== nameSegs.length) return false;
-	return pathSegs.every((seg, i) => seg.startsWith(":") || seg === nameSegs[i]);
+	// 避免动态段把保留字（如 create/update）误当成 :id，从而生成错误的面包屑层级
+	const reserved = new Set(["create", "update"]);
+	return pathSegs.every((seg, i) => {
+		if (seg.startsWith(":")) return !reserved.has(nameSegs[i]);
+		return seg === nameSegs[i];
+	});
 }
 
 /** 在扁平子路由中查找匹配 pathname 的路由（优先更长、更具体的 path） */
