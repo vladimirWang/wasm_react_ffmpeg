@@ -24,7 +24,12 @@ import dayjs from "dayjs";
 import StockOperationUploadModal, {
 	StockOperationUploadModalRefProps,
 } from "../../components/StockOperationUploadModal";
-import { composePromise, composePromise2, groupByUniqueElements } from "../../utils/common";
+import {
+	composePromise,
+	composePromise2,
+	groupByUniqueElements,
+	groupByUniqueElements2,
+} from "../../utils/common";
 import SearchBox from "../../components/SearchBox";
 import { getClients, IClient } from "../../api/client";
 import { getPlatforms, IPlatform } from "../../api/platform";
@@ -45,7 +50,7 @@ const StockOuts: React.FC = () => {
 		vendorName: "",
 		completedStart: undefined,
 		completedEnd: undefined,
-		isDeleted: 0,
+		isDeleted: "0" as const,
 	});
 	// 2. 定义SWR的fetcher函数：接收参数，调用getStockIns
 	const fetcher = async (params: IProductQueryParams) => {
@@ -244,7 +249,7 @@ const StockOuts: React.FC = () => {
 			return async () => {
 				const concurrentTasks = group.map(recordSet => {
 					const params = {
-						createdAt: recordSet[0].createdAt,
+						createdAt: recordSet[0].submittedAt,
 						productJoinStockOut: recordSet,
 						platformId: recordSet[0].platformId,
 						platformOrderNo: recordSet[0].platformOrderNo,
@@ -402,9 +407,10 @@ const StockOuts: React.FC = () => {
 			});
 		});
 		const groupRecords = Object.values(platformOrderNoMap);
-		const uniqueGroupsResult = groupByUniqueElements<StockOutRecord>(groupRecords, data => {
+		const uniqueGroupsResult = groupByUniqueElements2<StockOutRecord>(groupRecords, data => {
 			return data.productId;
 		});
+		console.log("----uniqueGroupsResult----: ", uniqueGroupsResult);
 		setGroupedRecords(groupRecords);
 		setUniqueGroups(uniqueGroupsResult);
 	};
@@ -481,9 +487,9 @@ const StockOuts: React.FC = () => {
 					"clientId",
 					"platformId",
 					"platformOrderNo",
-					"createdAt",
+					"submittedAt",
 				]}
-				dateFields={["createdAt"]}
+				dateFields={["submittedAt"]}
 				ref={stockOperationUploadModalRef}
 				operationType="stockOut"
 				open={fileUploadModalOpen}
