@@ -17,8 +17,8 @@ interface VerifyEmailProps extends RegisterCommonProps {
 }
 
 const initialValues = {
-	email: "aachen2012@outlook.com",
-	verifyCode: "123123",
+	email: "",
+	verifyCode: "",
 };
 export default function VerifyEmail(props: VerifyEmailProps) {
 	const { onNextStep, onGetVerifyValues, onPrevStep } = props;
