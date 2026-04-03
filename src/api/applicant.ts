@@ -31,3 +31,7 @@ export const getApplicants = (params: IPagination): Promise<IApplicantQueryRespo
 export const approveApplication = (data: { id: number }): Promise<void> => {
 	return nodejsRequest.post<void>(`${prefix}/approve`, data);
 };
+
+export const checkApplicantExisted = (email: string): Promise<boolean> => {
+	return nodejsRequest.get<boolean>(`${prefix}/checkApplicantExisted/${email}`);
+};

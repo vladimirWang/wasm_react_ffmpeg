@@ -54,10 +54,6 @@ export const checkEmailExisted = (email: string): Promise<boolean> => {
 	return nodejsRequest.get<boolean>("/user/checkEmailExisted/" + email);
 };
 
-export const checkEmailNotExisted = (email: string): Promise<boolean> => {
-	return nodejsRequest.get<boolean>("/user/checkEmailNotExisted/" + email);
-};
-
 export const getUserSaltByEmail = (email: string): Promise<string> => {
 	return nodejsRequest.get<string>("/user/getSalt/" + email);
 };

@@ -15,7 +15,6 @@ import { IPagination } from "../api/commonDef";
 const Products: React.FC = () => {
 	const [isModalOpen, setIsModalOpen] = useState(false);
 
-	const [approveLoading, setApproveLoading] = useState(false);
 	const showModal = () => {
 		setIsModalOpen(true);
 	};
@@ -27,6 +26,7 @@ const Products: React.FC = () => {
 	const handleCancel = () => {
 		setIsModalOpen(false);
 	};
+	const [approveLoadingMap, setApproveLoadingMap] = useState<Record<number, boolean>>({});
 	const columns: TableProps<IApplicant>["columns"] = [
 		{
 			title: "id",
@@ -62,16 +62,16 @@ const Products: React.FC = () => {
 					{record.status === "PENDING" && (
 						<>
 							<Button
-								loading={approveLoading}
+								loading={approveLoadingMap[record.id]}
 								size="small"
 								type="primary"
 								onClick={async () => {
 									try {
-										setApproveLoading(true);
+										setApproveLoadingMap(prev => ({ ...prev, [record.id]: true }));
 										await approveApplication({ id: record.id });
 										mutate();
 									} finally {
-										setApproveLoading(false);
+										setApproveLoadingMap(prev => ({ ...prev, [record.id]: false }));
 									}
 								}}
 							>

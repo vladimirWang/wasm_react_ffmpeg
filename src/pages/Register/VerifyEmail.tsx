@@ -2,9 +2,10 @@ import { debounce } from "lodash";
 import React, { useMemo, useState } from "react";
 import { Button, Flex, Form, Input, Space } from "antd";
 import { emailRegex, tailFormItemLayout } from "./Register";
-import { checkEmailNotExisted } from "../../api/user";
+// import { checkEmailNotExisted } from "../../api/user";
 import { checkEmailVerificationCode, sendEmailVerificationCode } from "../../api/util";
 import { checkInviteCode } from "../../api/applicant";
+import { checkEmailExisted } from "../../api/user";
 
 export interface RegisterCommonProps {
 	onNextStep?: () => void;
@@ -29,8 +30,8 @@ export default function VerifyEmail(props: VerifyEmailProps) {
 		() =>
 			debounce(email => {
 				if (!emailRegex.test(email)) return;
-				checkEmailNotExisted(email).then(existed => {
-					form.setFields([{ name: "email", errors: !existed ? ["邮箱已存在"] : [] }]);
+				checkEmailExisted(email).then(existed => {
+					form.setFields([{ name: "email", errors: existed ? ["邮箱已存在"] : [] }]);
 				});
 			}, 500),
 		[form]
@@ -95,8 +96,8 @@ export default function VerifyEmail(props: VerifyEmailProps) {
 							if (!emailRegex.test(value)) {
 								return Promise.reject(new Error("请输入有效的邮箱地址！"));
 							}
-							const existed = await checkEmailNotExisted(value);
-							return !existed ? Promise.reject(new Error("邮箱已存在")) : Promise.resolve();
+							const existed = await checkEmailExisted(value);
+							return existed ? Promise.reject(new Error("邮箱已存在")) : Promise.resolve();
 						},
 					},
 				]}
