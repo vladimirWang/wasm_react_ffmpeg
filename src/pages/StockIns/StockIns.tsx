@@ -7,7 +7,7 @@ import {
 	PlusCircleOutlined,
 } from "@ant-design/icons";
 import type { TableProps } from "antd";
-import { IProductQueryParams } from "../../api/product";
+import { getProducts, IProductQueryParams } from "../../api/product";
 import {
 	getStockIns,
 	IStockIn,
@@ -36,6 +36,8 @@ import {
 } from "../../utils/common";
 import SearchBox from "../../components/SearchBox";
 import { useSelectedRowsAreDeleted } from "../../hooks/useSelectedRowsAreDeleted";
+import { generateExcel2 } from "../../api/util";
+import { getVendors } from "../../api/vendor";
 
 const StockIns: React.FC = () => {
 	const [fileUploadModalOpen, setFileUploadModalOpen] = useState(false);
@@ -50,7 +52,7 @@ const StockIns: React.FC = () => {
 		vendorName: searchParams.get("vendorName") || undefined,
 		completedStart: searchParams.get("completedStart") || undefined,
 		completedEnd: searchParams.get("completedEnd") || undefined,
-		isDeleted: Number(searchParams.get("isDeleted")) === 1 ? 1 : 0,
+		isDeleted: searchParams.get("isDeleted") === "1" ? "1" : "0",
 	});
 
 	const swrKey = useMemo(
@@ -102,7 +104,7 @@ const StockIns: React.FC = () => {
 			vendorName: vendorName ? vendorName : undefined,
 			completedStart: completedStart ? dayjs(completedStart).format("YYYY-MM-DD") : undefined,
 			completedEnd: completedEnd ? dayjs(completedEnd).format("YYYY-MM-DD") : undefined,
-			isDeleted,
+			isDeleted: 0 as const,
 		});
 		return res; // 若你的getProducts返回的是响应体（如res.data），则这里取res.data
 	};
@@ -286,6 +288,24 @@ const StockIns: React.FC = () => {
 					}}
 				>
 					新增
+				</Button>
+				<Button
+					onClick={async () => {
+						const products = await getProducts();
+						console.log("----products----: ", products);
+						const vendors = await getVendors();
+						console.log("----vendors----: ", vendors);
+						await generateExcel2(products.list, vendors.list, [
+							{ label: "产品名称", field: "productId" },
+							{ label: "供应商名称", field: "vendorId" },
+							{ label: "数量", field: "count" },
+							{ label: "价格", field: "cost" },
+							{ label: "创建日期", field: "submittedAt" },
+						]);
+						message.success("下载模板成功");
+					}}
+				>
+					下载模板
 				</Button>
 				<Button
 					onClick={() => {
