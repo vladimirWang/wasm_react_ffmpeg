@@ -165,6 +165,7 @@ const StockOperationUploadModal = <T extends StockOperationRecord>(
 						for (const field of requiredFields) {
 							const colIndex = fieldMap[field] as number;
 							const value = row[colIndex];
+
 							if (dateFields.includes(field)) {
 								const createdAtSerial = value || dateToMsSince1900(new Date());
 								const submittedAt = excelSerialToDate(createdAtSerial);
@@ -172,7 +173,16 @@ const StockOperationUploadModal = <T extends StockOperationRecord>(
 								console.log("----submittedAt value----: ", value, formatCreatedAt);
 								requiredValues[field] = formatCreatedAt as T[keyof T];
 							} else {
-								requiredValues[field] = value as T[keyof T];
+								const reg = /-(\d+)$/;
+								if (field === "vendorId" || field === "productId") {
+									console.log("----vendorId value----: ", value, field);
+									const match = value.match(reg);
+									if (match) {
+										requiredValues[field] = Number(match[1]) as T[keyof T];
+									}
+								} else {
+									requiredValues[field] = value as T[keyof T];
+								}
 							}
 							// if (isNaN(value)) {
 							// 	reject(
