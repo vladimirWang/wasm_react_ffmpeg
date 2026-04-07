@@ -36,7 +36,7 @@ import {
 } from "../../utils/common";
 import SearchBox from "../../components/SearchBox";
 import { useSelectedRowsAreDeleted } from "../../hooks/useSelectedRowsAreDeleted";
-import { ExcelColumnType, generateExcel2, generateExcel3 } from "../../api/util";
+import { ExcelColumnType, generateExcel3 } from "../../api/util";
 import { getVendors } from "../../api/vendor";
 
 const StockIns: React.FC = () => {
@@ -291,13 +291,25 @@ const StockIns: React.FC = () => {
 				</Button>
 				<Button
 					onClick={async () => {
-						const products = await getProducts();
-						console.log("----products----: ", products);
-						const vendors = await getVendors();
-						console.log("----vendors----: ", vendors);
+						const products = await getProducts({ pagination: 0 });
+						const vendors = await getVendors({ pagination: 0 });
 						const columns = [
-							{ label: "产品名称", name: "productId", type: "select" as ExcelColumnType },
-							{ label: "供应商名称", name: "vendorId", type: "select" as ExcelColumnType },
+							{
+								label: "供应商名称",
+								name: "vendorId",
+								type: "select" as ExcelColumnType,
+								options: vendors.list.map(v => ({
+									label: v.name,
+									value: String(v.id),
+								})),
+							},
+							{
+								label: "产品名称",
+								name: "productId",
+								type: "cascade" as ExcelColumnType,
+								cascadeParentField: "vendorId",
+								products: products.list,
+							},
 							{ label: "数量", name: "count", type: "number" as ExcelColumnType },
 							{ label: "价格", name: "cost", type: "number" as ExcelColumnType },
 							{ label: "创建日期", name: "submittedAt", type: "date" as ExcelColumnType },

@@ -379,15 +379,6 @@ const StockOuts: React.FC = () => {
 
 						const columns = [
 							{
-								label: "产品名称",
-								name: "productId",
-								type: "select" as ExcelColumnType,
-								options: products.list.map(p => ({
-									label: p.name,
-									value: String(p.id),
-								})),
-							},
-							{
 								label: "供应商名称",
 								name: "vendorId",
 								type: "select" as ExcelColumnType,
@@ -395,6 +386,13 @@ const StockOuts: React.FC = () => {
 									label: v.name,
 									value: String(v.id),
 								})),
+							},
+							{
+								label: "产品名称",
+								name: "productId",
+								type: "cascade" as ExcelColumnType,
+								cascadeParentField: "vendorId",
+								products: products.list,
 							},
 							{ label: "数量", name: "count", type: "number" as ExcelColumnType },
 							{ label: "价格", name: "price", type: "number" as ExcelColumnType },

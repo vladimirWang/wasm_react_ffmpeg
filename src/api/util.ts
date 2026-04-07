@@ -126,6 +126,25 @@ function columnIndexToLetter(index: number): string {
 const LISTS_SHEET = "Lists";
 const DATA_FIRST_ROW = 3;
 const DATA_LAST_ROW = 1000;
+/** 级联 INDIRECT 失败或父格为空时的占位命名区域（Lists 上单格空值） */
+const EMPTY_PRODUCT_LIST_NAME = "EmptyProductList";
+
+export type ExcelColumnType = "text" | "number" | "date" | "select" | "cascade";
+
+/**
+ * select：固定 options，对应 Lists 上一列；
+ * cascade：依赖父列（须为 select，单元格为「名称-id」）；按 vendorId 在 Lists 上为每个父选项分列写入子项并注册 V_{id}，子列 INDIRECT 引用。
+ */
+export interface IExcelColumn {
+	label: string;
+	name: string;
+	type: ExcelColumnType;
+	options?: Array<{ label: string; value: string }>;
+	/** 父列字段名（与第 2 行 name 一致），仅 type 为 cascade 时使用，例如 vendorId */
+	cascadeParentField?: string;
+	/** 全量产品，在 generateExcel3 内按 vendorId 分组；仅 cascade 使用 */
+	products?: IProduct[];
+}
 
 export interface IOption {
 	label: string;
@@ -282,57 +301,119 @@ export const generateExcel2 = async (
 
 export const generateExcel3 = async (columns: IExcelColumn[]) => {
 	try {
-		// const vendorColIdx = titles.findIndex(t => t.field === "vendorId");
-		// if (vendorColIdx < 0) {
-		// 	throw new Error("titles 中需同时包含 productId 与 vendorId 列");
-		// }
 		const wb = new Workbook();
 		const ws = wb.addWorksheet("Sheet1");
 		const listsWs = wb.addWorksheet(LISTS_SHEET, { state: "hidden" });
 
-		let listColIndex = 1;
+		const dataValidations = (
+			ws as typeof ws & {
+				dataValidations: { add: (addr: string, v: DataValidation) => void };
+			}
+		).dataValidations;
 
 		columns.forEach((column, index) => {
 			const colL = columnIndexToLetter(index + 1);
 			ws.getCell(`${colL}1`).value = column.label;
 			ws.getCell(`${colL}2`).value = column.name;
-			if (column.type === "select" && column.options && column.options.length > 0) {
-				setDataValidations(
-					listsWs,
-					ws,
-					column.options,
-					[
-						{ x: colL as Alpha, y: DATA_FIRST_ROW },
-						{ x: colL as Alpha, y: DATA_LAST_ROW },
-					],
-					listColIndex
-				);
-				listColIndex += 1;
-			}
 		});
 
-		// setDataValidations(listsWs, ws, vendors, [
-		// 	{ x: vendorLetter as Alpha, y: DATA_FIRST_ROW },
-		// 	{ x: vendorLetter as Alpha, y: DATA_LAST_ROW },
-		// ]);
+		let listColIndex = 1;
+
+		columns.forEach((column, index) => {
+			if (column.type !== "select" || !column.options?.length) return;
+			const colL = columnIndexToLetter(index + 1);
+			setDataValidations(
+				listsWs,
+				ws,
+				column.options,
+				[
+					{ x: colL as Alpha, y: DATA_FIRST_ROW },
+					{ x: colL as Alpha, y: DATA_LAST_ROW },
+				],
+				listColIndex
+			);
+			listColIndex += 1;
+		});
+
+		const cascadeDvConfigs: { productColLetter: string; vendorLetter: string }[] = [];
+
+		columns.forEach((column, index) => {
+			if (column.type !== "cascade") return;
+			if (!column.cascadeParentField || !column.products?.length) {
+				throw new Error(`级联列「${column.label}」需要 cascadeParentField 与 products`);
+			}
+			const parentIdx = columns.findIndex(c => c.name === column.cascadeParentField);
+			if (parentIdx < 0) {
+				throw new Error(`未找到级联父列字段：${column.cascadeParentField}`);
+			}
+			const parentCol = columns[parentIdx];
+			if (parentCol.type !== "select" || !parentCol.options?.length) {
+				throw new Error(`级联父列「${parentCol.label}」须为带 options 的 select`);
+			}
+
+			const byVendor = new Map<number, IProduct[]>();
+			for (const p of column.products) {
+				if (!byVendor.has(p.vendorId)) byVendor.set(p.vendorId, []);
+				byVendor.get(p.vendorId)!.push(p);
+			}
+
+			const vendorLetter = columnIndexToLetter(parentIdx + 1);
+			const productColLetter = columnIndexToLetter(index + 1);
+
+			for (const vo of parentCol.options) {
+				const vid = Number(vo.value);
+				if (Number.isNaN(vid)) continue;
+				const plist = byVendor.get(vid) ?? [];
+				const colL = columnIndexToLetter(listColIndex);
+				const rowCount = Math.max(1, plist.length);
+				if (plist.length === 0) {
+					listsWs.getCell(1, listColIndex).value = "";
+				} else {
+					plist.forEach((p, i) => {
+						listsWs.getCell(i + 1, listColIndex).value = `${p.name}-${p.id}`;
+					});
+				}
+				const rangeAddr = `'${LISTS_SHEET}'!$${colL}$1:$${colL}$${rowCount}`;
+				wb.definedNames.add(rangeAddr, `V_${vid}`);
+				listColIndex += 1;
+			}
+
+			cascadeDvConfigs.push({ productColLetter, vendorLetter });
+		});
+
+		if (cascadeDvConfigs.length > 0) {
+			const emptyColL = columnIndexToLetter(listColIndex);
+			listsWs.getCell(1, listColIndex).value = "";
+			wb.definedNames.add(`'${LISTS_SHEET}'!$${emptyColL}$1`, EMPTY_PRODUCT_LIST_NAME);
+
+			const dvCommon = {
+				type: "list" as const,
+				showErrorMessage: true,
+				errorStyle: "error" as const,
+				errorTitle: "输入错误",
+				error: "请先选择供应商，再在产品列下拉中选择",
+			};
+
+			for (const { productColLetter, vendorLetter } of cascadeDvConfigs) {
+				const vendorCellRef = `INDIRECT("${vendorLetter}"&ROW())`;
+				const vendorIdFromCell = `IFERROR(VALUE(TRIM(RIGHT(SUBSTITUTE(${vendorCellRef},"-",REPT(" ",LEN(${vendorCellRef}))),LEN(${vendorCellRef})))),0)`;
+				const productListFormula = `=IFERROR(INDIRECT("V_"&${vendorIdFromCell}),INDIRECT("${EMPTY_PRODUCT_LIST_NAME}"))`;
+				dataValidations.add(`${productColLetter}${DATA_FIRST_ROW}:${productColLetter}${DATA_LAST_ROW}`, {
+					...dvCommon,
+					allowBlank: true,
+					formulae: [productListFormula],
+				});
+			}
+		}
 
 		const buffer = await wb.xlsx.writeBuffer();
 		const filename = `进货单模板_${dayjs().format("YYYY-MM-DD")}.xlsx`;
 		downloadFileByBuffer(buffer, filename);
 		return Promise.resolve();
 	} catch (error) {
-		// message.error((error as Error).message);
 		return Promise.reject(error);
 	}
 };
-
-export type ExcelColumnType = "text" | "number" | "date" | "select";
-interface IExcelColumn {
-	label: string;
-	name: string;
-	type: ExcelColumnType;
-	options?: Array<{ label: string; value: string }>;
-}
 export const generateExcel4 = async (columns: Array<IExcelColumn>) => {
 	try {
 		const wb = new Workbook();
