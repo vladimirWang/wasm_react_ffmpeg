@@ -36,7 +36,7 @@ import {
 } from "../../utils/common";
 import SearchBox from "../../components/SearchBox";
 import { useSelectedRowsAreDeleted } from "../../hooks/useSelectedRowsAreDeleted";
-import { generateExcel2 } from "../../api/util";
+import { ExcelColumnType, generateExcel2, generateExcel3 } from "../../api/util";
 import { getVendors } from "../../api/vendor";
 
 const StockIns: React.FC = () => {
@@ -295,13 +295,14 @@ const StockIns: React.FC = () => {
 						console.log("----products----: ", products);
 						const vendors = await getVendors();
 						console.log("----vendors----: ", vendors);
-						await generateExcel2(products.list, vendors.list, [
-							{ label: "产品名称", field: "productId" },
-							{ label: "供应商名称", field: "vendorId" },
-							{ label: "数量", field: "count" },
-							{ label: "价格", field: "cost" },
-							{ label: "创建日期", field: "submittedAt" },
-						]);
+						const columns = [
+							{ label: "产品名称", name: "productId", type: "select" as ExcelColumnType },
+							{ label: "供应商名称", name: "vendorId", type: "select" as ExcelColumnType },
+							{ label: "数量", name: "count", type: "number" as ExcelColumnType },
+							{ label: "价格", name: "cost", type: "number" as ExcelColumnType },
+							{ label: "创建日期", name: "submittedAt", type: "date" as ExcelColumnType },
+						];
+						await generateExcel3(columns);
 						message.success("下载模板成功");
 					}}
 				>

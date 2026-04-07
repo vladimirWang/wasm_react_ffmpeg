@@ -1,4 +1,4 @@
-import { DataValidation, Workbook } from "exceljs";
+import { DataValidation, Workbook, Worksheet } from "exceljs";
 import type { IProduct } from "./product";
 import { goRequest, nodejsRequest } from "../request";
 import { IResponse } from "./commonDef";
@@ -109,6 +109,7 @@ export const checkEmailVerificationCode = (data: {
 };
 
 type OptionField = "productId" | "vendorId";
+type OptionField2 = "productId" | "vendorId" | "clientId" | "platformId";
 
 /** 1-based 列号转 Excel 列字母（1→A，27→AA） */
 function columnIndexToLetter(index: number): string {
@@ -126,25 +127,93 @@ const LISTS_SHEET = "Lists";
 const DATA_FIRST_ROW = 3;
 const DATA_LAST_ROW = 1000;
 
+export interface IOption {
+	label: string;
+	value: string;
+}
+
+type Alpha =
+	| "A"
+	| "B"
+	| "C"
+	| "D"
+	| "E"
+	| "F"
+	| "G"
+	| "H"
+	| "I"
+	| "J"
+	| "K"
+	| "L"
+	| "M"
+	| "N"
+	| "O"
+	| "P"
+	| "Q"
+	| "R"
+	| "S"
+	| "T"
+	| "U"
+	| "V"
+	| "W"
+	| "X"
+	| "Y"
+	| "Z";
+interface IPos {
+	x: Alpha;
+	y: number;
+}
+const setDataValidations = (
+	listsWs: Worksheet,
+	targetWs: Worksheet,
+	options: IOption[],
+	range: [IPos, IPos],
+	listColIndex: number = 1
+) => {
+	const [start, end] = range;
+	// Lists!A 列：全部供应商（供「供应商」列下拉）
+	options.forEach((v, i) => {
+		listsWs.getCell(i + 1, listColIndex).value = `${v.label}-${v.value}`;
+	});
+	const listColLetter = columnIndexToLetter(listColIndex);
+	const listAddr = `'${LISTS_SHEET}'!$${listColLetter}$1:$${listColLetter}$${Math.max(1, options.length)}`;
+
+	const dataValidations = (
+		targetWs as typeof targetWs & {
+			dataValidations: { add: (addr: string, v: DataValidation) => void };
+		}
+	).dataValidations;
+
+	// 供应商：固定列表
+	const dvVendor: DataValidation = {
+		type: "list",
+		allowBlank: false,
+		formulae: [listAddr],
+		showErrorMessage: true,
+		errorStyle: "error",
+		errorTitle: "输入错误",
+		error: "请从下拉列表中选择数据项",
+	};
+	dataValidations.add(`${start.x}${start.y}:${end.x}${end.y}`, dvVendor);
+};
+
 /**
  * 进货模板（级联下拉）：先选供应商列，再选产品列；产品列表随供应商变化。
  * 依赖 INDIRECT + 工作簿名称 V_{vendorId}，供应商显示格式须为「名称-id」（与页面 `${name}-${id}` 一致），以便从单元格解析出 id。
  */
 export const generateExcel2 = async (
 	products: IProduct[],
-	vendors: Array<{ id: number; name: string }>,
+	vendors: Array<IOption>,
 	titles: Array<{ label: string; field: string }>
 ) => {
 	try {
-		const productColIdx = titles.findIndex(t => t.field === "productId");
 		const vendorColIdx = titles.findIndex(t => t.field === "vendorId");
-		if (productColIdx < 0 || vendorColIdx < 0) {
+		if (vendorColIdx < 0) {
 			throw new Error("titles 中需同时包含 productId 与 vendorId 列");
 		}
 
 		const wb = new Workbook();
 		const ws = wb.addWorksheet("Sheet1");
-		const listsWs = wb.addWorksheet(LISTS_SHEET, { state: "hidden" });
 
 		titles.forEach((title, index) => {
 			const colL = columnIndexToLetter(index + 1);
@@ -152,81 +221,127 @@ export const generateExcel2 = async (
 			ws.getCell(`${colL}2`).value = title.field;
 		});
 
-		const productLetter = columnIndexToLetter(productColIdx + 1);
 		const vendorLetter = columnIndexToLetter(vendorColIdx + 1);
 
-		// Lists!A 列：全部供应商（供「供应商」列下拉）
-		vendors.forEach((v, i) => {
-			listsWs.getCell(i + 1, 1).value = `${v.name}-${v.id}`;
-		});
-		const vendorListAddr = `'${LISTS_SHEET}'!$A$1:$A$${Math.max(1, vendors.length)}`;
+		const listsWs = wb.addWorksheet(LISTS_SHEET, { state: "hidden" });
 
-		// 自 B 列起：每个供应商一列产品「名称-id」，并注册名称 V_{id}
-		let listCol = 2;
-		const byVendor = new Map<number, IProduct[]>();
-		for (const p of products) {
-			if (!byVendor.has(p.vendorId)) byVendor.set(p.vendorId, []);
-			byVendor.get(p.vendorId)!.push(p);
-		}
+		setDataValidations(listsWs, ws, vendors, [
+			{ x: vendorLetter as Alpha, y: DATA_FIRST_ROW },
+			{ x: vendorLetter as Alpha, y: DATA_LAST_ROW },
+		]);
+		// // 自 B 列起：每个供应商一列产品「名称-id」，并注册名称 V_{id}
+		// const byVendor = new Map<number, IProduct[]>();
+		// for (const p of products) {
+		// 	if (!byVendor.has(p.vendorId)) byVendor.set(p.vendorId, []);
+		// 	byVendor.get(p.vendorId)!.push(p);
+		// }
 
-		for (const v of vendors) {
-			const plist = byVendor.get(v.id) ?? [];
-			const colL = columnIndexToLetter(listCol);
-			const rowCount = Math.max(1, plist.length);
-			if (plist.length === 0) {
-				listsWs.getCell(1, listCol).value = "";
-			} else {
-				plist.forEach((p, i) => {
-					listsWs.getCell(i + 1, listCol).value = `${p.name}-${p.id}`;
-				});
-			}
-			const rangeAddr = `'${LISTS_SHEET}'!$${colL}$1:$${colL}$${rowCount}`;
-			wb.definedNames.add(rangeAddr, `V_${v.id}`);
-			listCol += 1;
-		}
-
-		const dataValidations = (
-			ws as typeof ws & {
-				dataValidations: { add: (addr: string, v: DataValidation) => void };
-			}
-		).dataValidations;
-
-		// 供应商：固定列表
-		const dvVendor: DataValidation = {
-			type: "list",
-			allowBlank: false,
-			formulae: [vendorListAddr],
-			showErrorMessage: true,
-			errorStyle: "error",
-			errorTitle: "输入错误",
-			error: "请从下拉列表中选择供应商",
-		};
-		dataValidations.add(
-			`${vendorLetter}${DATA_FIRST_ROW}:${vendorLetter}${DATA_LAST_ROW}`,
-			dvVendor
-		);
+		// for (const v of vendors) {
+		// 	const plist = byVendor.get(v.id) ?? [];
+		// 	const colL = columnIndexToLetter(listCol);
+		// 	const rowCount = Math.max(1, plist.length);
+		// 	if (plist.length === 0) {
+		// 		listsWs.getCell(1, listCol).value = "";
+		// 	} else {
+		// 		plist.forEach((p, i) => {
+		// 			listsWs.getCell(i + 1, listCol).value = `${p.name}-${p.id}`;
+		// 		});
+		// 	}
+		// 	const rangeAddr = `'${LISTS_SHEET}'!$${colL}$1:$${colL}$${rowCount}`;
+		// 	wb.definedNames.add(rangeAddr, `V_${v.id}`);
+		// 	listCol += 1;
+		// }
 
 		// 产品：INDIRECT("V_"&从供应商单元格解析出的 id)；用 ROW() 与 INDIRECT 引用「当前行」的供应商格，避免整列下拉仍指向第 3 行
-		const vendorCellRef = `INDIRECT("${vendorLetter}"&ROW())`;
-		const vendorIdFromCell = `VALUE(TRIM(RIGHT(SUBSTITUTE(${vendorCellRef},"-",REPT(" ",99)),99)))`;
-		const productListFormula = `INDIRECT("V_"&${vendorIdFromCell})`;
-		const dvProduct: DataValidation = {
-			type: "list",
-			allowBlank: true,
-			formulae: [productListFormula],
-			showErrorMessage: true,
-			errorStyle: "error",
-			errorTitle: "输入错误",
-			error: "请先选择供应商，再从列表中选择产品",
-		};
-		dataValidations.add(
-			`${productLetter}${DATA_FIRST_ROW}:${productLetter}${DATA_LAST_ROW}`,
-			dvProduct
-		);
+		// const vendorCellRef = `INDIRECT("${vendorLetter}"&ROW())`;
+		// const vendorIdFromCell = `VALUE(TRIM(RIGHT(SUBSTITUTE(${vendorCellRef},"-",REPT(" ",99)),99)))`;
+		// const productListFormula = `INDIRECT("V_"&${vendorIdFromCell})`;
+		// const dvProduct: DataValidation = {
+		// 	type: "list",
+		// 	allowBlank: true,
+		// 	formulae: [productListFormula],
+		// 	showErrorMessage: true,
+		// 	errorStyle: "error",
+		// 	errorTitle: "输入错误",
+		// 	error: "请先选择供应商，再从列表中选择产品",
+		// };
+		// dataValidations.add(
+		// 	`${productLetter}${DATA_FIRST_ROW}:${productLetter}${DATA_LAST_ROW}`,
+		// 	dvProduct
+		// );
 
 		const buffer = await wb.xlsx.writeBuffer();
 		const filename = `进货单模板_${dayjs().format("YYYY-MM-DD")}.xlsx`;
 		downloadFileByBuffer(buffer, filename);
+		return Promise.resolve();
+	} catch (error) {
+		// message.error((error as Error).message);
+		return Promise.reject(error);
+	}
+};
+
+export const generateExcel3 = async (columns: IExcelColumn[]) => {
+	try {
+		// const vendorColIdx = titles.findIndex(t => t.field === "vendorId");
+		// if (vendorColIdx < 0) {
+		// 	throw new Error("titles 中需同时包含 productId 与 vendorId 列");
+		// }
+		const wb = new Workbook();
+		const ws = wb.addWorksheet("Sheet1");
+		const listsWs = wb.addWorksheet(LISTS_SHEET, { state: "hidden" });
+
+		let listColIndex = 1;
+
+		columns.forEach((column, index) => {
+			const colL = columnIndexToLetter(index + 1);
+			ws.getCell(`${colL}1`).value = column.label;
+			ws.getCell(`${colL}2`).value = column.name;
+			if (column.type === "select" && column.options && column.options.length > 0) {
+				setDataValidations(
+					listsWs,
+					ws,
+					column.options,
+					[
+						{ x: colL as Alpha, y: DATA_FIRST_ROW },
+						{ x: colL as Alpha, y: DATA_LAST_ROW },
+					],
+					listColIndex
+				);
+				listColIndex += 1;
+			}
+		});
+
+		// setDataValidations(listsWs, ws, vendors, [
+		// 	{ x: vendorLetter as Alpha, y: DATA_FIRST_ROW },
+		// 	{ x: vendorLetter as Alpha, y: DATA_LAST_ROW },
+		// ]);
+
+		const buffer = await wb.xlsx.writeBuffer();
+		const filename = `进货单模板_${dayjs().format("YYYY-MM-DD")}.xlsx`;
+		downloadFileByBuffer(buffer, filename);
+		return Promise.resolve();
+	} catch (error) {
+		// message.error((error as Error).message);
+		return Promise.reject(error);
+	}
+};
+
+export type ExcelColumnType = "text" | "number" | "date" | "select";
+interface IExcelColumn {
+	label: string;
+	name: string;
+	type: ExcelColumnType;
+	options?: Array<{ label: string; value: string }>;
+}
+export const generateExcel4 = async (columns: Array<IExcelColumn>) => {
+	try {
+		const wb = new Workbook();
+		const ws = wb.addWorksheet("Sheet1");
+		const listsWs = wb.addWorksheet(LISTS_SHEET, { state: "hidden" });
+
+		// const buffer = await wb.xlsx.writeBuffer();
+		// const filename = `进货单模板_${dayjs().format("YYYY-MM-DD")}.xlsx`;
+		// downloadFileByBuffer(buffer, filename);
 		return Promise.resolve();
 	} catch (error) {
 		// message.error((error as Error).message);

@@ -7,7 +7,7 @@ import {
 	SearchOutlined,
 } from "@ant-design/icons";
 import type { TableProps } from "antd";
-import { IProductQueryParams } from "../../api/product";
+import { getProducts, IProductQueryParams } from "../../api/product";
 import {
 	getStockOuts,
 	IStockOut,
@@ -34,6 +34,8 @@ import SearchBox from "../../components/SearchBox";
 import { getClients, IClient } from "../../api/client";
 import { getPlatforms, IPlatform } from "../../api/platform";
 import { useSelectedRowsAreDeleted } from "../../hooks/useSelectedRowsAreDeleted";
+import { getVendors } from "../../api/vendor";
+import { ExcelColumnType, generateExcel3 } from "../../api/util";
 
 const StockOuts: React.FC = () => {
 	const [fileUploadModalOpen, setFileUploadModalOpen] = useState(false);
@@ -367,6 +369,61 @@ const StockOuts: React.FC = () => {
 					}}
 				>
 					新增
+				</Button>
+				<Button
+					onClick={async () => {
+						const products = await getProducts({ pagination: 0 });
+						const vendors = await getVendors({ pagination: 0 });
+						const clients = await getClients({ pagination: 0 });
+						const platforms = await getPlatforms();
+
+						const columns = [
+							{
+								label: "产品名称",
+								name: "productId",
+								type: "select" as ExcelColumnType,
+								options: products.list.map(p => ({
+									label: p.name,
+									value: String(p.id),
+								})),
+							},
+							{
+								label: "供应商名称",
+								name: "vendorId",
+								type: "select" as ExcelColumnType,
+								options: vendors.list.map(v => ({
+									label: v.name,
+									value: String(v.id),
+								})),
+							},
+							{ label: "数量", name: "count", type: "number" as ExcelColumnType },
+							{ label: "价格", name: "price", type: "number" as ExcelColumnType },
+							{
+								label: "客户",
+								name: "clientId",
+								type: "select" as ExcelColumnType,
+								options: clients.list.map(client => ({
+									label: client.name,
+									value: String(client.id),
+								})),
+							},
+							{
+								label: "平台",
+								name: "platformId",
+								type: "select" as ExcelColumnType,
+								options: platforms.map(platform => ({
+									label: platform.name,
+									value: String(platform.id),
+								})),
+							},
+							{ label: "平台订单号", name: "platformOrderNo", type: "text" as ExcelColumnType },
+							{ label: "创建日期", name: "submittedAt", type: "date" as ExcelColumnType },
+						];
+						await generateExcel3(columns);
+						message.success("下载模板成功");
+					}}
+				>
+					下载模板
 				</Button>
 				<Button
 					onClick={() => {
