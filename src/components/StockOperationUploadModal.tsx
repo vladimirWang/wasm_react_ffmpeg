@@ -174,9 +174,15 @@ const StockOperationUploadModal = <T extends StockOperationRecord>(
 								requiredValues[field] = formatCreatedAt as T[keyof T];
 							} else {
 								const reg = /-(\d+)$/;
-								if (field === "vendorId" || field === "productId") {
-									console.log("----vendorId value----: ", value, field);
-									const match = value.match(reg);
+								if (
+									field === "vendorId" ||
+									field === "productId" ||
+									field === "clientId" ||
+									field === "platformId"
+								) {
+									const str =
+										value === undefined || value === null ? "" : String(value).trim();
+									const match = str.match(reg);
 									if (match) {
 										requiredValues[field] = Number(match[1]) as T[keyof T];
 									}
