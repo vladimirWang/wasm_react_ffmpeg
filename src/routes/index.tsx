@@ -14,6 +14,7 @@ const Home = lazy(() => import("../pages/Home"));
 const About = lazy(() => import("../pages/About"));
 const NotFound = lazy(() => import("../pages/NotFound"));
 const Login = lazy(() => import("../pages/Login"));
+const GitHubOAuthCallback = lazy(() => import("../pages/GitHubOAuthCallback"));
 const AdminLogin = lazy(() => import("../pages/AdminLogin"));
 const Register = lazy(() => import("../pages/Register/Register"));
 const Landing = lazy(() => import("../pages/Landing"));
@@ -125,14 +126,13 @@ const fetchCurrentUser = async (): Promise<IUser | null> => {
 	try {
 		userPromise = getCurrentUser()
 			.then(res => {
-				// 检查是否是直接的 user 对象（有 userId 或 email 等用户属性）
-				// 处理字段映射：如果 API 返回的是 userId，需要映射到 id
+				const raw = res as IUser & { userId?: number };
 				const user: IUser = {
-					id: res.id,
-					email: res.email,
-					username: res.username,
-					createdAt: res.createdAt,
-					role: res.role,
+					id: String(raw.userId ?? raw.id ?? ""),
+					email: raw.email,
+					username: raw.username,
+					createdAt: raw.createdAt ?? "",
+					role: raw.role,
 				};
 				saveCachedUser(user);
 				// 更新 zustand store
@@ -178,7 +178,11 @@ export const authLoader = (meta?: RouteMeta) => {
 		const pathname = url.pathname;
 
 		// 如果是登录页或注册页，直接放行，避免死循环
-		if (pathname === "/landing/login" || pathname === "/landing/register") {
+		if (
+			pathname === "/landing/login" ||
+			pathname === "/landing/register" ||
+			pathname === "/landing/oauth/callback"
+		) {
 			return null;
 		}
 
@@ -457,6 +461,14 @@ export const routeConfig: ExtendedRouteObject[] = [
 			{
 				path: "register",
 				Component: Register,
+				meta: {
+					hidden: true,
+					auth: "free",
+				},
+			},
+			{
+				path: "oauth/callback",
+				Component: GitHubOAuthCallback,
 				meta: {
 					hidden: true,
 					auth: "free",

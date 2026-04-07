@@ -37,6 +37,44 @@ export const userLogin = (
 	});
 };
 
+/** 构建「开始 GitHub 授权」的完整 URL（须整页跳转，不能走 AJAX） */
+export function buildGithubOAuthStartUrl(redirectAfterLogin?: string): string {
+	const params = new URLSearchParams();
+	if (redirectAfterLogin) {
+		params.set("redirect", redirectAfterLogin);
+	}
+	const qs = params.toString() ? `?${params.toString()}` : "";
+
+	/** 生产若 OAuth 走 /api/auth/github（与 GITHUB_REDIRECT_URI 同站点路径风格一致），可配置完整 URL */
+	const explicitStart = import.meta.env.VITE_GITHUB_OAUTH_START_URL;
+	if (explicitStart && String(explicitStart).trim()) {
+		return `${String(explicitStart).replace(/\/$/, "")}${qs}`;
+	}
+
+	const base = (import.meta.env.VITE_API_BASE_URL || "/nodejs_api").replace(/\/$/, "");
+	const path = "/user/oauth/github";
+	const suffix = `${path}${qs}`;
+	if (base.startsWith("http://") || base.startsWith("https://")) {
+		return `${base}${suffix}`;
+	}
+	const origin = typeof window !== "undefined" ? window.location.origin : "";
+	const prefix = base.startsWith("/") ? base : `/${base}`;
+	return `${origin}${prefix}${suffix}`;
+}
+
+export type GithubOAuthExchangeResult = {
+	token: string;
+	redirect?: string;
+};
+
+export const exchangeGithubOAuthToken = (exchange: string): Promise<GithubOAuthExchangeResult> => {
+	return nodejsRequest.post<GithubOAuthExchangeResult>(
+		"/user/oauth/github/exchange",
+		{ exchange },
+		{ showSuccessMessage: false }
+	);
+};
+
 export const userRegister = (data: RegisterParams): Promise<RegisterResponse> => {
 	console.log("userRegister data: ", data);
 	return nodejsRequest.post<RegisterResponse>("/user/register", data);

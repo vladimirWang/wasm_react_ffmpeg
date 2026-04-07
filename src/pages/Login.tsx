@@ -1,7 +1,12 @@
 import React, { useRef, useState } from "react";
-import { LockOutlined, MailOutlined } from "@ant-design/icons";
-import { Button, Flex, Form, Input, message } from "antd";
-import { getUserSaltByEmail, userLogin, type LoginParams } from "../api/user";
+import { GithubOutlined, LockOutlined, MailOutlined } from "@ant-design/icons";
+import { Button, Divider, Flex, Form, Input, message } from "antd";
+import {
+	buildGithubOAuthStartUrl,
+	getUserSaltByEmail,
+	userLogin,
+	type LoginParams,
+} from "../api/user";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { clearUserCache } from "../routes";
 import { hashPassword } from "../utils/algo";
@@ -63,6 +68,13 @@ const Login: React.FC = () => {
 		} finally {
 			setLoading(false);
 		}
+	};
+
+	const startGithubLogin = () => {
+		const redirectParam = searchParams.get("redirect");
+		const path =
+			redirectParam != null && redirectParam !== "" ? redirectParam : undefined;
+		window.location.href = buildGithubOAuthStartUrl(path);
 	};
 
 	const loadUserSalt = async (email: string) => {
@@ -149,6 +161,12 @@ const Login: React.FC = () => {
 				<Form.Item>
 					<Button block type="primary" htmlType="submit" loading={loading}>
 						登录
+					</Button>
+					<Divider plain style={{ margin: "12px 0" }}>
+						或
+					</Divider>
+					<Button block icon={<GithubOutlined />} onClick={startGithubLogin}>
+						使用 GitHub 登录
 					</Button>
 
 					<Flex justify="space-between" align="center">
