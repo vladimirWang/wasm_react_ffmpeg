@@ -47,7 +47,8 @@ import { getCurrentUser, type IUser } from "../api/user";
 import { useUserStore } from "../store/userStore";
 const AdminRegister = lazy(() => import("../pages/AdminRegister"));
 const AdminForgetPassword = lazy(() => import("../pages/AdminForgetPassword"));
-const ApplicationPending = lazy(() => import("../pages/Applicants"));
+const Applicants = lazy(() => import("../pages/Applicants"));
+const ApplicantActivate = lazy(() => import("../pages/ApplicantActivate/ApplicantActivate"));
 
 // 用户信息缓存
 let cachedUser: IUser | null = null;
@@ -443,6 +444,14 @@ export const routeConfig: ExtendedRouteObject[] = [
 		],
 	},
 	{
+		path: "/applicant/activate",
+		Component: ApplicantActivate,
+		meta: {
+			hidden: true,
+			auth: "free",
+		},
+	},
+	{
 		path: "/landing",
 		Component: Landing,
 		errorElement: <RouteErrorPage />,
@@ -543,7 +552,7 @@ export const adminRouteConfig: ExtendedRouteObject[] = [
 		children: [
 			{
 				path: "applicants",
-				Component: ApplicationPending,
+				Component: Applicants,
 				meta: {
 					icon: <UserOutlined />,
 					title: "申请人",

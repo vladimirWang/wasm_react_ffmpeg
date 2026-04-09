@@ -22,10 +22,11 @@ export interface LoginParams {
 
 // 定义注册请求参数类型
 export interface RegisterParams {
-	email: string;
+	// email: string;
+	// verifyCode: string;
+	token: string;
 	password: string;
 	username: string;
-	verifyCode: string;
 }
 
 export const userLogin = (
@@ -76,7 +77,6 @@ export const exchangeGithubOAuthToken = (exchange: string): Promise<GithubOAuthE
 };
 
 export const userRegister = (data: RegisterParams): Promise<RegisterResponse> => {
-	console.log("userRegister data: ", data);
 	return nodejsRequest.post<RegisterResponse>("/user/register", data);
 };
 
@@ -112,4 +112,14 @@ export interface IUpdatePasswordParams {
 // 修改密码
 export const updatePassword = (data: IUpdatePasswordParams): Promise<void> => {
 	return nodejsRequest.post<void>("/user/updatePassword", data);
+};
+
+interface RegisterByTokenParams {
+	token: string;
+	password: string;
+	username: string;
+}
+
+export const userRegisterByToken = (data: RegisterByTokenParams): Promise<RegisterResponse> => {
+	return nodejsRequest.post<RegisterResponse>("/user/registerByToken", data);
 };

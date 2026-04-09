@@ -1,5 +1,17 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { Alert, Button, Flex, Input, Modal, Pagination, Space, Table, Tag, Tooltip } from "antd";
+import {
+	Alert,
+	Button,
+	Flex,
+	Input,
+	message,
+	Modal,
+	Pagination,
+	Space,
+	Table,
+	Tag,
+	Tooltip,
+} from "antd";
 import { PlusCircleOutlined, SearchOutlined } from "@ant-design/icons";
 import type { TableProps } from "antd";
 import { IProduct, IProductQueryParams, getProducts } from "../api/product";
@@ -59,7 +71,7 @@ const Products: React.FC = () => {
 			dataIndex: "action",
 			render: (_, record) => (
 				<Space size="middle">
-					{record.status === "PENDING" && (
+					{true && (
 						<>
 							<Button
 								loading={approveLoadingMap[record.id]}
@@ -70,6 +82,7 @@ const Products: React.FC = () => {
 										setApproveLoadingMap(prev => ({ ...prev, [record.id]: true }));
 										await approveApplication({ id: record.id });
 										mutate();
+										message.success("激活链接发送到对应邮箱");
 									} finally {
 										setApproveLoadingMap(prev => ({ ...prev, [record.id]: false }));
 									}

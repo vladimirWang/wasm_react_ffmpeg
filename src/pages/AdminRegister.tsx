@@ -9,6 +9,7 @@ import { sleep } from "../utils/common";
 import { debounce } from "lodash";
 import { checkEmailVerificationCode, sendEmailVerificationCode } from "../api/util";
 import { RegisterParams, RegisterResponse } from "../api/user";
+import { emailRegex, passwordRegex } from "../regexp";
 
 /** 垂直布局：标签与输入均占满一行，避免右侧留白 */
 const formItemLayout: FormProps = {
@@ -24,10 +25,6 @@ const stepItems = [
 	{ title: "验证邮箱", description: "填写邮箱并获取验证码" },
 	{ title: "设置账号", description: "填写用户名与密码" },
 ];
-
-const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-
-const passwordRegex = /^[0-9a-zA-Z!@#$%^&*()_+\-=\[\]{}|;:,.<>?~]{6,8}$/;
 
 const registerFormInitialValues = {
 	// email: "aachen2012@outlook.com",
