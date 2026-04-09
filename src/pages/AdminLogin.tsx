@@ -137,6 +137,7 @@ const AdminLogin: React.FC = () => {
 						</Form.Item> */}
 						<Link to="/admin/forget-password">忘记密码</Link>
 					</Flex>
+					<Link to="/landing/login">去商户平台登录</Link>
 				</Form.Item>
 			</Form>
 		</div>

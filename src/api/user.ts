@@ -20,11 +20,9 @@ export interface LoginParams {
 	nonce: string;
 }
 
-// 定义注册请求参数类型
 export interface RegisterParams {
-	// email: string;
-	// verifyCode: string;
-	token: string;
+	email: string;
+	verifyCode: string;
 	password: string;
 	username: string;
 }
