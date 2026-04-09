@@ -136,7 +136,6 @@ const AdminLogin: React.FC = () => {
 							<Checkbox>Remember me</Checkbox>
 						</Form.Item> */}
 						<Link to="/admin/forget-password">忘记密码</Link>
-						<Link to="/admin/register">去注册!</Link>
 					</Flex>
 				</Form.Item>
 			</Form>

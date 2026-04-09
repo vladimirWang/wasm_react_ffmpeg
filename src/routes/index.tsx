@@ -45,7 +45,7 @@ const ForgetPassword = lazy(() => import("../pages/ForgetPassword"));
 const OpenAIChatDemo = lazy(() => import("../pages/OpenAIChatDemo"));
 import { getCurrentUser, type IUser } from "../api/user";
 import { useUserStore } from "../store/userStore";
-const AdminRegister = lazy(() => import("../pages/AdminRegister"));
+// const AdminRegister = lazy(() => import("../pages/AdminRegister"));
 const AdminForgetPassword = lazy(() => import("../pages/AdminForgetPassword"));
 const Applicants = lazy(() => import("../pages/Applicants"));
 const ApplicantActivate = lazy(() => import("../pages/ApplicantActivate/ApplicantActivate"));
@@ -520,14 +520,14 @@ export const routeConfig: ExtendedRouteObject[] = [
 			auth: "free",
 		},
 	},
-	{
-		path: "/admin/register",
-		Component: AdminRegister,
-		meta: {
-			hidden: true,
-			auth: "free",
-		},
-	},
+	// {
+	// 	path: "/admin/register",
+	// 	Component: AdminRegister,
+	// 	meta: {
+	// 		hidden: true,
+	// 		auth: "free",
+	// 	},
+	// },
 	{
 		path: "/admin/forget-password",
 		Component: AdminForgetPassword,
