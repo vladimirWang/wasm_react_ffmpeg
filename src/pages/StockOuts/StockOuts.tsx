@@ -35,7 +35,7 @@ import { getClients, IClient } from "../../api/client";
 import { getPlatforms, IPlatform } from "../../api/platform";
 import { useSelectedRowsAreDeleted } from "../../hooks/useSelectedRowsAreDeleted";
 import { getVendors } from "../../api/vendor";
-import { ExcelColumnType, generateExcel3 } from "../../api/util";
+import { downloadFileByBuffer, ExcelColumnType, generateExcel3 } from "../../api/util";
 
 const StockOuts: React.FC = () => {
 	const [fileUploadModalOpen, setFileUploadModalOpen] = useState(false);
@@ -379,8 +379,8 @@ const StockOuts: React.FC = () => {
 
 						const columns = [
 							{
-								label: "供应商名称",
-								name: "vendorId",
+								header: "供应商名称",
+								key: "vendorId",
 								type: "select" as ExcelColumnType,
 								options: vendors.list.map(v => ({
 									label: v.name,
@@ -388,17 +388,21 @@ const StockOuts: React.FC = () => {
 								})),
 							},
 							{
-								label: "产品名称",
-								name: "productId",
-								type: "cascade" as ExcelColumnType,
-								cascadeParentField: "vendorId",
-								products: products.list,
+								header: "产品名称",
+								key: "productId",
+								type: "select" as ExcelColumnType,
+								parentField: "vendorId",
+								options: products.list.map(item => ({
+									label: item.name,
+									value: String(item.id),
+									parentValue: String(item.vendorId),
+								})),
 							},
-							{ label: "数量", name: "count", type: "number" as ExcelColumnType },
-							{ label: "价格", name: "price", type: "number" as ExcelColumnType },
+							{ header: "数量", key: "count", type: "number" as ExcelColumnType },
+							{ header: "价格", key: "price", type: "number" as ExcelColumnType },
 							{
-								label: "客户",
-								name: "clientId",
+								header: "客户",
+								key: "clientId",
 								type: "select" as ExcelColumnType,
 								options: clients.list.map(client => ({
 									label: client.name,
@@ -406,18 +410,20 @@ const StockOuts: React.FC = () => {
 								})),
 							},
 							{
-								label: "平台",
-								name: "platformId",
+								header: "平台",
+								key: "platformId",
 								type: "select" as ExcelColumnType,
 								options: platforms.map(platform => ({
 									label: platform.name,
 									value: String(platform.id),
 								})),
 							},
-							{ label: "平台订单号", name: "platformOrderNo", type: "text" as ExcelColumnType },
-							{ label: "创建日期", name: "submittedAt", type: "date" as ExcelColumnType },
+							{ header: "平台订单号", key: "platformOrderNo", type: "text" as ExcelColumnType },
+							{ header: "创建日期", key: "submittedAt", type: "date" as ExcelColumnType },
 						];
-						await generateExcel3(columns);
+						const buffer = await generateExcel3(columns);
+						const filename = `出货单模板_${dayjs().format("YYYY-MM-DD")}.xlsx`;
+						downloadFileByBuffer(buffer, filename);
 						message.success("下载模板成功");
 					}}
 				>

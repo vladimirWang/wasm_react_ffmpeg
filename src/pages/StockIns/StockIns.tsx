@@ -36,7 +36,7 @@ import {
 } from "../../utils/common";
 import SearchBox from "../../components/SearchBox";
 import { useSelectedRowsAreDeleted } from "../../hooks/useSelectedRowsAreDeleted";
-import { ExcelColumnType, generateExcel3 } from "../../api/util";
+import { downloadFileByBuffer, ExcelColumnType, generateExcel3 } from "../../api/util";
 import { getVendors } from "../../api/vendor";
 
 const StockIns: React.FC = () => {
@@ -339,7 +339,9 @@ const StockIns: React.FC = () => {
 							{ header: "创建日期", key: "submittedAt", type: "date" as ExcelColumnType },
 						];
 						try {
-							await generateExcel3(columns);
+							const buffer = await generateExcel3(columns);
+							const filename = `进货单模板_${dayjs().format("YYYY-MM-DD")}.xlsx`;
+							downloadFileByBuffer(buffer, filename);
 							message.success("下载模板成功");
 						} catch (error) {
 							console.log("----generateExcel3 error----: ", error);

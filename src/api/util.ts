@@ -344,7 +344,7 @@ function generateIfFormula(
 	return formula;
 }
 
-export const generateExcel3 = async (columns: IExcelColumn[]) => {
+export const generateExcel3 = async (columns: IExcelColumn[]): Promise<ArrayBuffer> => {
 	try {
 		const wb = new Workbook();
 		const ws = wb.addWorksheet("数据");
@@ -462,9 +462,8 @@ export const generateExcel3 = async (columns: IExcelColumn[]) => {
 		});
 
 		const buffer = await wb.xlsx.writeBuffer();
-		const filename = `进货单模板_${dayjs().format("YYYY-MM-DD")}.xlsx`;
-		downloadFileByBuffer(buffer, filename);
-		return Promise.resolve();
+
+		return Promise.resolve(buffer);
 	} catch (error) {
 		return Promise.reject(error);
 	}
