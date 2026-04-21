@@ -302,6 +302,10 @@ const StockIns: React.FC = () => {
 									label: v.name,
 									value: String(v.id),
 								})),
+								// options: [
+								// 	{ label: "nike", value: "1" },
+								// 	{ label: "puma", value: "2" },
+								// ],
 							},
 							{
 								header: "产品名称",
@@ -313,6 +317,11 @@ const StockIns: React.FC = () => {
 									value: String(item.id),
 									parentValue: String(item.vendorId),
 								})),
+								// options: [
+								// 	{ label: "NIKE hat", value: "1", parentValue: "1" },
+								// 	{ label: "puma pant", value: "2", parentValue: "2" },
+								// 	{ label: "puma glove", value: "3", parentValue: "2" },
+								// ],
 								// type: "select" as ExcelColumnType,
 								// options: [
 								// 	{
@@ -467,6 +476,7 @@ const StockIns: React.FC = () => {
 				columns={batchOperationColumns}
 				requiredFields={["productId", "vendorId", "count", "cost", "submittedAt"]}
 				dateFields={["submittedAt"]}
+				selectFields={["vendorId", "productId"]}
 				ref={stockOperationUploadModalRef}
 				operationType="stockIn"
 				open={fileUploadModalOpen}
