@@ -362,6 +362,14 @@ export const generateExcel3 = async (columns: IExcelColumn[]) => {
 		ws.getRow(1).eachCell(cell => (cell.protection = { locked: true }));
 		ws.getRow(2).eachCell(cell => (cell.protection = { locked: true }));
 
+		// 3. 从第 3 行开始（以 0 开始计数行索引 >= 2），所有单元格都可编辑
+		// 注意：工作表 protect 后，未显式解锁的单元格会默认 locked=true
+		for (let row = DATA_FIRST_ROW; row <= DATA_LAST_ROW; row++) {
+			for (let col = 1; col <= columns.length; col++) {
+				ws.getCell(row, col).protection = { locked: false };
+			}
+		}
+
 		let hiddenListColIndex = 1; // 从A列开始写数据源
 		let colIndex = 1;
 		columns.forEach(col => {
@@ -419,7 +427,6 @@ export const generateExcel3 = async (columns: IExcelColumn[]) => {
 					for (let i = DATA_FIRST_ROW; i <= DATA_LAST_ROW; i++) {
 						// 每一行都必须引用当前行的父列，否则会出现“斜向关联/错位关联”
 						const ifFormula = generateIfFormula(parentColLetter, i, arr);
-						ws.getCell(`${colLetter}${i}`).protection = { locked: false };
 						ws.getCell(`${colLetter}${i}`).dataValidation = {
 							type: "list",
 							allowBlank: true,
@@ -434,7 +441,6 @@ export const generateExcel3 = async (columns: IExcelColumn[]) => {
 					hiddenListColIndex++;
 					// wb.definedNames.add(range, `${col.key}`)
 					for (let i = DATA_FIRST_ROW; i <= DATA_LAST_ROW; i++) {
-						ws.getCell(`${colLetter}${i}`).protection = { locked: false };
 						ws.getCell(`${colLetter}${i}`).dataValidation = {
 							type: "list",
 							allowBlank: true,
