@@ -416,9 +416,9 @@ export const generateExcel3 = async (columns: IExcelColumn[]) => {
 						hiddenListColIndex++;
 					}
 					console.log("arr", arr);
-					const ifFormula = generateIfFormula(parentColLetter, 2, arr);
-					// formulae: [`=IF(A${i}="nike",LISTS!$B$2:$B$2,IF(A${i}="puma",LISTS!$C$2:$C$2,""))`]
 					for (let i = DATA_FIRST_ROW; i <= DATA_LAST_ROW; i++) {
+						// 每一行都必须引用当前行的父列，否则会出现“斜向关联/错位关联”
+						const ifFormula = generateIfFormula(parentColLetter, i, arr);
 						ws.getCell(`${colLetter}${i}`).protection = { locked: false };
 						ws.getCell(`${colLetter}${i}`).dataValidation = {
 							type: "list",
