@@ -5,7 +5,6 @@ import { IResponse } from "./commonDef";
 import { ParamEmail } from "./user";
 import { message } from "antd";
 import dayjs from "dayjs";
-import { IVendor } from "./vendor";
 
 const prefix = "/util";
 
@@ -359,10 +358,15 @@ export const generateExcel3 = async (columns: IExcelColumn[]) => {
 		// ];
 		ws.getRow(1).font = { bold: true };
 
+		// 2. 锁定第一、二行（仅这两行不可修改）
+		ws.getRow(1).eachCell(cell => (cell.protection = { locked: true }));
+		ws.getRow(2).eachCell(cell => (cell.protection = { locked: true }));
+
 		let hiddenListColIndex = 1; // 从A列开始写数据源
 		let colIndex = 1;
 		columns.forEach(col => {
 			let colLetter = columnIndexToLetter(colIndex);
+			ws.getCell(`${colLetter}2`).value = col.key;
 			if (col.type === "select" && Array.isArray(col.options) && col.options.length > 0) {
 				const hiddenColLetter = columnIndexToLetter(hiddenListColIndex);
 				const options = col.options;
@@ -411,9 +415,11 @@ export const generateExcel3 = async (columns: IExcelColumn[]) => {
 						});
 						hiddenListColIndex++;
 					}
+					console.log("arr", arr);
 					const ifFormula = generateIfFormula(parentColLetter, 2, arr);
 					// formulae: [`=IF(A${i}="nike",LISTS!$B$2:$B$2,IF(A${i}="puma",LISTS!$C$2:$C$2,""))`]
-					for (let i = 2; i <= 10; i++) {
+					for (let i = DATA_FIRST_ROW; i <= DATA_LAST_ROW; i++) {
+						ws.getCell(`${colLetter}${i}`).protection = { locked: false };
 						ws.getCell(`${colLetter}${i}`).dataValidation = {
 							type: "list",
 							allowBlank: true,
@@ -427,7 +433,8 @@ export const generateExcel3 = async (columns: IExcelColumn[]) => {
 					setValidationDataSource(hiddenWs, hiddenColLetter, options);
 					hiddenListColIndex++;
 					// wb.definedNames.add(range, `${col.key}`)
-					for (let i = 2; i <= 10; i++) {
+					for (let i = DATA_FIRST_ROW; i <= DATA_LAST_ROW; i++) {
+						ws.getCell(`${colLetter}${i}`).protection = { locked: false };
 						ws.getCell(`${colLetter}${i}`).dataValidation = {
 							type: "list",
 							allowBlank: true,
@@ -440,6 +447,12 @@ export const generateExcel3 = async (columns: IExcelColumn[]) => {
 				}
 			}
 			colIndex++;
+		});
+
+		// 6. 启用工作表保护（锁定第一/二行生效）
+		ws.protect("", {
+			selectLockedCells: true,
+			selectUnlockedCells: true,
 		});
 
 		const buffer = await wb.xlsx.writeBuffer();

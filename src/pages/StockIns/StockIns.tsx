@@ -331,7 +331,7 @@ const StockIns: React.FC = () => {
 						];
 						try {
 							await generateExcel3(columns);
-							message.success("下载模板成功12300");
+							message.success("下载模板成功");
 						} catch (error) {
 							console.log("----generateExcel3 error----: ", error);
 							message.error((error as Error).message);
