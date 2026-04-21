@@ -551,6 +551,7 @@ const StockOuts: React.FC = () => {
 					"submittedAt",
 				]}
 				dateFields={["submittedAt"]}
+				selectFields={["vendorId", "productId", "clientId", "platformId"]}
 				ref={stockOperationUploadModalRef}
 				operationType="stockOut"
 				open={fileUploadModalOpen}
