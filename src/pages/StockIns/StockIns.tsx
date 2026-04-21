@@ -295,8 +295,8 @@ const StockIns: React.FC = () => {
 						const vendors = await getVendors({ pagination: 0 });
 						const columns = [
 							{
-								label: "供应商名称",
-								name: "vendorId",
+								header: "供应商名称",
+								key: "vendorId",
 								type: "select" as ExcelColumnType,
 								options: vendors.list.map(v => ({
 									label: v.name,
@@ -304,18 +304,38 @@ const StockIns: React.FC = () => {
 								})),
 							},
 							{
-								label: "产品名称",
-								name: "productId",
-								type: "cascade" as ExcelColumnType,
-								cascadeParentField: "vendorId",
-								products: products.list,
+								header: "产品名称",
+								key: "productId",
+								type: "select" as ExcelColumnType,
+								parentField: "vendorId",
+								options: products.list.map(item => ({
+									label: item.name,
+									value: String(item.id),
+									parentValue: String(item.vendorId),
+								})),
+								// type: "select" as ExcelColumnType,
+								// options: [
+								// 	{
+								// 		label: "产品名称",
+								// 		value: "productId",
+								// 	},
+								// 	{
+								// 		label: "产品名称2",
+								// 		value: "productId2",
+								// 	},
+								// ],
 							},
-							{ label: "数量", name: "count", type: "number" as ExcelColumnType },
-							{ label: "价格", name: "cost", type: "number" as ExcelColumnType },
-							{ label: "创建日期", name: "submittedAt", type: "date" as ExcelColumnType },
+							{ header: "数量", key: "count", type: "number" as ExcelColumnType },
+							{ header: "价格", key: "cost", type: "number" as ExcelColumnType },
+							{ header: "创建日期", key: "submittedAt", type: "date" as ExcelColumnType },
 						];
-						await generateExcel3(columns);
-						message.success("下载模板成功");
+						try {
+							await generateExcel3(columns);
+							message.success("下载模板成功12300");
+						} catch (error) {
+							console.log("----generateExcel3 error----: ", error);
+							message.error((error as Error).message);
+						}
 					}}
 				>
 					下载模板

@@ -5,6 +5,7 @@ import { IResponse } from "./commonDef";
 import { ParamEmail } from "./user";
 import { message } from "antd";
 import dayjs from "dayjs";
+import { IVendor } from "./vendor";
 
 const prefix = "/util";
 
@@ -129,22 +130,43 @@ const DATA_LAST_ROW = 1000;
 /** 级联 INDIRECT 失败或父格为空时的占位命名区域（Lists 上单格空值） */
 const EMPTY_PRODUCT_LIST_NAME = "EmptyProductList";
 
-export type ExcelColumnType = "text" | "number" | "date" | "select" | "cascade";
+export type ExcelColumnType = "text" | "number" | "date" | "select";
 
 /**
  * select：固定 options，对应 Lists 上一列；
  * cascade：依赖父列（须为 select，单元格为「名称-id」）；按 vendorId 在 Lists 上为每个父选项分列写入子项并注册 V_{id}，子列 INDIRECT 引用。
  */
-export interface IExcelColumn {
+
+export interface IOptionCascade {
 	label: string;
-	name: string;
-	type: ExcelColumnType;
-	options?: Array<{ label: string; value: string }>;
-	/** 父列字段名（与第 2 行 name 一致），仅 type 为 cascade 时使用，例如 vendorId */
-	cascadeParentField?: string;
-	/** 全量产品，在 generateExcel3 内按 vendorId 分组；仅 cascade 使用 */
-	products?: IProduct[];
+	value: string;
+	parentValue: string;
 }
+
+export interface IExcelBaseColumn {
+	header: string;
+	key: string;
+}
+
+export type IExcelColumn<T extends ExcelColumnType = ExcelColumnType> = IExcelBaseColumn & {
+	type: T;
+} & (T extends "select"
+		? // 当 type = select 时：必须有 options，且支持普通/联动两种场景
+				| {
+						// 普通 select：仅 options（IOption[]），无 parentField
+						options: IOption[];
+						parentField?: never;
+				  }
+				| {
+						// 联动 select：有 parentField + options 必须是 IOptionCascade[]（含 parentValue）
+						parentField: string;
+						options: IOptionCascade[];
+				  }
+		: // 非 select 时：禁止出现 options/parentField
+			{
+				options?: never;
+				parentField?: never;
+			});
 
 export interface IOption {
 	label: string;
@@ -299,133 +321,132 @@ export const generateExcel2 = async (
 	}
 };
 
+function setValidationDataSource(ws: Worksheet, colLetter: string, options: IOption[]) {
+	options.forEach((opt, idx) => {
+		ws.getCell(`${colLetter}${idx + 2}`).value = `${opt.label}-${opt.value}`; // 从第2行开始写选项
+	});
+}
+
+function generateIfFormula(
+	parentColLetter: string,
+	i: number,
+	options: Array<{ value: string; addr: string }>
+) {
+	let formula = "";
+	options.forEach((opt, idx) => {
+		if (idx === 0) {
+			formula += `IF(${parentColLetter}${i}="${opt.value}",${opt.addr}`;
+		} else {
+			formula += `,IF(${parentColLetter}${i}="${opt.value}",${opt.addr}`;
+		}
+	});
+	formula += ', "")' + ")";
+	//  .repeat(options.length);
+	return formula;
+}
+
 export const generateExcel3 = async (columns: IExcelColumn[]) => {
 	try {
 		const wb = new Workbook();
-		const ws = wb.addWorksheet("Sheet1");
-		const listsWs = wb.addWorksheet(LISTS_SHEET, { state: "hidden" });
+		const ws = wb.addWorksheet("数据");
+		const hiddenWs = wb.addWorksheet("LISTS", { state: "hidden" });
+		console.log("columns", columns);
+		// 表头
+		ws.columns = columns.map(col => ({ header: col.header, key: col.key, width: 20 }));
+		// ws.columns = [
+		//   { header: '品牌', key: 'brand', width: 20 },
+		//   { header: '产品', key: 'product', width: 20 }
+		// ];
+		ws.getRow(1).font = { bold: true };
 
-		const dataValidations = (
-			ws as typeof ws & {
-				dataValidations: { add: (addr: string, v: DataValidation) => void };
-			}
-		).dataValidations;
+		let hiddenListColIndex = 1; // 从A列开始写数据源
+		let colIndex = 1;
+		columns.forEach(col => {
+			let colLetter = columnIndexToLetter(colIndex);
+			if (col.type === "select" && Array.isArray(col.options) && col.options.length > 0) {
+				const hiddenColLetter = columnIndexToLetter(hiddenListColIndex);
+				const options = col.options;
+				// 如果是下拉类型，且有选项，则写入数据源
+				if (col.parentField) {
+					const parentColIndex = columns.findIndex(c => c.key === col.parentField);
+					if (parentColIndex === -1) {
+						return;
+					}
+					const parentOptions = columns[parentColIndex].options;
+					if (!parentOptions || parentOptions.length === 0) {
+						return;
+					}
 
-		columns.forEach((column, index) => {
-			const colL = columnIndexToLetter(index + 1);
-			ws.getCell(`${colL}1`).value = column.label;
-			ws.getCell(`${colL}2`).value = column.name;
-		});
-
-		let listColIndex = 1;
-
-		columns.forEach((column, index) => {
-			if (column.type !== "select" || !column.options?.length) return;
-			const colL = columnIndexToLetter(index + 1);
-			setDataValidations(
-				listsWs,
-				ws,
-				column.options,
-				[
-					{ x: colL as Alpha, y: DATA_FIRST_ROW },
-					{ x: colL as Alpha, y: DATA_LAST_ROW },
-				],
-				listColIndex
-			);
-			listColIndex += 1;
-		});
-
-		const cascadeDvConfigs: { productColLetter: string; vendorLetter: string }[] = [];
-
-		columns.forEach((column, index) => {
-			if (column.type !== "cascade") return;
-			if (!column.cascadeParentField || !column.products?.length) {
-				throw new Error(`级联列「${column.label}」需要 cascadeParentField 与 products`);
-			}
-			const parentIdx = columns.findIndex(c => c.name === column.cascadeParentField);
-			if (parentIdx < 0) {
-				throw new Error(`未找到级联父列字段：${column.cascadeParentField}`);
-			}
-			const parentCol = columns[parentIdx];
-			if (parentCol.type !== "select" || !parentCol.options?.length) {
-				throw new Error(`级联父列「${parentCol.label}」须为带 options 的 select`);
-			}
-
-			const byVendor = new Map<number, IProduct[]>();
-			for (const p of column.products) {
-				if (!byVendor.has(p.vendorId)) byVendor.set(p.vendorId, []);
-				byVendor.get(p.vendorId)!.push(p);
-			}
-
-			const vendorLetter = columnIndexToLetter(parentIdx + 1);
-			const productColLetter = columnIndexToLetter(index + 1);
-
-			for (const vo of parentCol.options) {
-				const vid = Number(vo.value);
-				if (Number.isNaN(vid)) continue;
-				const plist = byVendor.get(vid) ?? [];
-				const colL = columnIndexToLetter(listColIndex);
-				const rowCount = Math.max(1, plist.length);
-				if (plist.length === 0) {
-					listsWs.getCell(1, listColIndex).value = "";
-				} else {
-					plist.forEach((p, i) => {
-						listsWs.getCell(i + 1, listColIndex).value = `${p.name}-${p.id}`;
+					const parentColLetter = columnIndexToLetter(parentColIndex + 1);
+					console.log("parentColLetter", parentColLetter);
+					// 处理联动关系，先写入所有选项到隐藏表，再通过 IF 公式实现联动
+					const map: Record<
+						string,
+						{ label: string; children: Array<IOption & { parentLabel: string }> }
+					> = {};
+					(options as IOptionCascade[]).forEach((opt, idx) => {
+						if (!map[opt.parentValue]) {
+							map[opt.parentValue] = { label: "", children: [] };
+						}
+						const parentInfo = parentOptions.find(po => po.value === opt.parentValue);
+						if (parentInfo) {
+							const parent = map[opt.parentValue];
+							parent.label = parentInfo.label;
+							parent.children.push({
+								value: opt.value,
+								label: opt.label,
+								parentLabel: parentInfo.label,
+							});
+						}
 					});
+					const arr = [];
+					for (const parentId in map) {
+						const parent = map[parentId];
+						const opts = parent.children;
+						const hiddenColLetter = columnIndexToLetter(hiddenListColIndex);
+						setValidationDataSource(hiddenWs, hiddenColLetter, opts);
+						arr.push({
+							value: `${parent.label}-${parentId}`,
+							addr: `LISTS!$${hiddenColLetter}$2:$${hiddenColLetter}$${opts.length + 1}`,
+						});
+						hiddenListColIndex++;
+					}
+					const ifFormula = generateIfFormula(parentColLetter, 2, arr);
+					// formulae: [`=IF(A${i}="nike",LISTS!$B$2:$B$2,IF(A${i}="puma",LISTS!$C$2:$C$2,""))`]
+					for (let i = 2; i <= 10; i++) {
+						ws.getCell(`${colLetter}${i}`).dataValidation = {
+							type: "list",
+							allowBlank: true,
+							// formulae: [`=IF(${parentColLetter}${i}="nike",LISTS!$B$2:$B$2,IF(${parentColLetter}${i}="puma",LISTS!$C$2:$C$2,""))`],
+							formulae: ["=" + ifFormula],
+							// showDropDown: true,
+						};
+					}
+				} else {
+					const range = `LISTS!$${hiddenColLetter}$2:$${hiddenColLetter}$${options.length + 2}`;
+					setValidationDataSource(hiddenWs, hiddenColLetter, options);
+					hiddenListColIndex++;
+					// wb.definedNames.add(range, `${col.key}`)
+					for (let i = 2; i <= 10; i++) {
+						ws.getCell(`${colLetter}${i}`).dataValidation = {
+							type: "list",
+							allowBlank: true,
+							// formulae: ['LISTS!$A$2:$A$3'], // 直接写死，绝对生效
+							formulae: [range],
+							// formulae: [wb.definedNames.getNames(col.key)],
+							// showDropDown: true,
+						};
+					}
 				}
-				const rangeAddr = `'${LISTS_SHEET}'!$${colL}$1:$${colL}$${rowCount}`;
-				wb.definedNames.add(rangeAddr, `V_${vid}`);
-				listColIndex += 1;
 			}
-
-			cascadeDvConfigs.push({ productColLetter, vendorLetter });
+			colIndex++;
 		});
-
-		if (cascadeDvConfigs.length > 0) {
-			const emptyColL = columnIndexToLetter(listColIndex);
-			listsWs.getCell(1, listColIndex).value = "";
-			wb.definedNames.add(`'${LISTS_SHEET}'!$${emptyColL}$1`, EMPTY_PRODUCT_LIST_NAME);
-
-			const dvCommon = {
-				type: "list" as const,
-				showErrorMessage: true,
-				errorStyle: "error" as const,
-				errorTitle: "输入错误",
-				error: "请先选择供应商，再在产品列下拉中选择",
-			};
-
-			for (const { productColLetter, vendorLetter } of cascadeDvConfigs) {
-				const vendorCellRef = `INDIRECT("${vendorLetter}"&ROW())`;
-				const vendorIdFromCell = `IFERROR(VALUE(TRIM(RIGHT(SUBSTITUTE(${vendorCellRef},"-",REPT(" ",LEN(${vendorCellRef}))),LEN(${vendorCellRef})))),0)`;
-				const productListFormula = `=IFERROR(INDIRECT("V_"&${vendorIdFromCell}),INDIRECT("${EMPTY_PRODUCT_LIST_NAME}"))`;
-				dataValidations.add(`${productColLetter}${DATA_FIRST_ROW}:${productColLetter}${DATA_LAST_ROW}`, {
-					...dvCommon,
-					allowBlank: true,
-					formulae: [productListFormula],
-				});
-			}
-		}
 
 		const buffer = await wb.xlsx.writeBuffer();
 		const filename = `进货单模板_${dayjs().format("YYYY-MM-DD")}.xlsx`;
 		downloadFileByBuffer(buffer, filename);
 		return Promise.resolve();
 	} catch (error) {
-		return Promise.reject(error);
-	}
-};
-export const generateExcel4 = async (columns: Array<IExcelColumn>) => {
-	try {
-		const wb = new Workbook();
-		const ws = wb.addWorksheet("Sheet1");
-		const listsWs = wb.addWorksheet(LISTS_SHEET, { state: "hidden" });
-
-		// const buffer = await wb.xlsx.writeBuffer();
-		// const filename = `进货单模板_${dayjs().format("YYYY-MM-DD")}.xlsx`;
-		// downloadFileByBuffer(buffer, filename);
-		return Promise.resolve();
-	} catch (error) {
-		// message.error((error as Error).message);
 		return Promise.reject(error);
 	}
 };
