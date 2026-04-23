@@ -120,3 +120,13 @@ export const checkProductNameExistedInVendor = (
 		params,
 	});
 };
+
+interface ProductAmountQuery{
+	amount: number;
+	moreThan: boolean;
+	desc?: boolean;
+}
+
+export const getProductsByAmount = async(params: ProductAmountQuery) => {
+	return nodejsRequest.get<IProductsQueryResponse>("/product/getProductsByAmount", { params });
+}

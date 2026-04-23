@@ -4,7 +4,7 @@ import type { RcFile } from "antd/es/upload";
 import { IVendorUpdateParams } from "../../api/vendor";
 import { useEffect, useMemo, useState } from "react";
 import { IProductJoinStockOut, IStockOut, IStockOutCreateParams } from "../../api/stockOut";
-import { getProductDetailById, getProducts, IProduct } from "../../api/product";
+import { getProductDetailById, getProducts, IProduct, getProductsByAmount } from "../../api/product";
 import { PageOperation } from "../../enum";
 import { PositiveInputNumber } from "../../components/PositiveInputNumber";
 import StockOperationTable from "../../components/StockOperationTable";
@@ -104,7 +104,8 @@ export default function StockOutForm(props: StockInFormProps) {
 
 	const loadProducts = async () => {
 		try {
-			const res = await getProducts();
+			const res = await getProductsByAmount({ amount: 0, moreThan: true });
+			// const res = await getProducts();
 			setAllProducts(res.list);
 		} catch (e) {
 			message.error((e as Error).message);

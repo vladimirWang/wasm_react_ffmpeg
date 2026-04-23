@@ -7,7 +7,7 @@ import {
 	SearchOutlined,
 } from "@ant-design/icons";
 import type { TableProps } from "antd";
-import { getProducts, IProductQueryParams } from "../../api/product";
+import { getProducts, IProductQueryParams, getProductsByAmount } from "../../api/product";
 import {
 	getStockOuts,
 	IStockOut,
@@ -356,7 +356,7 @@ const StockOuts: React.FC = () => {
 		// }
 	};
 
-	const [keyword, setKeyword] = useState<string>(queryParams.productName || "");
+	// const [keyword, setKeyword] = useState<string>(queryParams.productName || "");
 	const [page, setPage] = useState(queryParams.page);
 
 	const toolBar = (
@@ -372,7 +372,8 @@ const StockOuts: React.FC = () => {
 				</Button>
 				<Button
 					onClick={async () => {
-						const products = await getProducts({ pagination: 0 });
+						const products = await getProductsByAmount({ amount: 0, moreThan: true });
+						// const products = await getProducts();
 						const vendors = await getVendors({ pagination: 0 });
 						const clients = await getClients({ pagination: 0 });
 						const platforms = await getPlatforms();
