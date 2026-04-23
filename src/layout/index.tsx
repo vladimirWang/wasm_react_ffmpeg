@@ -33,7 +33,7 @@ const LayoutComponent: React.FC = () => {
 			<SideBar />
 			<Layout>
 				<Header style={{ background: colorBgContainer }} className="flex justify-end gap-3">
-					<CalendarTwoTone twoToneColor="#ec6765" className="text-2xl" onClick={() => {}} />
+					{/* <CalendarTwoTone twoToneColor="#ec6765" className="text-2xl" onClick={() => {}} /> */}
 					<Drop />
 				</Header>
 				<Content style={{ margin: "0 16px" }}>
