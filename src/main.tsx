@@ -7,6 +7,17 @@ import { ErrorBoundary } from "./components/ErrorBoundary.tsx";
 import dayjs from "dayjs";
 import utc from "dayjs/plugin/utc";
 import timezone from "dayjs/plugin/timezone";
+import { ConfigProvider, App as AntdApp } from "antd";
+
+// 主题色与 src/index.css 中 Tailwind @theme 定义保持一致
+const antdTheme = {
+	cssVar: { key: "app-theme" },
+	token: {
+		colorPrimary: "#2196F3",
+		colorLink: "#2196F3",
+		colorInfo: "#2196F3",
+	},
+};
 
 // 注册插件
 dayjs.extend(utc);
@@ -24,9 +35,13 @@ if (import.meta.env.MODE === "test" || import.meta.env.VITE_APP_ENV === "test") 
 // console.log('isconnected: ', mock, result);
 ReactDOM.createRoot(document.getElementById("root")!).render(
 	<ErrorBoundary>
-		<>
-			<App />
-			<ModalComponent />
-		</>
+		<ConfigProvider theme={antdTheme}>
+			<AntdApp>
+				<>
+					<App />
+					<ModalComponent />
+				</>
+			</AntdApp>
+		</ConfigProvider>
 	</ErrorBoundary>
 );

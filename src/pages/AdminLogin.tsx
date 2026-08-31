@@ -11,8 +11,8 @@ import { getNonce } from "../api/util";
 import { LoginParams } from "../api/user";
 
 const loginFormInitialValues = {
-	email: "fernandowang584@gmail.com",
-	password: "123456",
+	// email: "fernandowang584@gmail.com",
+	// password: "fernandotest",
 	remember: true,
 };
 
