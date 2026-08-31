@@ -403,15 +403,15 @@ export const routeConfig: ExtendedRouteObject[] = [
 					title: "出货记录详情",
 				},
 			},
-			{
-				path: "openai",
-				Component: OpenAIChatDemo,
-				meta: {
-					title: "AI Demo",
-					icon: <FileOutlined />,
-					order: 99,
-				},
-			},
+			// {
+			// 	path: "openai",
+			// 	Component: OpenAIChatDemo,
+			// 	meta: {
+			// 		title: "AI Demo",
+			// 		icon: <FileOutlined />,
+			// 		order: 99,
+			// 	},
+			// },
 			{
 				path: "clients",
 				Component: Clients,
