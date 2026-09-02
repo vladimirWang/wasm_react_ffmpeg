@@ -128,12 +128,14 @@ const fetchCurrentUser = async (): Promise<IUser | null> => {
 		userPromise = getCurrentUser()
 			.then(res => {
 				const raw = res as IUser & { userId?: number };
+				console.log("user data: ", raw);
 				const user: IUser = {
 					id: String(raw.userId ?? raw.id ?? ""),
 					email: raw.email,
 					username: raw.username,
 					createdAt: raw.createdAt ?? "",
 					role: raw.role,
+					tenantId: raw.tenantId,
 				};
 				saveCachedUser(user);
 				// 更新 zustand store

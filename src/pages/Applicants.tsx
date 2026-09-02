@@ -53,6 +53,13 @@ const Products: React.FC = () => {
 			width: 100,
 		},
 		{
+			title: "租户名称",
+			dataIndex: "tenantName",
+			key: "tenantName",
+			width: 120,
+			render: (tenantName: string | null | undefined) => tenantName || "-",
+		},
+		{
 			title: "状态",
 			key: "status",
 			dataIndex: "status",
@@ -71,7 +78,7 @@ const Products: React.FC = () => {
 			dataIndex: "action",
 			render: (_, record) => (
 				<Space size="middle">
-					{true && (
+					{record.status === "PENDING" && (
 						<>
 							<Button
 								loading={approveLoadingMap[record.id]}
@@ -82,7 +89,6 @@ const Products: React.FC = () => {
 										setApproveLoadingMap(prev => ({ ...prev, [record.id]: true }));
 										await approveApplication({ id: record.id });
 										mutate();
-										message.success("激活链接发送到对应邮箱");
 									} finally {
 										setApproveLoadingMap(prev => ({ ...prev, [record.id]: false }));
 									}

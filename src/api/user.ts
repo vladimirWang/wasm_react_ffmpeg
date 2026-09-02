@@ -7,6 +7,8 @@ export type IUser = {
 	username?: string;
 	createdAt: string;
 	role: "merchant" | "admin";
+	/** 商户用户的租户 ID；admin 跨租户为 undefined */
+	tenantId?: number;
 };
 // 定义注册响应类型
 export type RegisterResponse = IResponse<IUser>;
