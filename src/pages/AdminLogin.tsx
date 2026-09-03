@@ -127,7 +127,7 @@ const AdminLogin: React.FC = () => {
 					</Flex>
 				</Form.Item>
 				<Form.Item>
-					<Button block type="primary" htmlType="submit" loading={loading}>
+					<Button block htmlType="submit" loading={loading}>
 						登录
 					</Button>
 

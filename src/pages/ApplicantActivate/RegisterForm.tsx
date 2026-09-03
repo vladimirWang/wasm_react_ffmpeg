@@ -1,7 +1,12 @@
 import React, { useState } from "react";
 import { Button, Checkbox, Form, FormItemProps, Input } from "antd";
 import { Link, useNavigate } from "react-router-dom";
-import { RegisterParams, RegisterResponse, userRegister, userRegisterByToken } from "../../api/user";
+import {
+	RegisterParams,
+	RegisterResponse,
+	userRegister,
+	userRegisterByToken,
+} from "../../api/user";
 import { sleep } from "../../utils/common";
 import { formItemLayout } from "../Register/Register";
 import { passwordRegex } from "../../regexp";
@@ -14,9 +19,9 @@ const registerFormInitialValues = {
 	// password: "123456",
 	// confirm: "123456",
 	// agreement: true,
-	username: "mike",
-	password: "123456",
-	confirm: "123456",
+	// username: "mike",
+	// password: "123456",
+	// confirm: "123456",
 	agreement: true,
 };
 

@@ -4,7 +4,12 @@ import type { RcFile } from "antd/es/upload";
 import { IVendorUpdateParams } from "../../api/vendor";
 import { useEffect, useMemo, useState } from "react";
 import { IProductJoinStockOut, IStockOut, IStockOutCreateParams } from "../../api/stockOut";
-import { getProductDetailById, getProducts, IProduct, getProductsByAmount } from "../../api/product";
+import {
+	getProductDetailById,
+	getProducts,
+	IProduct,
+	getProductsByAmount,
+} from "../../api/product";
 import { PageOperation } from "../../enum";
 import { PositiveInputNumber } from "../../components/PositiveInputNumber";
 import StockOperationTable from "../../components/StockOperationTable";
@@ -106,6 +111,8 @@ export default function StockOutForm(props: StockInFormProps) {
 		try {
 			const res = await getProductsByAmount({ amount: 0, moreThan: true });
 			// const res = await getProducts();
+			console.log("[DEBUG] getProductsByAmount res:", res);
+			console.log("[DEBUG] res.list[0]?.vendor:", res.list?.[0]?.vendor);
 			setAllProducts(res.list);
 		} catch (e) {
 			message.error((e as Error).message);
@@ -190,6 +197,7 @@ export default function StockOutForm(props: StockInFormProps) {
 						platformOrderNo: platformId === 1 ? undefined : platformOrderNo,
 					});
 				} catch (e: unknown) {
+					message.error("创建出货异常: " + (e as Error).message);
 				} finally {
 					setLoading(false);
 				}

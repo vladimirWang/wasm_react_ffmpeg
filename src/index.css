@@ -2,7 +2,11 @@
 @import "tailwindcss";
 
 @theme {
-  --color-primary: #2196F3;
-  --color-primary-hover: #4096FF;
-  --color-primary-active: #0958D9;
+  /* 对齐 StockFlow 落地页橙色风（hsl(24, 100%, 50%) ≈ #FF7A00） */
+  --color-primary: #FF7A00;
+  --color-primary-hover: #E66F00;
+  --color-primary-active: #CC6200;
+  /* 圆角与落地页统一 */
+  --radius-lg: 0.75rem;
+  --radius-md: 0.5rem;
 }

@@ -1,11 +1,11 @@
-/* 后管系统风格 - 简洁淡主题色背景 */
+/* 后管系统风格 - 简洁淡主题色背景（已对齐 StockFlow 橙色风） */
 .landing-bg {
   position: relative;
   min-height: 100vh;
   width: 100%;
   overflow: hidden;
-  /* 以主题色 #2196F3 为基调的淡蓝渐变 */
-  background: linear-gradient(135deg, #e8f1fb 0%, #f4f7fb 50%, #eef3f9 100%);
+  /* 以主题色 #FF7A00 为基调的淡橙渐变 */
+  background: linear-gradient(135deg, #FFF3E6 0%, #FFF8F0 50%, #FFFAF5 100%);
 }
 
 .landing-content {

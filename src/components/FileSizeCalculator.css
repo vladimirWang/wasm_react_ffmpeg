@@ -59,8 +59,8 @@
 .loading-message {
   margin-top: 15px;
   padding: 12px;
-  background-color: #e3f2fd;
-  color: #2196F3;
+  background-color: #FFF3E6;
+  color: var(--color-primary, #FF7A00);
   border-radius: 6px;
   font-size: 14px;
   text-align: center;

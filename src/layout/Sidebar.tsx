@@ -4,6 +4,7 @@ import { useLocation, useNavigate } from "react-router-dom";
 import { adminRouteConfig, routeConfig } from "../routes";
 import { useUserStore } from "../store/userStore";
 import { generateMenuItems } from "../utils/routeMenu";
+import { ClusterOutlined } from "@ant-design/icons";
 
 const { Sider } = Layout;
 
@@ -63,20 +64,25 @@ export default function Sidebar() {
 
 	return (
 		<Sider collapsible collapsed={collapsed} onCollapse={value => setCollapsed(value)}>
+			{/* Logo 区：对齐落地页 StockFlow 品牌 */}
 			<div
-				className="h-12 flex items-center justify-center text-white/80 text-sm font-medium border-b border-white/10 select-none"
-				title={tenantId ? `租户ID: ${tenantId}` : undefined}
+				className="h-16 flex items-center gap-2 px-4 border-b border-gray-100 select-none"
+				title={tenantId ? `租户 ID: ${tenantId}` : undefined}
 			>
-				{collapsed
-					? tenantId
-						? `#${tenantId}`
-						: ""
-					: tenantId
-						? `租户 ID: ${tenantId}`
-						: "管理后台"}
+				<span className="flex h-8 w-8 items-center justify-center rounded-lg bg-[#FF7A00] text-white flex-shrink-0">
+					<ClusterOutlined />
+				</span>
+				{!collapsed && (
+					<div className="flex flex-col leading-tight">
+						<span className="text-base font-bold text-gray-900">StockFlow</span>
+						<span className="text-[11px] text-gray-400">
+							{tenantId ? `#${tenantId}` : "WMS 管理后台"}
+						</span>
+					</div>
+				)}
 			</div>
 			<Menu
-				theme="dark"
+				theme="light"
 				selectedKeys={selectedKeys}
 				mode="inline"
 				items={menuItems}

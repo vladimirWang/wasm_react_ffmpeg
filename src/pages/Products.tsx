@@ -149,11 +149,11 @@ const Products: React.FC = () => {
 		}
 	);
 
-	const location = useLocation();
-	useEffect(() => {
-		// 每次进入该路由都强制重新校验一次数据，避免命中 dedupe/缓存导致不刷新
-		mutate();
-	}, [location.key, mutate]);
+	// const location = useLocation();
+	// useEffect(() => {
+	// 	// 每次进入该路由都强制重新校验一次数据，避免命中 dedupe/缓存导致不刷新
+	// 	mutate();
+	// }, [location.key, mutate]);
 
 	const [keyword, setKeyword] = useState<string>(queryParams.productName || "");
 	const [page, setPage] = useState(queryParams.page);

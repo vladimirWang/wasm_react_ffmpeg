@@ -149,9 +149,9 @@ const Login: React.FC = () => {
 						<Link to="/forget-password">忘记密码</Link>
 						<Link to="/landing/register">去注册</Link>
 					</Flex>
-					<Flex justify="flex-start" className="mt-2 text-[13px]">
+					{/* <Flex justify="flex-start" className="mt-2 text-[13px]">
 						<Link to="/admin/login">去后管平台</Link>
-					</Flex>
+					</Flex> */}
 				</Form>
 			</div>
 		</div>
