@@ -34,10 +34,9 @@ const AdminLogin: React.FC = () => {
 			setLoading(true);
 			const nonce = await getNonce();
 			const salt = await loadUserSalt(values.email);
-			console.log("salt: ", salt);
 			if (!salt) {
 				setLoading(false);
-				message.error("请确认邮箱是否正确，或重新输入邮箱");
+				message.error("邮箱未注册，请确认后重试");
 				return;
 			}
 			values.captchaId = captchaId;
@@ -69,12 +68,16 @@ const AdminLogin: React.FC = () => {
 	const loadUserSalt = async (email: string) => {
 		if (!email) {
 			message.error("请输入邮箱");
-			return;
+			return undefined;
 		}
-		const salt = await adminGetUserSaltByEmail(email);
-		console.log("salt: ", salt);
-		// setSalt(salt);
-		return salt;
+		try {
+			// 禁用拦截器自动弹错，由 onFinish 的 if (!salt) 分支统一处理
+			const salt = await adminGetUserSaltByEmail(email, { showErrorMessage: false });
+			return salt;
+		} catch {
+			// 邮箱不存在或其他接口错误，都返回 undefined
+			return undefined;
+		}
 	};
 
 	return (

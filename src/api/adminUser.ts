@@ -24,8 +24,11 @@ export const adminCheckEmailNotExisted = (email: string): Promise<boolean> => {
 	return nodejsRequest.get<boolean>(`${prefix}/checkEmailNotExisted/${email}`);
 };
 
-export const adminGetUserSaltByEmail = (email: string): Promise<string> => {
-	return nodejsRequest.get<string>(`${prefix}/getSalt/${email}`);
+export const adminGetUserSaltByEmail = (
+	email: string,
+	config?: { showErrorMessage?: boolean }
+): Promise<string> => {
+	return nodejsRequest.get<string>(`${prefix}/getSalt/${email}`, config);
 };
 
 // 重置密码
