@@ -9,6 +9,8 @@ export type IUser = {
 	role: "merchant" | "admin";
 	/** 商户用户的租户 ID；admin 跨租户为 undefined */
 	tenantId?: number;
+	/** 是否为租户超级管理员（Tenant.superUserId 指向该用户） */
+	isSuperUser?: boolean;
 };
 // 定义注册响应类型
 export type RegisterResponse = IResponse<IUser>;
@@ -120,10 +122,9 @@ interface RegisterByTokenParams {
 	token: string;
 	password: string;
 	username: string;
-	tenantOption: TenantOption;
-	/** 自建租户时传租户名称 */
+	/** 新流程：申请时已确定租户，激活时不需要传 */
+	tenantOption?: TenantOption;
 	tenantName?: string;
-	/** 加入已有租户时传租户编码 */
 	tenantCode?: string;
 }
 

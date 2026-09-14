@@ -6,6 +6,7 @@ import {
 	TeamOutlined,
 	FileOutlined,
 	UserOutlined,
+	BarChartOutlined,
 } from "@ant-design/icons";
 import RouteErrorPage from "../pages/RouteErrorPage";
 
@@ -136,6 +137,7 @@ const fetchCurrentUser = async (): Promise<IUser | null> => {
 					createdAt: raw.createdAt ?? "",
 					role: raw.role,
 					tenantId: raw.tenantId,
+					isSuperUser: raw.isSuperUser,
 				};
 				saveCachedUser(user);
 				// 更新 zustand store
@@ -229,6 +231,7 @@ export interface RouteMeta {
 	hidden?: boolean; // 是否在菜单中隐藏
 	order?: number; // 菜单排序
 	auth?: boolean | "free"; // 是否需要登录，false 或 'free' 表示无需登录
+	superUserOnly?: boolean; // 仅租户超级管理员可见
 }
 
 export interface ExtendedRouteObject extends Omit<RouteObject, "children"> {
@@ -443,6 +446,16 @@ export const routeConfig: ExtendedRouteObject[] = [
 					title: "客户编辑",
 				},
 			},
+			{
+				path: "applicants",
+				Component: Applicants,
+				meta: {
+					icon: <UserOutlined />,
+					title: "申请人",
+					order: 6,
+					superUserOnly: true,
+				},
+			},
 		],
 	},
 	{
@@ -558,6 +571,7 @@ export const adminRouteConfig: ExtendedRouteObject[] = [
 				meta: {
 					icon: <UserOutlined />,
 					title: "申请人",
+					order: 1,
 				},
 			},
 		],

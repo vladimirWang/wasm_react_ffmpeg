@@ -14,12 +14,13 @@ export default function Sidebar() {
 	const location = useLocation();
 	const role = useUserStore(s => s.user?.role);
 	const tenantId = useUserStore(s => s.user?.tenantId);
+	const isSuperUser = useUserStore(s => s.user?.isSuperUser);
 	const isAdmin = role === "admin";
 
 	// 从路由配置生成菜单项
 	const menuItems = useMemo(() => {
-		return generateMenuItems(isAdmin ? adminRouteConfig : routeConfig);
-	}, [isAdmin]);
+		return generateMenuItems(isAdmin ? adminRouteConfig : routeConfig, "", isSuperUser);
+	}, [isAdmin, isSuperUser]);
 
 	// 处理菜单点击
 	const handleMenuClick = ({ key }: { key: string }) => {

@@ -7,17 +7,24 @@ type MenuItem = NonNullable<NonNullable<Required<MenuProps>["items"]>[number]>;
  * 从路由配置中提取菜单项
  * @param routes 路由配置数组
  * @param parentPath 父路径，用于构建完整路径
+ * @param isSuperUser 当前用户是否为租户超级管理员
  * @returns 菜单项数组
  */
 export function generateMenuItems(
   routes: ExtendedRouteObject[],
-  parentPath: string = ""
+  parentPath: string = "",
+  isSuperUser: boolean = false,
 ): MenuItem[] {
   const menuItems: MenuItem[] = [];
 
   routes.forEach((route) => {
     // 跳过隐藏的路由
     if (route.meta?.hidden) {
+      return;
+    }
+
+    // 跳过仅超级管理员可见但当前用户不是超级管理员的路由
+    if (route.meta?.superUserOnly && !isSuperUser) {
       return;
     }
 
@@ -39,8 +46,8 @@ export function generateMenuItems(
 
     // 如果有子路由，递归处理
     if (route.children && route.children.length > 0) {
-      const childrenMenuItems = generateMenuItems(route.children, fullPath);
-      
+      const childrenMenuItems = generateMenuItems(route.children, fullPath, isSuperUser);
+
       // 如果当前路由有 meta 信息，创建父菜单项
       if (route.meta?.title) {
         menuItems.push({
