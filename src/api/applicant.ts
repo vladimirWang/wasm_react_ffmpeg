@@ -33,6 +33,11 @@ export const approveApplication = (data: { id: number }): Promise<void> => {
 	return nodejsRequest.post<void>(`${prefix}/approve`, data);
 };
 
+// 重新发送激活链接（旧链接立即失效）
+export const resendActivationLink = (data: { id: number }): Promise<void> => {
+	return nodejsRequest.post<void>(`${prefix}/resend`, data, { showSuccessMessage: true });
+};
+
 export const checkApplicantExisted = (email: string): Promise<boolean> => {
 	return nodejsRequest.get<boolean>(`${prefix}/checkApplicantExisted/${email}`);
 };

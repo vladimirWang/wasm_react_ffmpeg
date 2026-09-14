@@ -21,7 +21,7 @@ import mockBarcode from "../assets/barcode.jpg";
 import { GlobalModal } from "../components/GlobalModal";
 import dayjs from "dayjs";
 import { paramsToSearchParams } from "../utils/common";
-import { approveApplication, getApplicants, IApplicant } from "../api/applicant";
+import { approveApplication, getApplicants, IApplicant, resendActivationLink } from "../api/applicant";
 import { IPagination } from "../api/commonDef";
 
 const Products: React.FC = () => {
@@ -39,6 +39,7 @@ const Products: React.FC = () => {
 		setIsModalOpen(false);
 	};
 	const [approveLoadingMap, setApproveLoadingMap] = useState<Record<number, boolean>>({});
+	const [resendLoadingMap, setResendLoadingMap] = useState<Record<number, boolean>>({});
 	const columns: TableProps<IApplicant>["columns"] = [
 		{
 			title: "id",
@@ -100,6 +101,23 @@ const Products: React.FC = () => {
 								审核驳回
 							</Button> */}
 						</>
+					)}
+					{record.status === "APPROVED" && (
+						<Button
+							loading={resendLoadingMap[record.id]}
+							size="small"
+							onClick={async () => {
+								try {
+									setResendLoadingMap(prev => ({ ...prev, [record.id]: true }));
+									await resendActivationLink({ id: record.id });
+									mutate();
+								} finally {
+									setResendLoadingMap(prev => ({ ...prev, [record.id]: false }));
+								}
+							}}
+						>
+							重新发送邀请链接
+						</Button>
 					)}
 
 					<Link to={`/product/${record.id}`}>查看</Link>
