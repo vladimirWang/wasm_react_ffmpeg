@@ -17,9 +17,7 @@ interface IUploadFileResponse {
 	hash: string;
 }
 export const uploadFile = async (formData: FormData): Promise<IUploadFileResponse> => {
-	// return goRequest.post<IUploadFileResponse>("/user/upload", formData);
-	console.log("---uploadFile---: ", formData);
-	return nodejsRequest.post<IUploadFileResponse>("/user/upload", formData);
+	return nodejsRequest.post<IUploadFileResponse>("/file/upload", formData);
 };
 
 interface IFileExisted {
@@ -32,10 +30,7 @@ export const checkFileExistedByHash = (
 	hash: string,
 	config?: { showSuccessMessage?: boolean }
 ): Promise<IFileExisted> => {
-	// return goRequest.get<IFileExisted>("/user/checkFileExisted/" + hash, {
-	// 	showSuccessMessage: config?.showSuccessMessage,
-	// });
-	return nodejsRequest.get<IFileExisted>("/user/checkFileExisted/" + hash, {
+	return nodejsRequest.get<IFileExisted>("/file/checkFileExisted/" + hash, {
 		showSuccessMessage: config?.showSuccessMessage,
 	});
 };

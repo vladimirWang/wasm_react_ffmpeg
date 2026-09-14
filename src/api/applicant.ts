@@ -9,9 +9,7 @@ export const checkInviteCode = (data: { email: string; inviteCode: string }): Pr
 };
 
 // 获取邀请码
-export const sendInviteCode = (
-	data: ParamEmail & { tenantName?: string },
-): Promise<void> => {
+export const sendInviteCode = (data: ParamEmail): Promise<void> => {
 	return nodejsRequest.post<void>(`${prefix}/sendInviteCode`, data, { showSuccessMessage: true });
 };
 export interface IApplicant {
