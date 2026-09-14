@@ -1,13 +1,16 @@
-import { Bar } from "@ant-design/charts";
+import { Pie } from "@ant-design/charts";
 import { useEffect, useState } from "react";
 import { getTopProductsByVolume } from "../../api/statistics";
 import { message } from "antd";
 import dayjs from "dayjs";
 
+interface VolumeData {
+	type: string;
+	value: number;
+}
+
 const TopProductsByVolume = () => {
-	const [data, setData] = useState<
-		{ productName: string; totalCount: number }[]
-	>([]);
+	const [data, setData] = useState<VolumeData[]>([]);
 
 	const startDate = dayjs().subtract(3, "month").toDate();
 	const endDate = dayjs().toDate();
@@ -17,8 +20,8 @@ const TopProductsByVolume = () => {
 			const result = await getTopProductsByVolume({ startDate, endDate });
 			setData(
 				result.map((item) => ({
-					productName: item.productName,
-					totalCount: item.totalCount,
+					type: item.productName,
+					value: item.totalCount,
 				})),
 			);
 		} catch (e) {
@@ -32,21 +35,28 @@ const TopProductsByVolume = () => {
 
 	const config = {
 		data,
-		xField: "totalCount",
-		yField: "productName",
-		seriesField: "productName",
-		legend: false,
+		angleField: "value",
+		colorField: "type",
 		title: {
-			title: "销量最好的10个产品(近3个月)",
+			title: `热销商品销量(近3个月)`,
 			subtitle: `${dayjs(startDate).format("YYYY-MM-DD")} 至 ${dayjs(endDate).format("YYYY-MM-DD")}`,
 		},
 		label: {
-			text: "totalCount",
-			position: "right",
+			text: "value",
+			style: {
+				fontWeight: "bold",
+			},
+		},
+		legend: {
+			color: {
+				title: false,
+				position: "right",
+				rowPadding: 5,
+			},
 		},
 	};
 
-	return <Bar {...config} />;
+	return <Pie {...config} />;
 };
 
 export default TopProductsByVolume;

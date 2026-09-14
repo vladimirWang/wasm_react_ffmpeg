@@ -50,6 +50,7 @@ import { useUserStore } from "../store/userStore";
 const AdminForgetPassword = lazy(() => import("../pages/AdminForgetPassword"));
 const Applicants = lazy(() => import("../pages/Applicants"));
 const ApplicantActivate = lazy(() => import("../pages/ApplicantActivate/ApplicantActivate"));
+const Analytics = lazy(() => import("../pages/Admin/Analytics"));
 
 // 用户信息缓存
 let cachedUser: IUser | null = null;
@@ -572,6 +573,15 @@ export const adminRouteConfig: ExtendedRouteObject[] = [
 					icon: <UserOutlined />,
 					title: "申请人",
 					order: 1,
+				},
+			},
+			{
+				path: "analytics",
+				Component: Analytics,
+				meta: {
+					icon: <BarChartOutlined />,
+					title: "访问统计",
+					order: 2,
 				},
 			},
 		],

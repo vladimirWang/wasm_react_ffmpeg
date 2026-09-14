@@ -1,12 +1,10 @@
 import React from "react";
-import { Link } from "react-router-dom";
-import { Line } from "@ant-design/charts";
 import LineDemo from "./LineDemo";
-import TreeMapDemo from "./TreeMapDemo";
 import ColumnDemo from "./ColumnDemo";
 import DemoScatter from "./ScatterDemo";
 import RadarDemo from "./RadaDemo";
 import HotSales from "./HotSales";
+import TopProductsByVolume from "./TopProductsByVolume";
 
 export default function Home() {
 	return (
@@ -14,6 +12,9 @@ export default function Home() {
 			<div className="grid grid-cols-2 gap-4">
 				<div>
 					<HotSales />
+				</div>
+				<div>
+					<TopProductsByVolume />
 				</div>
 				<div>
 					<LineDemo />
