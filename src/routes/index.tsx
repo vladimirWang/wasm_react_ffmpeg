@@ -7,6 +7,7 @@ import {
 	FileOutlined,
 	UserOutlined,
 	BarChartOutlined,
+	SettingOutlined,
 } from "@ant-design/icons";
 import RouteErrorPage from "../pages/RouteErrorPage";
 
@@ -51,6 +52,7 @@ const AdminForgetPassword = lazy(() => import("../pages/AdminForgetPassword"));
 const Applicants = lazy(() => import("../pages/Applicants"));
 const ApplicantActivate = lazy(() => import("../pages/ApplicantActivate/ApplicantActivate"));
 const Analytics = lazy(() => import("../pages/Admin/Analytics"));
+const TenantSettings = lazy(() => import("../pages/Tenant/TenantSettings"));
 
 // 用户信息缓存
 let cachedUser: IUser | null = null;
@@ -214,6 +216,10 @@ export const authLoader = (meta?: RouteMeta) => {
 				return redirect(`/landing/login?redirect=${redirectUrl}`);
 			}
 			// 返回用户信息，可以在组件中通过 useLoaderData 获取
+			// superUserOnly 路由：非超级管理员即使直接输入 URL 也重定向到仪表盘
+			if (meta?.superUserOnly && !user.isSuperUser) {
+				return redirect("/dashboard");
+			}
 			return { user };
 		} catch (error) {
 			// 请求失败，重定向到登录页
@@ -454,6 +460,16 @@ export const routeConfig: ExtendedRouteObject[] = [
 					icon: <UserOutlined />,
 					title: "申请人",
 					order: 6,
+					superUserOnly: true,
+				},
+			},
+			{
+				path: "tenant/settings",
+				Component: TenantSettings,
+				meta: {
+					icon: <SettingOutlined />,
+					title: "租户设置",
+					order: 7,
 					superUserOnly: true,
 				},
 			},
