@@ -11,13 +11,26 @@ export interface ITenant {
 	updatedAt?: string;
 }
 
+/** 租户基本信息（侧边栏展示用） */
+export interface ITenantInfo {
+	id: number;
+	name: string;
+	code: string;
+	logo: string | null;
+}
+
 export interface IUpdateTenantParams {
 	name?: string;
 	/** 相对路径 /uploads/xxx.png；传 null 清除 logo */
 	logo?: string | null;
 }
 
-/** 获取当前租户信息（仅 superUser） */
+/** 获取当前租户基本信息（任意租户用户，用于侧边栏展示） */
+export const getTenantInfo = (): Promise<ITenantInfo> => {
+	return nodejsRequest.get<ITenantInfo>("/tenant/info");
+};
+
+/** 获取当前租户完整信息（仅 superUser，租户设置页） */
 export const getTenantProfile = (): Promise<ITenant> => {
 	return nodejsRequest.get<ITenant>("/tenant");
 };

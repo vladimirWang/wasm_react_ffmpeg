@@ -1,10 +1,11 @@
 import { Layout, Menu } from "antd";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { adminRouteConfig, routeConfig } from "../routes";
 import { useUserStore } from "../store/userStore";
 import { generateMenuItems } from "../utils/routeMenu";
 import { ClusterOutlined } from "@ant-design/icons";
+import { getTenantInfo, type ITenantInfo } from "../api/tenant";
 
 const { Sider } = Layout;
 
@@ -16,6 +17,23 @@ export default function Sidebar() {
 	const tenantId = useUserStore(s => s.user?.tenantId);
 	const isSuperUser = useUserStore(s => s.user?.isSuperUser);
 	const isAdmin = role === "admin";
+
+	const [tenant, setTenant] = useState<ITenantInfo | null>(null);
+
+	// 加载租户基本信息（名称/code/logo），admin 无 tenantId 不加载
+	useEffect(() => {
+		if (!tenantId) return;
+		let cancelled = false;
+		(async () => {
+			try {
+				const info = await getTenantInfo();
+				if (!cancelled) setTenant(info);
+			} catch {
+				// 静默失败，侧边栏回退到默认品牌展示
+			}
+		})();
+		return () => { cancelled = true; };
+	}, [tenantId]);
 
 	// 从路由配置生成菜单项
 	const menuItems = useMemo(() => {
@@ -65,19 +83,29 @@ export default function Sidebar() {
 
 	return (
 		<Sider collapsible collapsed={collapsed} onCollapse={value => setCollapsed(value)}>
-			{/* Logo 区：对齐落地页 StockFlow 品牌 */}
+			{/* 侧边栏头部：展示租户 logo / 名称 / code，无租户时回退到品牌默认 */}
 			<div
 				className="h-16 flex items-center gap-2 px-4 border-b border-gray-100 select-none"
-				title={tenantId ? `租户 ID: ${tenantId}` : undefined}
+				title={tenant ? `${tenant.name}（${tenant.code}）` : undefined}
 			>
-				<span className="flex h-8 w-8 items-center justify-center rounded-lg bg-[#FF7A00] text-white flex-shrink-0">
-					<ClusterOutlined />
-				</span>
+				{tenant?.logo ? (
+					<img
+						src={tenant.logo}
+						alt={tenant.name}
+						className="h-8 w-8 rounded-lg object-cover flex-shrink-0"
+					/>
+				) : (
+					<span className="flex h-8 w-8 items-center justify-center rounded-lg bg-[#FF7A00] text-white flex-shrink-0">
+						<ClusterOutlined />
+					</span>
+				)}
 				{!collapsed && (
-					<div className="flex flex-col leading-tight">
-						<span className="text-base font-bold text-gray-900">StockFlow</span>
+					<div className="flex flex-col leading-tight min-w-0">
+						<span className="text-sm font-bold text-gray-900 truncate">
+							{tenant?.name ?? "StockFlow"}
+						</span>
 						<span className="text-[11px] text-gray-400">
-							{tenantId ? `#${tenantId}` : "WMS 管理后台"}
+							{tenant ? tenant.code : "WMS 管理后台"}
 						</span>
 					</div>
 				)}
