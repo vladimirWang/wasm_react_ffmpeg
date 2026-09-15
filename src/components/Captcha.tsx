@@ -49,8 +49,8 @@ function Captcha(
 	return (
 		<img
 			src={captchaSrc}
-			width={100}
-			height={40}
+			width={90}
+			height={36}
 			alt="验证码"
 			onClick={loadCaptcha}
 			style={{ background: "white" }}
