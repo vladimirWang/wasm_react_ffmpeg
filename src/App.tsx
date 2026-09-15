@@ -11,6 +11,7 @@ import { router } from "./routes";
 import "./App.css";
 import { RouterProvider } from "react-router-dom";
 import { ModuleContext } from "./context/moduleContext";
+import logo from './assets/logo.svg'
 
 function App() {
 	// const [wasmReady, setWasmReady] = useState(false);
@@ -98,7 +99,12 @@ function App() {
           <Route path="*" element={<Navigate to="/" replace={true} />} />
         </Routes>
       </BrowserRouter> */}
-			<Suspense fallback={<div>Loading...</div>}>
+			<Suspense fallback={<div style={{width: '100vw', height: '100vh', display: 'flex', justifyContent: 'center', alignItems: 'center'}}>
+				<section className="flex flex-col items-center">
+					<h3 className="text-bold text-2xl">库存管理系统</h3>
+					<img className="mt-8" src={logo} width={100} height={100}/>
+				</section>
+			</div>}>
 				<RouterProvider router={router} />
 			</Suspense>
 		</ModuleContext>
