@@ -1,7 +1,7 @@
 import { LoadingOutlined, PlusOutlined, DeleteOutlined, ThunderboltOutlined } from "@ant-design/icons";
 import { Button, message, Switch, Upload } from "antd";
 import { RcFile } from "antd/es/upload";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { md5File } from "../utils/file";
 import { checkAndUploadFile } from "../api/util";
 import { standardizeImage } from "../api/image";
@@ -22,6 +22,11 @@ const MIME_EXT: Record<string, string> = {
 	"image/webp": "webp",
 };
 
+/** 去掉历史数据里的绝对地址前缀：http://139.224.68.145:4000/uploads/x → /uploads/x */
+function stripOrigin(url: string) {
+	return url.replace(/^https?:\/\/(localhost|\d{1,3}(?:\.\d{1,3}){3}):\d{4}/, "");
+}
+
 export default function ImageUpload({
 	onChange,
 	value,
@@ -32,13 +37,22 @@ export default function ImageUpload({
 	const [standardizing, setStandardizing] = useState(false);
 	/** AI 抠图开关：开启后标准化会扣除背景只保留主体，其余区域铺纯色底 */
 	const [removeBg, setRemoveBg] = useState(true);
-	const [imageUrl, setImageUrl] = useState<string[]>(value ?? []);
 
-	// 外部 value 变化时同步内部预览（表单回显、标准化后程序化更新都依赖它）
+	/** 表单值：服务器相对路径（/uploads/xxx.jpg） */
+	const [serverUrls, setServerUrls] = useState<string[]>(() =>
+		(value ?? []).map(stripOrigin)
+	);
+	/** 本会话刚上传/处理出来的图：服务器路径 → blob 预览地址，避免立即回源取图导致裂图 */
+	const blobMap = useRef(new Map<string, string>());
+
+	// 外部 value 变化（表单回显、reset）时同步；不覆盖刚上传图的 blob 预览
 	useEffect(() => {
-		const next = value ?? [];
-		setImageUrl(prev => (prev.join("|") === next.join("|") ? prev : next));
+		const next = (value ?? []).map(stripOrigin);
+		setServerUrls(prev => (prev.join("|") === next.join("|") ? prev : next));
 	}, [value]);
+
+	/** 实际展示地址：优先本地 blob，否则用服务器相对路径（同源经 nginx 访问） */
+	const displayUrls = serverUrls.map(u => blobMap.current.get(u) ?? u);
 
 	const uploadButton = (
 		<button style={{ border: 0, background: "none" }} type="button">
@@ -47,15 +61,10 @@ export default function ImageUpload({
 		</button>
 	);
 
-	const beforeUpload = (file: RcFile) => {
+	const beforeUpload = (_file: RcFile) => {
 		return true;
-		// const isJpgOrPng = file.type === "image/jpeg" || file.type === "image/png";
-		// if (!isJpgOrPng) {
-		// 	message.error("只能上传 JPG，PNG 格式图片!");
-		// }
-		// return isJpgOrPng;
 	};
-	const handleChange = (info: any) => {
+	const handleChange = (_info: any) => {
 		// 不要在这里往 imageUrl 里追加：否则选第三张时 length 立刻变为 3，Upload 会被卸载，customRequest 无法执行
 	};
 	const handleCustomRequest = async (options: any) => {
@@ -64,14 +73,12 @@ export default function ImageUpload({
 			setUploading(true);
 			const md5 = await md5File(file);
 			const res = await checkAndUploadFile(md5, file);
-			const fileUrl = URL.createObjectURL(file);
-			setImageUrl([...imageUrl, fileUrl]);
-
-			const prefix = /^https?:\/\/(localhost|\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}):\d{4}/;
-			const convertedValues = (value ?? []).map(url => {
-				return url.replace(prefix, "");
-			});
-			onChange?.([...convertedValues, res.filePath]);
+			const filePath = stripOrigin(res.filePath);
+			// 登记 blob 预览，保证表单值切换后缩略图不回源、不闪裂
+			blobMap.current.set(filePath, URL.createObjectURL(file));
+			const next = [...serverUrls, filePath];
+			setServerUrls(next);
+			onChange?.(next);
 		} catch (e) {
 			message.error("上传失败: " + (e as Error).message);
 		} finally {
@@ -85,7 +92,7 @@ export default function ImageUpload({
 	 * → 处理后的图走原有秒传链路 → 更新表单值与预览
 	 */
 	const handleStandardize = async () => {
-		const source = value?.[0];
+		const source = displayUrls[0];
 		if (!source) {
 			message.warning("请先上传图片");
 			return;
@@ -114,9 +121,11 @@ export default function ImageUpload({
 			});
 			const md5 = await md5File(processedFile);
 			const res = await checkAndUploadFile(md5, processedFile);
+			const filePath = stripOrigin(res.filePath);
 
-			setImageUrl([URL.createObjectURL(result.blob)]);
-			onChange?.([res.filePath]);
+			blobMap.current.set(filePath, URL.createObjectURL(result.blob));
+			setServerUrls([filePath]);
+			onChange?.([filePath]);
 			message.success(`标准化完成：${result.width}×${result.height}`);
 		} catch (e) {
 			// standardizeImage 内部已弹错误提示，这里兜底网络层异常
@@ -124,6 +133,12 @@ export default function ImageUpload({
 		} finally {
 			setStandardizing(false);
 		}
+	};
+
+	const handleDelete = (index: number) => {
+		const next = serverUrls.filter((_, i) => i !== index);
+		setServerUrls(next);
+		onChange?.(next);
 	};
 
 	/** AI 抠图开关提示文案 */
@@ -136,30 +151,23 @@ export default function ImageUpload({
 	return (
 		<div className="flex flex-col items-start gap-2 w-full min-w-0">
 			<div className="flex flex-wrap items-center gap-2 w-full min-w-0">
-				{imageUrl.map(url => {
+				{displayUrls.map((url, index) => {
 					return (
 						<div
-							key={url}
+							key={serverUrls[index] ?? url}
 							className="group relative w-[100px] h-[100px] shrink-0 overflow-hidden rounded border border-gray-200 bg-gray-50 cursor-pointer"
 						>
 							<img draggable={false} src={url} alt="avatar" className="w-full h-full object-cover" />
 							{/* hover 时显示的遮罩与图标 */}
 							<div className="absolute inset-0 bg-black/40 flex items-center justify-center gap-3 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
 								<span className="w-8 h-8 flex items-center justify-center rounded-full bg-white/90 text-gray-700 hover:bg-white hover:text-red-500 transition-colors">
-									<DeleteOutlined
-										className="text-base"
-										onClick={() => {
-											const newImageUrl = imageUrl.filter(item => item !== url);
-											setImageUrl(newImageUrl);
-											onChange?.(newImageUrl);
-										}}
-									/>
+									<DeleteOutlined className="text-base" onClick={() => handleDelete(index)} />
 								</span>
 							</div>
 						</div>
 					);
 				})}
-				{imageUrl.length < (restProps.maxCount ?? 1) && (
+				{serverUrls.length < (restProps.maxCount ?? 1) && (
 					<Upload
 						accept={".jpg,.jpeg,.png,.gif,.bmp,.webp"}
 						name="file"
@@ -174,7 +182,7 @@ export default function ImageUpload({
 					</Upload>
 				)}
 			</div>
-			{showStandardize && imageUrl.length > 0 && (
+			{showStandardize && displayUrls.length > 0 && (
 				<div className="flex flex-wrap items-center gap-3">
 					<Button
 						size="small"
