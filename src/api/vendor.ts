@@ -72,7 +72,7 @@ export const updateVendorDetailById = (
 export type IVendorCreateParams = Omit<IVendor, "id" | "createdAt" | "updatedAt" | "isDel">;
 // 创建供应商
 export const createVendor = async (data: IVendorUpdateParams): Promise<VendorDetailResponse> => {
-	return nodejsRequest.post<VendorDetailResponse>("/vendor/", data);
+	return nodejsRequest.post<VendorDetailResponse>("/vendor", data);
 };
 
 export type batchDeleteVendorSchema = { id: number[] };
