@@ -118,6 +118,14 @@ const ChangePassword: React.FC = () => {
 									{ required: true, message: "请输入新密码！" },
 									{ min: 6, message: "密码长度不能小于6位" },
 									{ max: 8, message: "密码长度不能大于8位" },
+									({ getFieldValue }) => ({
+										validator(_, value) {
+											if (!value || getFieldValue("current") !== value) {
+												return Promise.resolve();
+											}
+											return Promise.reject(new Error("新密码不能与旧密码一致！"));
+										},
+									}),
 								]}
 								hasFeedback
 							>
