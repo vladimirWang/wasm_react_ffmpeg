@@ -1,8 +1,9 @@
 import { Pie } from "@ant-design/charts";
-import React, { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { getHotSales } from "../../api/statistics";
-import { message } from "antd";
+import { message, theme } from "antd";
 import dayjs from "dayjs";
+import { buildThemePalette } from "./chartColors";
 
 interface HotSalesData {
 	type: string;
@@ -11,6 +12,12 @@ interface HotSalesData {
 
 const HotSales = () => {
 	const [data, setData] = useState<HotSalesData[]>([]);
+	const { token } = theme.useToken();
+	// 饼图为多分类图表，使用由系统主题色派生的分类色板
+	const palette = useMemo(
+		() => buildThemePalette(token.colorPrimary),
+		[token.colorPrimary]
+	);
 
 	const startDate = dayjs().subtract(3, "month").toDate();
 	const endDate = dayjs().subtract(1, "day").toDate();
@@ -39,7 +46,10 @@ const HotSales = () => {
 		data,
 		angleField: "value",
 		colorField: "type",
-		// color: ["#FF6B6B", "#4ECDC4", "#FFD166", "#06D6A0"],
+		// 各扇区颜色取自系统主题色派生色板（G2 v5 写法）
+		scale: {
+			color: { range: palette },
+		},
 		title: {
 			title: `热销商品销售额(近3个月)`,
 			subtitle: `${dayjs(startDate).format("YYYY-MM-DD")} 至 ${dayjs(endDate).format("YYYY-MM-DD")}`,

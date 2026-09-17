@@ -1,8 +1,9 @@
 import { Pie } from "@ant-design/charts";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { getTopProductsByVolume } from "../../api/statistics";
-import { message } from "antd";
+import { message, theme } from "antd";
 import dayjs from "dayjs";
+import { buildThemePalette } from "./chartColors";
 
 interface VolumeData {
 	type: string;
@@ -11,6 +12,12 @@ interface VolumeData {
 
 const TopProductsByVolume = () => {
 	const [data, setData] = useState<VolumeData[]>([]);
+	const { token } = theme.useToken();
+	// 饼图为多分类图表，使用由系统主题色派生的分类色板
+	const palette = useMemo(
+		() => buildThemePalette(token.colorPrimary),
+		[token.colorPrimary]
+	);
 
 	const startDate = dayjs().subtract(3, "month").toDate();
 	const endDate = dayjs().toDate();
@@ -37,6 +44,10 @@ const TopProductsByVolume = () => {
 		data,
 		angleField: "value",
 		colorField: "type",
+		// 各扇区颜色取自系统主题色派生色板（G2 v5 写法）
+		scale: {
+			color: { range: palette },
+		},
 		title: {
 			title: `热销商品销量(近3个月)`,
 			subtitle: `${dayjs(startDate).format("YYYY-MM-DD")} 至 ${dayjs(endDate).format("YYYY-MM-DD")}`,
