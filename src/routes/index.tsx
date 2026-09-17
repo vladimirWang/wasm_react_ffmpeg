@@ -1,4 +1,4 @@
-import { createHashRouter, type RouteObject, redirect } from "react-router-dom";
+import { createHashRouter, Navigate, type RouteObject, redirect } from "react-router-dom";
 import { ReactNode, lazy } from "react";
 import {
 	PieChartOutlined,
@@ -271,7 +271,11 @@ export const routeConfig: ExtendedRouteObject[] = [
 		errorElement: <RouteErrorPage />,
 		children: [
 			{
-				// index: true,
+				// 访问 / 时重定向到 /dashboard（URL 会变化），dashboard 路由本身保留给菜单和各跳转逻辑
+				index: true,
+				Component: () => <Navigate to="/dashboard" replace />,
+			},
+			{
 				path: "dashboard",
 				Component: Home,
 				meta: {
