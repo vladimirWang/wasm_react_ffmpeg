@@ -82,8 +82,10 @@ export const userRegister = (data: RegisterParams): Promise<RegisterResponse> =>
 	return nodejsRequest.post<RegisterResponse>("/user/register", data);
 };
 
-export const getCurrentUser = (): Promise<IUser> => {
-	return nodejsRequest.get<IUser>("/user/current");
+export const getCurrentUser = (config?: {
+	showErrorMessage?: boolean;
+}): Promise<IUser> => {
+	return nodejsRequest.get<IUser>("/user/current", config);
 };
 
 export const logout = (): Promise<void> => {

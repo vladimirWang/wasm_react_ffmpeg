@@ -10,6 +10,7 @@ import {
 	SettingOutlined,
 } from "@ant-design/icons";
 import RouteErrorPage from "../pages/RouteErrorPage";
+import logo from "../assets/logo.svg";
 
 // 懒加载页面，减少首屏体积
 const Home = lazy(() => import("../pages/Home"));
@@ -57,9 +58,13 @@ const TenantSettings = lazy(() => import("../pages/Tenant/TenantSettings"));
 // 用户信息缓存
 let cachedUser: IUser | null = null;
 let userPromise: Promise<IUser> | null = null;
+// 上次后台静默校验时间戳，节流避免每次路由跳转都请求 /user/current
+let lastSilentRefreshAt = 0;
 const CACHE_KEY = "cached_user";
 const CACHE_EXPIRY_KEY = "cached_user_expiry";
 const CACHE_DURATION = 5 * 60 * 1000; // 5分钟缓存
+// 静默校验最小间隔：SPA 内连续跳转不重复校验，整页刷新后（变量重置）必然触发一次
+const SILENT_REFRESH_INTERVAL = 60 * 1000;
 
 // 检查是否有登录态
 const hasAuth = (): boolean => {
@@ -68,11 +73,12 @@ const hasAuth = (): boolean => {
 };
 
 // 从 localStorage 恢复缓存的用户信息
-const restoreCachedUser = (): IUser | null => {
+// ignoreExpiry=true 时即使缓存已过期也返回（用于"先渲染、后台静默校验"场景）
+const restoreCachedUser = (ignoreExpiry = false): IUser | null => {
 	try {
 		const cached = localStorage.getItem(CACHE_KEY);
 		const expiry = localStorage.getItem(CACHE_EXPIRY_KEY);
-		if (cached && expiry && Date.now() < Number(expiry)) {
+		if (cached && (ignoreExpiry || (expiry && Date.now() < Number(expiry)))) {
 			return JSON.parse(cached);
 		}
 	} catch (e) {
@@ -80,6 +86,17 @@ const restoreCachedUser = (): IUser | null => {
 	}
 	return null;
 };
+
+// 将后端 /user/current 的原始返回映射为前端使用的 IUser
+const mapCurrentUser = (raw: IUser & { userId?: number }): IUser => ({
+	id: String(raw.userId ?? raw.id ?? ""),
+	email: raw.email,
+	username: raw.username,
+	createdAt: raw.createdAt ?? "",
+	role: raw.role,
+	tenantId: raw.tenantId,
+	isSuperUser: raw.isSuperUser,
+});
 
 // 保存用户信息到缓存
 const saveCachedUser = (user: IUser) => {
@@ -96,6 +113,7 @@ const saveCachedUser = (user: IUser) => {
 export const clearUserCache = () => {
 	cachedUser = null;
 	userPromise = null;
+	lastSilentRefreshAt = 0;
 	localStorage.removeItem(CACHE_KEY);
 	localStorage.removeItem(CACHE_EXPIRY_KEY);
 	// 清除 zustand store
@@ -133,15 +151,7 @@ const fetchCurrentUser = async (): Promise<IUser | null> => {
 			.then(res => {
 				const raw = res as IUser & { userId?: number };
 				console.log("user data: ", raw);
-				const user: IUser = {
-					id: String(raw.userId ?? raw.id ?? ""),
-					email: raw.email,
-					username: raw.username,
-					createdAt: raw.createdAt ?? "",
-					role: raw.role,
-					tenantId: raw.tenantId,
-					isSuperUser: raw.isSuperUser,
-				};
+				const user = mapCurrentUser(raw);
 				saveCachedUser(user);
 				// 更新 zustand store
 				useUserStore.getState().setUser(user);
@@ -170,6 +180,8 @@ const fetchCurrentUser = async (): Promise<IUser | null> => {
 
 		const user = await userPromise;
 		userPromise = null;
+		// 同步拉取成功后，静默校验节流也一并更新
+		lastSilentRefreshAt = Date.now();
 		return user;
 	} catch (error) {
 		userPromise = null;
@@ -177,6 +189,39 @@ const fetchCurrentUser = async (): Promise<IUser | null> => {
 		// 确保错误被正确抛出
 		throw error;
 	}
+};
+
+/**
+ * 后台静默校验登录态（不 await、不阻塞路由渲染）：
+ * - 成功：刷新内存/localStorage 缓存与 zustand store，页面无感拿到最新用户信息；
+ * - 401/403：响应拦截器已统一清 token 并跳转登录页，这里不重复处理；
+ * - 网络抖动/服务不可用：保留旧缓存继续使用，下一个节流周期再试。
+ * showErrorMessage:false 避免后台请求失败时弹出错误提示打扰用户。
+ */
+const silentRefreshUser = () => {
+	const now = Date.now();
+	if (now - lastSilentRefreshAt < SILENT_REFRESH_INTERVAL) {
+		return;
+	}
+	lastSilentRefreshAt = now;
+
+	getCurrentUser({ showErrorMessage: false })
+		.then(res => {
+			const user = mapCurrentUser(res as IUser & { userId?: number });
+			saveCachedUser(user);
+			useUserStore.getState().setUser(user);
+		})
+		.catch(error => {
+			const code = error?.code || (error instanceof Error ? 0 : error.code);
+			if (code === 401 || code === 403) {
+				// 拦截器已处理跳转，仅需重置本地状态
+				clearUserCache();
+				return;
+			}
+			// 非鉴权错误（网络抖动等）：放行下次跳转时重试，缓存保留
+			lastSilentRefreshAt = 0;
+			console.warn("Silent refresh user failed, keep cached user:", error);
+		});
 };
 
 // 路由守卫 loader
@@ -206,7 +251,28 @@ export const authLoader = (meta?: RouteMeta) => {
 			return redirect(`/landing/login?redirect=${redirectUrl}`);
 		}
 
-		// 验证 token 有效性并获取用户信息（带缓存，避免重复请求）
+		// 缓存优先：内存缓存或 localStorage 缓存（即使已过期）都先放行渲染，
+		// 真正的 token 校验由 silentRefreshUser 后台静默完成，
+		// 避免每次刷新都白屏等待 /user/current（等待期间显示 hydrateFallbackElement）
+		const cached = cachedUser ?? restoreCachedUser(true);
+		if (cached) {
+			if (!cachedUser) {
+				cachedUser = cached;
+				// zustand store 同步，页面组件从 store 取用户信息
+				useUserStore.getState().setUser(cached);
+			}
+			// 不阻塞渲染的后台校验（内部有节流）
+			silentRefreshUser();
+			// superUserOnly 路由：缓存明确不是超级管理员则立即回仪表盘，
+			// 权限若刚被收回，后台校验返回 401/403 后由拦截器处理
+			if (meta?.superUserOnly && !cached.isSuperUser) {
+				return redirect("/dashboard");
+			}
+			return { user: cached };
+		}
+
+		// 完全没有缓存（首次登录/换浏览器/手动清过缓存）：
+		// 此时没有可信任的用户信息，只能同步等待首次校验
 		try {
 			const user = await fetchCurrentUser();
 			if (!user) {
@@ -246,12 +312,39 @@ export interface ExtendedRouteObject extends Omit<RouteObject, "children"> {
 	children?: ExtendedRouteObject[];
 }
 
+/**
+ * 首屏 hydration 期间的加载元素：loader 未完成或懒加载 chunk 下载中时展示。
+ * 刻意只用内联样式 + logo，不依赖 antd 等 vendor chunk，保证白屏期也能立即渲染。
+ */
+const RouteHydrateFallback = (
+	<div
+		style={{
+			width: "100vw",
+			height: "100vh",
+			display: "flex",
+			justifyContent: "center",
+			alignItems: "center",
+		}}
+	>
+		<section style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
+			<img src={logo} width={88} height={88} alt="库存管理系统" />
+			<h3 style={{ margin: "16px 0 0", fontSize: 20, fontWeight: 700, color: "#262626" }}>
+				库存管理系统
+			</h3>
+			<p style={{ margin: "8px 0 0", fontSize: 14, color: "#8c8c8c" }}>加载中…</p>
+		</section>
+	</div>
+);
+
 // 递归函数：为路由配置添加 loader
 const addAuthLoader = (routes: ExtendedRouteObject[]): RouteObject[] => {
 	return routes.map(route => {
 		const { meta, children, ...rest } = route;
 		const newRoute: RouteObject = {
 			...rest,
+			// 每条路由都提供首屏加载元素：
+			// 消除 react-router 的 "No HydrateFallback element..." 警告，并把白屏变成加载页
+			hydrateFallbackElement: rest.hydrateFallbackElement ?? RouteHydrateFallback,
 			loader: authLoader(meta),
 		};
 
