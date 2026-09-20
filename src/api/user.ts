@@ -118,16 +118,10 @@ export const updatePassword = (data: IUpdatePasswordParams): Promise<void> => {
 	return nodejsRequest.post<void>("/user/updatePassword", data);
 };
 
-export type TenantOption = "join" | "create";
-
 interface RegisterByTokenParams {
 	token: string;
 	password: string;
 	username: string;
-	/** 新流程：申请时已确定租户，激活时不需要传 */
-	tenantOption?: TenantOption;
-	tenantName?: string;
-	tenantCode?: string;
 }
 
 export const userRegisterByToken = (data: RegisterByTokenParams): Promise<RegisterResponse> => {
