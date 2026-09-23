@@ -607,7 +607,7 @@ export default function ProductForm({
 							/>
 						</Form.Item>
 						<Form.Item<IProductUpdateParams> label="产品图片" name="img">
-						<ImageUpload maxCount={1} showStandardize={pageOperation !== "view"} />
+						<ImageUpload maxCount={1} />
 							{/* <Upload
 								accept={".jpg,.jpeg,.png,.gif,.bmp,.webp"}
 								name="file"
