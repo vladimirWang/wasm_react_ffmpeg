@@ -39,6 +39,8 @@ import ExampleWorker from "../../workers/example.worker?worker";
 import type { WorkerResult } from "../../workers/example.worker";
 import { pick } from "lodash";
 import ImageUpload from "../../components/ImageUpload";
+import MultiCreateSelect, { type MultiCreateOption } from "../../components/MultiCreateSelect";
+import { createSku, createSkuCategory, getSkuCategories, getSkus, type ISku } from "../../api/sku";
 import { LexicalComposer } from "@lexical/react/LexicalComposer";
 import { RichTextPlugin } from "@lexical/react/LexicalRichTextPlugin";
 import { ContentEditable } from "@lexical/react/LexicalContentEditable";
@@ -185,7 +187,7 @@ export default function ProductForm({
 	redirect,
 }: {
 	redirect?: string;
-	initialValues?: IProductUpdateParams;
+	initialValues?: IProductUpdateParams & { productJoinSkus?: { sku: ISku }[] };
 	onFinishCallback?: (values: IProductUpdateParams) => Promise<void>;
 	pageOperation: PageOperation;
 }) {
@@ -222,7 +224,12 @@ export default function ProductForm({
 		const current = (form.getFieldValue("desc") ?? "").toString().trim();
 
 		// 如果用户已经编辑过（当前是非空、非“空 editorState”的 JSON），不要覆盖
-		if (current && current.startsWith("{") && current.endsWith("}") && !isEmptyLexicalJson(current)) {
+		if (
+			current &&
+			current.startsWith("{") &&
+			current.endsWith("}") &&
+			!isEmptyLexicalJson(current)
+		) {
 			return;
 		}
 
@@ -241,6 +248,63 @@ export default function ProductForm({
 	const { data: vendors } = useSWR("https://api.example.com/data", vendorsFetch, {
 		revalidateOnFocus: true,
 	});
+
+	// ===== SKU 分类 / SKU =====
+	// 表单内新建、但列表接口尚未重新加载的 SKU（保证选中态立即可见）
+	const [extraSkus, setExtraSkus] = useState<ISku[]>([]);
+	// SKU 新增行内「所属分类」下拉的当前值
+	const [newSkuCategoryId, setNewSkuCategoryId] = useState<number | undefined>(undefined);
+
+	const { data: skuCategories, mutate: mutateSkuCategories } = useSWR(
+		"sku-categories",
+		async () => (await getSkuCategories()).list,
+		{ revalidateOnFocus: false }
+	);
+
+	// SKU 分类仅作表单内筛选，不随产品提交
+	const selectedCategoryIds: number[] = Form.useWatch("skuCategoryIds", form) ?? [];
+
+	const { data: skuList } = useSWR(
+		selectedCategoryIds.length > 0
+			? (["skus-by-categories", selectedCategoryIds.join(",")] as const)
+			: null,
+		async ([, ids]) => (await getSkus({ categoryIds: ids })).list,
+		{ revalidateOnFocus: false }
+	);
+
+	const categoryOptions: MultiCreateOption[] = useMemo(
+		() => (skuCategories ?? []).map(c => ({ value: c.id, label: c.name })),
+		[skuCategories]
+	);
+
+	const skuOptions: MultiCreateOption[] = useMemo(() => {
+		const map = new Map<number, MultiCreateOption>();
+		for (const s of [...(skuList ?? []), ...extraSkus]) {
+			map.set(s.id, { value: s.id, label: s.name, skuCategoryId: s.skuCategoryId });
+		}
+		return Array.from(map.values());
+	}, [skuList, extraSkus]);
+
+	// 分类选择变化时：收敛新增行的「所属分类」
+	useEffect(() => {
+		if (selectedCategoryIds.length === 1) {
+			setNewSkuCategoryId(selectedCategoryIds[0]);
+		} else if (newSkuCategoryId !== undefined && !selectedCategoryIds.includes(newSkuCategoryId)) {
+			setNewSkuCategoryId(undefined);
+		}
+	}, [selectedCategoryIds, newSkuCategoryId]);
+
+	// 取消勾选分类时，移除其下已选 SKU（选项尚未加载的保守保留）
+	const pruneSkuIdsByCategories = (ids: number[]) => {
+		const current: number[] = form.getFieldValue("skuIds") ?? [];
+		const optionMap = new Map(skuOptions.map(o => [o.value, o]));
+		const next = current.filter(skuId => {
+			const opt = optionMap.get(skuId);
+			if (!opt || opt.skuCategoryId === undefined) return true;
+			return ids.includes(opt.skuCategoryId);
+		});
+		if (next.length !== current.length) form.setFieldValue("skuIds", next);
+	};
 
 	const productId = id ? Number(id) : undefined;
 
@@ -403,6 +467,19 @@ export default function ProductForm({
 		}
 	};
 
+	// 产品详情中的 SKU 关联 → 表单初值：skuIds + 由 SKU 反推出的已选分类
+	const formInitialValues = useMemo(
+		() => ({
+			...initialValues,
+			img: initialValues?.img ? [initialValues.img] : undefined,
+			skuIds: initialValues?.productJoinSkus?.map(item => item.sku.id),
+			skuCategoryIds: Array.from(
+				new Set((initialValues?.productJoinSkus ?? []).map(item => item.sku.skuCategoryId))
+			),
+		}),
+		[initialValues]
+	);
+
 	const navigate = useNavigate();
 	const descValue = Form.useWatch("desc", form);
 	console.log("---descValue---: ", descValue);
@@ -469,10 +546,7 @@ export default function ProductForm({
 				disabled={pageOperation === "view"}
 				form={form}
 				name="basic"
-				initialValues={{
-					...initialValues,
-					img: initialValues?.img ? [initialValues.img] : undefined,
-				}}
+				initialValues={formInitialValues}
 				labelCol={{ span: 6 }}
 				wrapperCol={{ span: 18 }}
 				onFinish={async values => {
@@ -490,6 +564,8 @@ export default function ProductForm({
 						console.log("---updated---: ", updated);
 						const changedKeys = Array.from(new Set([...(created as any), ...(updated as any)]));
 						const incrementalValues = pick(values, changedKeys);
+						// SKU 分类仅用于表单内过滤 SKU 选项，不提交后端
+						delete incrementalValues.skuCategoryIds;
 						console.log("---incrementalValues 1---: ", values.desc, incrementalValues);
 						if (incrementalValues.desc) {
 							const descHtml = await lexicalDescToHtml(incrementalValues.desc);
@@ -592,6 +668,66 @@ export default function ProductForm({
 						<Form.Item<IProductUpdateParams> label="备注" name="remark">
 							<Input.TextArea showCount maxLength={190} rows={4} placeholder="请输入备注信息" />
 						</Form.Item>
+						<Form.Item<IProductUpdateParams>
+							label="SKU分类"
+							name="skuCategoryIds"
+							extra="可从已有分类中多选，也可在下拉框底部直接新增分类"
+						>
+							<MultiCreateSelect
+								placeholder="请选择或新增SKU分类（可多选）"
+								options={categoryOptions}
+								disabled={pageOperation === "view"}
+								onChange={pruneSkuIdsByCategories}
+								onAdd={async name => {
+									const created = await createSkuCategory({ name });
+									await mutateSkuCategories(list => [...(list ?? []), created], {
+										revalidate: false,
+									});
+									return { value: created.id, label: created.name };
+								}}
+							/>
+						</Form.Item>
+						<Form.Item<IProductUpdateParams>
+							label="SKU"
+							name="skuIds"
+							extra="展示所选分类下的已有 SKU，可多选；新增时请先选择所属分类"
+						>
+							<MultiCreateSelect
+								placeholder={
+									selectedCategoryIds.length ? "请选择或新增SKU（可多选）" : "请先选择SKU分类"
+								}
+								options={skuOptions}
+								disabled={pageOperation === "view"}
+								addDisabled={selectedCategoryIds.length === 0 || !newSkuCategoryId}
+								addDisabledTip={
+									selectedCategoryIds.length === 0 ? "请先选择SKU分类" : "请选择所属分类"
+								}
+								addBefore={
+									<Select
+										style={{ width: 120 }}
+										placeholder="所属分类"
+										value={newSkuCategoryId}
+										onChange={setNewSkuCategoryId}
+										options={categoryOptions.filter(c => selectedCategoryIds.includes(c.value))}
+										disabled={pageOperation === "view" || selectedCategoryIds.length === 0}
+										// 浮层挂在节点内部，点选项时不脱离外层 SKU 下拉，避免外层被关闭
+										getPopupContainer={triggerNode => triggerNode.parentElement ?? document.body}
+									/>
+								}
+								onAdd={async name => {
+									const created = await createSku({
+										name,
+										skuCategoryId: newSkuCategoryId as number,
+									});
+									setExtraSkus(prev => [...prev, created]);
+									return {
+										value: created.id,
+										label: created.name,
+										skuCategoryId: created.skuCategoryId,
+									};
+								}}
+							/>
+						</Form.Item>
 					</section>
 					<section className="flex-1 space-y-4">
 						{/* 用 Lexical 作为描述编辑器；desc 字段仍保存为 string（Lexical JSON 或旧纯文本） */}
@@ -607,7 +743,7 @@ export default function ProductForm({
 							/>
 						</Form.Item>
 						<Form.Item<IProductUpdateParams> label="产品图片" name="img">
-						<ImageUpload maxCount={1} showStandardize={pageOperation !== "view"} />
+							<ImageUpload maxCount={1} showStandardize={pageOperation !== "view"} />
 							{/* <Upload
 								accept={".jpg,.jpeg,.png,.gif,.bmp,.webp"}
 								name="file"

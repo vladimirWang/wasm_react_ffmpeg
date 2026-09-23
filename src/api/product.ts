@@ -1,6 +1,7 @@
 import { nodejsRequest } from "../request";
 import { IPaginationResp, IPagination, IResponse } from "./commonDef";
 import { IVendor } from "./vendor";
+import type { ISku } from "./sku";
 
 // 产品类型定义
 export interface IProductHistoryCostItem {
@@ -31,6 +32,7 @@ export interface IProduct {
 	salePrice: number;
 	vendor?: IVendor;
 	desc?: string;
+	productJoinSkus?: { sku: ISku }[];
 }
 
 // 定义登录响应类型
@@ -78,8 +80,13 @@ export const getProductDetailById = (id: number): Promise<IProduct> => {
 };
 
 export type IProductUpdateParams = Partial<
-	Omit<IProduct, "id" | "createdAt" | "updatedAt" | "isDel">
->;
+	Omit<IProduct, "id" | "createdAt" | "updatedAt" | "isDel" | "productJoinSkus">
+> & {
+	// 产品关联的 SKU id 集合（表单提交用）
+	skuIds?: number[];
+	// 表单内的 SKU 分类筛选值（不提交后端，仅用于过滤 SKU 选项）
+	skuCategoryIds?: number[];
+};
 
 // 更新产品详情
 export const patchProductById = (id: number, data: IProductUpdateParams): Promise<IProduct> => {
@@ -121,12 +128,12 @@ export const checkProductNameExistedInVendor = (
 	});
 };
 
-interface ProductAmountQuery{
+interface ProductAmountQuery {
 	amount: number;
 	moreThan: boolean;
 	desc?: boolean;
 }
 
-export const getProductsByAmount = async(params: ProductAmountQuery) => {
+export const getProductsByAmount = async (params: ProductAmountQuery) => {
 	return nodejsRequest.get<IProductsQueryResponse>("/product/getProductsByAmount", { params });
-}
+};
