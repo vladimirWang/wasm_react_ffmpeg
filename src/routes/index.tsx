@@ -54,6 +54,7 @@ const Applicants = lazy(() => import("../pages/Applicants"));
 const ApplicantActivate = lazy(() => import("../pages/ApplicantActivate/ApplicantActivate"));
 const Analytics = lazy(() => import("../pages/Admin/Analytics"));
 const TenantSettings = lazy(() => import("../pages/Tenant/TenantSettings"));
+const PyodideDemo = lazy(() => import("../pages/PyodideDemo"));
 
 // 用户信息缓存
 let cachedUser: IUser | null = null;
@@ -637,6 +638,15 @@ export const routeConfig: ExtendedRouteObject[] = [
 			title: "关于",
 			icon: <FileOutlined />,
 			order: 4,
+			hidden: true,
+			auth: "free",
+		},
+	},
+	{
+		path: "/pyodide-demo",
+		Component: PyodideDemo,
+		meta: {
+			title: "Pyodide AI 图片演示",
 			hidden: true,
 			auth: "free",
 		},

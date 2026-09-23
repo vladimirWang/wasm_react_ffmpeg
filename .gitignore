@@ -71,6 +71,10 @@ public/output.js
 public/output.wasm
 *.wasm.map
 
+# AI 抠图模型（isnet-general-use.onnx，约 170MB，超过 GitHub 100MB 单文件限制）
+# 第三方预训练权重，用 pnpm run model:download 获取（固定 URL + md5 校验）
+public/models/*.onnx
+
 # Emscripten 临时文件
 *.o
 *.bc

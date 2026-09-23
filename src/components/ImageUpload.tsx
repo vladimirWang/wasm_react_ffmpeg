@@ -1,17 +1,17 @@
-import { LoadingOutlined, PlusOutlined, DeleteOutlined, ThunderboltOutlined } from "@ant-design/icons";
-import { Button, message, Switch, Upload } from "antd";
-import { RcFile } from "antd/es/upload";
+import { PlusOutlined, DeleteOutlined, LoadingOutlined } from "@ant-design/icons";
+import { Upload, message } from "antd";
 import { useEffect, useRef, useState } from "react";
 import { md5File } from "../utils/file";
 import { checkAndUploadFile } from "../api/util";
-import { standardizeImage } from "../api/image";
+import ImageProcessDrawer from "./ImageProcessDrawer";
 import type { GetProps } from "antd";
+import type { ProcessResult } from "../types/pyodide";
 
 interface ImageUploadProps {
 	onChange?: (url: string[]) => void;
 	value?: string[];
-	/** 显示「一键标准化」按钮：白底方形补边 + 缩放到 800×800 + JPEG 85 质量 */
-	showStandardize?: boolean;
+	/** 是否启用 AI 自动处理（上传后自动弹出处理结果抽屉） */
+	autoProcess?: boolean;
 }
 
 /** mime → 文件扩展名 */
@@ -22,7 +22,7 @@ const MIME_EXT: Record<string, string> = {
 	"image/webp": "webp",
 };
 
-/** 去掉历史数据里的绝对地址前缀：http://139.224.68.145:4000/uploads/x → /uploads/x */
+/** 去掉历史数据里的绝对地址前缀 */
 function stripOrigin(url: string) {
 	return url.replace(/^https?:\/\/(localhost|\d{1,3}(?:\.\d{1,3}){3}):\d{4}/, "");
 }
@@ -30,28 +30,34 @@ function stripOrigin(url: string) {
 export default function ImageUpload({
 	onChange,
 	value,
-	showStandardize,
+	autoProcess = true,
 	...restProps
 }: ImageUploadProps & GetProps<typeof Upload>) {
 	const [uploading, setUploading] = useState(false);
-	const [standardizing, setStandardizing] = useState(false);
-	/** AI 抠图开关：开启后标准化会扣除背景只保留主体，其余区域铺纯色底 */
-	const [removeBg, setRemoveBg] = useState(true);
 
 	/** 表单值：服务器相对路径（/uploads/xxx.jpg） */
 	const [serverUrls, setServerUrls] = useState<string[]>(() =>
 		(value ?? []).map(stripOrigin)
 	);
-	/** 本会话刚上传/处理出来的图：服务器路径 → blob 预览地址，避免立即回源取图导致裂图 */
+	/** 本会话刚上传/处理出来的图：服务器路径 → blob 预览地址 */
 	const blobMap = useRef(new Map<string, string>());
+	/** 当前最新的原始 File 对象（用于传给抽屉做处理） */
+	const currentFileRef = useRef<File | Blob | null>(null);
+	/** 抽屉是否打开 */
+	const [drawerOpen, setDrawerOpen] = useState(false);
+	/** 抽屉中展示的原图预览 URL */
+	const [drawerOriginalUrl, setDrawerOriginalUrl] = useState<string>("");
 
-	// 外部 value 变化（表单回显、reset）时同步；不覆盖刚上传图的 blob 预览
+	// 外部 value 变化时同步
 	useEffect(() => {
 		const next = (value ?? []).map(stripOrigin);
 		setServerUrls(prev => (prev.join("|") === next.join("|") ? prev : next));
+		if ((value?.length ?? 0) === 0) {
+			currentFileRef.current = null;
+		}
 	}, [value]);
 
-	/** 实际展示地址：优先本地 blob，否则用服务器相对路径（同源经 nginx 访问） */
+	/** 实际展示地址：优先本地 blob，否则用服务器相对路径 */
 	const displayUrls = serverUrls.map(u => blobMap.current.get(u) ?? u);
 
 	const uploadButton = (
@@ -61,24 +67,34 @@ export default function ImageUpload({
 		</button>
 	);
 
-	const beforeUpload = (_file: RcFile) => {
-		return true;
-	};
 	const handleChange = (_info: any) => {
-		// 不要在这里往 imageUrl 里追加：否则选第三张时 length 立刻变为 3，Upload 会被卸载，customRequest 无法执行
+		// 不要在这里往 imageUrl 里追加
 	};
+
 	const handleCustomRequest = async (options: any) => {
 		try {
 			const { file } = options;
 			setUploading(true);
+
+			// 保存原始文件引用
+			currentFileRef.current = file;
+
+			// 秒传 + 上传
 			const md5 = await md5File(file);
 			const res = await checkAndUploadFile(md5, file);
 			const filePath = stripOrigin(res.filePath);
-			// 登记 blob 预览，保证表单值切换后缩略图不回源、不闪裂
+
+			// 登记 blob 预览
 			blobMap.current.set(filePath, URL.createObjectURL(file));
 			const next = [...serverUrls, filePath];
 			setServerUrls(next);
 			onChange?.(next);
+
+			// 自动处理：打开抽屉
+			if (autoProcess) {
+				setDrawerOriginalUrl(URL.createObjectURL(file));
+				setDrawerOpen(true);
+			}
 		} catch (e) {
 			message.error("上传失败: " + (e as Error).message);
 		} finally {
@@ -86,52 +102,42 @@ export default function ImageUpload({
 		}
 	};
 
-	/**
-	 * 一键标准化：
-	 * 取当前图片 → 调 Python gRPC（/image/standardize，白底方形 800×800 JPEG）
-	 * → 处理后的图走原有秒传链路 → 更新表单值与预览
-	 */
-	const handleStandardize = async () => {
-		const source = displayUrls[0];
-		if (!source) {
-			message.warning("请先上传图片");
-			return;
-		}
+	/** 使用处理结果（替换当前图片） */
+	const handleUseResult = async (result: ProcessResult) => {
 		try {
-			setStandardizing(true);
-			// blob:（刚上传的本地预览）和 /uploads/xxx（已保存图片）都可直接 fetch
-			const sourceBlob = await fetch(source).then(r => {
-				if (!r.ok) throw new Error(`读取图片失败：HTTP ${r.status}`);
-				return r.blob();
-			});
-
-			const result = await standardizeImage(sourceBlob, {
-				removeBackground: removeBg,
-				square: true,
-				maxWidth: 800,
-				maxHeight: 800,
-				background: "#FFFFFF",
-				format: "JPEG",
-				quality: 85,
-			});
-
 			const ext = MIME_EXT[result.mimeType] ?? "jpg";
-			const processedFile = new File([result.blob], `standardized.${ext}`, {
+			const processedBlob = new Blob([result.image as any], { type: result.mimeType });
+			const processedFile = new File([processedBlob], `processed.${ext}`, {
 				type: result.mimeType,
 			});
+
 			const md5 = await md5File(processedFile);
 			const res = await checkAndUploadFile(md5, processedFile);
 			const filePath = stripOrigin(res.filePath);
 
-			blobMap.current.set(filePath, URL.createObjectURL(result.blob));
+			blobMap.current.set(filePath, URL.createObjectURL(processedBlob));
+			currentFileRef.current = processedFile;
 			setServerUrls([filePath]);
 			onChange?.([filePath]);
-			message.success(`标准化完成：${result.width}×${result.height}`);
+			message.success("已使用处理后的图片");
 		} catch (e) {
-			// standardizeImage 内部已弹错误提示，这里兜底网络层异常
-			if (e instanceof TypeError) message.error("标准化服务不可用，请确认图片服务已启动");
-		} finally {
-			setStandardizing(false);
+			message.error("保存处理结果失败: " + (e as Error).message);
+		}
+	};
+
+	/** 保留原图（什么都不做，关闭抽屉即可） */
+	const handleKeepOriginal = () => {
+		// 保持现状
+	};
+
+	/** 重新上传（删除当前图片，触发重新上传） */
+	const handleReupload = () => {
+		// 删除当前图片，用户可以重新上传
+		if (serverUrls.length > 0) {
+			const next: string[] = [];
+			setServerUrls(next);
+			onChange?.(next);
+			currentFileRef.current = null;
 		}
 	};
 
@@ -139,17 +145,13 @@ export default function ImageUpload({
 		const next = serverUrls.filter((_, i) => i !== index);
 		setServerUrls(next);
 		onChange?.(next);
+		if (next.length === 0) {
+			currentFileRef.current = null;
+		}
 	};
 
-	/** AI 抠图开关提示文案 */
-	const removeBgLabel = (
-		<span className="text-xs text-gray-500">
-			AI 抠图：只保留主体，其余换纯白底（约 1-3 秒）
-		</span>
-	);
-
 	return (
-		<div className="flex flex-col items-start gap-2 w-full min-w-0">
+		<div className="flex flex-col items-start gap-3 w-full min-w-0">
 			<div className="flex flex-wrap items-center gap-2 w-full min-w-0">
 				{displayUrls.map((url, index) => {
 					return (
@@ -175,31 +177,24 @@ export default function ImageUpload({
 						className="avatar-uploader [&_.ant-upload]:m-0!"
 						showUploadList={false}
 						customRequest={handleCustomRequest}
-						beforeUpload={beforeUpload}
+						beforeUpload={() => true}
 						onChange={handleChange}
 					>
 						{uploadButton}
 					</Upload>
 				)}
 			</div>
-			{showStandardize && displayUrls.length > 0 && (
-				<div className="flex flex-wrap items-center gap-3">
-					<Button
-						size="small"
-						type="primary"
-						ghost
-						icon={<ThunderboltOutlined />}
-						loading={standardizing}
-						onClick={handleStandardize}
-					>
-						一键标准化（白底方形 800×800）
-					</Button>
-					<label className="flex items-center gap-1.5 cursor-pointer select-none">
-						<Switch size="small" checked={removeBg} onChange={setRemoveBg} />
-						{removeBgLabel}
-					</label>
-				</div>
-			)}
+
+			{/* AI 图片处理结果抽屉 */}
+			<ImageProcessDrawer
+				open={drawerOpen}
+				originalFile={currentFileRef.current}
+				originalUrl={drawerOriginalUrl}
+				onClose={() => setDrawerOpen(false)}
+				onUseResult={handleUseResult}
+				onKeepOriginal={handleKeepOriginal}
+				onReupload={handleReupload}
+			/>
 		</div>
 	);
 }
