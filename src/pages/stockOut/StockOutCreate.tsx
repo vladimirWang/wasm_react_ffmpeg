@@ -11,7 +11,6 @@ import { useEffect, useState } from "react";
 
 export default function StockInCreate() {
 	const onFinishCallback = async (formValue: IStockOutCreateParams) => {
-		debugger;
 		// console.log(formValue, "--formvalue");
 		try {
 			await createStockOut(formValue);

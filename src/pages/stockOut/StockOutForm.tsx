@@ -5,7 +5,6 @@ import { IVendorUpdateParams } from "../../api/vendor";
 import { useEffect, useMemo, useState } from "react";
 import { IProductJoinStockOut, IStockOut, IStockOutCreateParams } from "../../api/stockOut";
 import {
-	getProductDetailById,
 	getProducts,
 	IProduct,
 	getProductsByAmount,
@@ -56,7 +55,10 @@ export default function StockOutForm(props: StockInFormProps) {
 	type JoinFieldRow = { key: number; name: number };
 
 	const [productVendorMap, setProductVendorMap] = useState<Partial<Record<number, number>>>({});
-	const [productBalanceMap, setProductBalanceMap] = useState<Partial<Record<number, number>>>({});
+	// 产品id → (规格组合 specSkuIds → 该变体库存)
+	const [productVariantMap, setProductVariantMap] = useState<
+		Record<number, Record<string, number>>
+	>({});
 
 	const columnsBase: TableProps<JoinFieldRow>["columns"] = [
 		{
@@ -85,10 +87,12 @@ export default function StockOutForm(props: StockInFormProps) {
 			key: "count",
 			width: 150,
 			render: (_v, row) => {
-				const rowValue = (productJoinStockOutData || [])[row.name];
-				const productId = rowValue?.productId;
-				const balance =
-					!productId || !productBalanceMap[productId] ? 999 : productBalanceMap[productId];
+				const rowValue = productJoinStockOutData?.[row.name];
+				// 按所选完整规格组合取变体库存上限；未选规格时不限制（后端仍做超卖校验）
+				const max =
+					rowValue?.productId != null && rowValue.specSkuIds
+						? productVariantMap[rowValue.productId]?.[rowValue.specSkuIds]
+						: undefined;
 				return (
 					<Form.Item
 						name={[row.name, "count"]}
@@ -99,7 +103,7 @@ export default function StockOutForm(props: StockInFormProps) {
 							disabled={!editable}
 							min={1}
 							style={{ width: "100%" }}
-							max={balance}
+							max={max}
 						/>
 					</Form.Item>
 				);
@@ -215,21 +219,20 @@ export default function StockOutForm(props: StockInFormProps) {
 						remove={remove}
 						currentValues={productJoinStockOutData ?? []}
 						allData={allProducts}
+						listName="productJoinStockOut"
 						onAdd={() => {
 							add({ productId: undefined, price: 1, count: 1 });
 						}}
-						onSelectProduct={async val => {
-							try {
-								const result = await getProductDetailById(val);
-								if (!result) {
-									message.error("商品不存在");
-									return;
-								}
-								console.log("product detail result: ", result);
-								setProductBalanceMap(prev => ({ ...prev, [val]: result.balance }));
-							} catch (e) {
-								message.error((e as Error).message);
+						onProductDetailLoaded={(productId, detail) => {
+							// 从变体列表构建 规格组合 → 库存 的映射（选择与回显都会触发）
+							const variantBalance: Record<string, number> = {};
+							for (const v of detail.variants ?? []) {
+								variantBalance[v.specSkuIds] = v.balance;
 							}
+							setProductVariantMap(prev => ({
+								...prev,
+								[productId]: variantBalance,
+							}));
 						}}
 					/>
 				)}

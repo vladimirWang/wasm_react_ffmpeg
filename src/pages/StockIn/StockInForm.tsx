@@ -18,7 +18,7 @@ import { PlusSquareOutlined, QuestionCircleOutlined } from "@ant-design/icons";
 import { getProducts, IProduct, getLatestShelfPriceByProductId } from "../../api/product";
 import { PageOperation } from "../../enum";
 import { PositiveInputNumber } from "../../components/PositiveInputNumber";
-import { useDistinctProducts } from "../../hooks/useDistinctProducts";
+
 import StockOperationTable, { JoinFieldRow } from "../../components/StockOperationTable";
 import dayjs from "dayjs";
 import { disabledFuture } from "../../utils/common";
@@ -204,6 +204,7 @@ export default function StockInForm(props: StockInFormProps) {
 							remove={remove}
 							currentValues={productJoinStockInData}
 							allData={allProducts}
+							listName="productJoinStockIn"
 							onAdd={() => {
 								add({ productId: undefined, cost: 1, count: 1, shelfPrice: 1 });
 							}}

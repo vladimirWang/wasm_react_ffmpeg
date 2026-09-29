@@ -1,6 +1,6 @@
 import { useMemo } from "react";
 
-// 获取剩下未选中过的商品
+// 获取剩下未选中过的商品：过滤掉 productId 一致的产品
 export const useDistinctProducts = <T extends { id: number }>(
 	allProducts: T[],
 	selectedProducts: { productId: number }[]

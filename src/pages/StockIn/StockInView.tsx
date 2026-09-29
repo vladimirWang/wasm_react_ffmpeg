@@ -1,18 +1,15 @@
 import StockInForm from "./StockInForm";
-import { createStockIn, getStockInDetailById, IStockIn, updateStockIn } from "../../api/stockIn";
-import { IProductJoinStockIn } from "../../api/stockIn";
+import { getStockInDetailById, IStockIn } from "../../api/stockIn";
 import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import useSWR from "swr";
 import { Card, Spin } from "antd";
-import dayjs from "dayjs";
 
 export default function StockInView() {
 	const { id } = useParams();
 
 	const fetcher = async (id: number) => {
 		const res = await getStockInDetailById(Number(id));
-		console.log("------------fetcher-----data--------------: ", data);
 		return res;
 	};
 	const [completed, setCompleted] = useState(false);
@@ -21,15 +18,10 @@ export default function StockInView() {
 
 	useEffect(() => {
 		if (data && !error) {
-			console.log("-----------------data--------------: ", data);
 			setStockInData({ ...data });
 			setCompleted(true);
 		}
 	}, [data, error]);
-
-	useEffect(() => {
-		setCompleted(false);
-	}, []);
 
 	return (
 		<div style={{ background: "#f5f5f5" }}>
