@@ -27,13 +27,19 @@ export interface IProduct {
 	latestCost: number;
 	productCode?: string;
 	historyCost?: IProductHistoryCostItem[];
-	stockInPending: number;
-	stockOutPending: number;
 	salePrice: number;
 	vendor?: IVendor;
 	desc?: string;
 	productJoinSkus?: { sku: ISku }[];
+	// 产品变体（真实 SKU = 完整规格组合）及各组合库存
+	variants?: { specSkuIds: string; balance: number }[];
 }
+
+/**
+ * 产品 + SKU 扁平化项：将 IProduct 按 productJoinSkus 展开后每项附加 skuId。
+ * 用于按 productId + skuId 组合进行去重/过滤的场景（如 useDistinctProducts）。
+ */
+export type IProductSkuItem = IProduct & { skuId: number };
 
 // 定义登录响应类型
 export type IProductsQueryResponse = IPaginationResp<IProduct>;

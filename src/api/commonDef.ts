@@ -36,6 +36,7 @@ export interface StockOperationRecord {
 	count: number;
 	rowIndex?: number; // Excel 中的原始行号（用于保持顺序）
 	result?: string; // 导入数据库结果， 业务单号或者失败原因
+	specSkuIds?: string;
 }
 
 // 进出库表单中的表格数据类型
@@ -43,4 +44,6 @@ export interface IProductJoinStockOperation {
 	count: number;
 	productId: number;
 	vendorId: number;
+	/** 逗号分隔的 SKU id 集合（规格 = 多维度拼接），持久化到后端 */
+	specSkuIds: string;
 }

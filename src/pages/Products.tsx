@@ -64,16 +64,6 @@ const Products: React.FC = () => {
 				return text < 10 ? <span className="text-red-500">{text}</span> : text;
 			},
 		},
-		{
-			title: "待进库",
-			dataIndex: "stockInPending",
-			key: "stockInPending",
-		},
-		{
-			title: "待出库",
-			dataIndex: "stockOutPending",
-			key: "stockOutPending",
-		},
 		// {
 		// 	title: "产品编码",
 		// 	dataIndex: "productCode",

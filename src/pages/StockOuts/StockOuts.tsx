@@ -370,7 +370,7 @@ const StockOuts: React.FC = () => {
 				>
 					新增
 				</Button>
-				<Button
+				{/* <Button
 					onClick={async () => {
 						const products = await getProductsByAmount({ amount: 0, moreThan: true });
 						// const products = await getProducts();
@@ -436,7 +436,7 @@ const StockOuts: React.FC = () => {
 					}}
 				>
 					通过文件批量导入
-				</Button>
+				</Button> */}
 			</section>
 			<SearchBox queryParams={queryParams} onSetQueryParams={setQueryParams} />
 		</div>

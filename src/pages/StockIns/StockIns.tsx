@@ -149,12 +149,12 @@ const StockIns: React.FC = () => {
 					return "-";
 				}
 
-				const productNames = record.products.map(p => p.productName);
+				const uniqueProductNames = [...new Set(record.products.map(p => p.productName))];
 				return (
-					<Tooltip title={productNames.join(",")}>
+					<Tooltip title={uniqueProductNames.join(",")}>
 						<span>
 							{len > 1
-								? `${productNames.slice(0, 5).join(",")}...`
+								? `${uniqueProductNames.slice(0, 5).join(",")}...`
 								: record.products[0].productName}
 						</span>
 					</Tooltip>
@@ -289,7 +289,7 @@ const StockIns: React.FC = () => {
 				>
 					新增
 				</Button>
-				<Button
+				{/* <Button
 					onClick={async () => {
 						const products = await getProducts({ pagination: 0 });
 						const vendors = await getVendors({ pagination: 0 });
@@ -357,7 +357,7 @@ const StockIns: React.FC = () => {
 					}}
 				>
 					通过文件批量导入
-				</Button>
+				</Button> */}
 			</section>
 			<SearchBox
 				queryParams={queryParams}
