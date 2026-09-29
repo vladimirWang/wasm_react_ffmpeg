@@ -34,7 +34,10 @@ export default defineConfig({
 	//   port: 3000
 	// },
 	optimizeDeps: {
-		exclude: ["monaco-editor"],
+		// onnxruntime-web 必须排除预打包：esbuild 会抹掉其动态 import 上的
+		// /* @vite-ignore */，导致 Vite 把运行时 import() 的 /public 胶水 .mjs
+		// 当作源码模块解析而报错；排除后浏览器以原生动态 import 直接加载。
+		exclude: ["monaco-editor", "onnxruntime-web"],
 	},
 	// 确保开发模式下生成 source map
 	build: {
