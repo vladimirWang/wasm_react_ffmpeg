@@ -21,11 +21,21 @@ const MODEL_SIZE = 1024;
 /** 模型文件随站点发布（public/models），图片与模型数据均不出本机 */
 const MODEL_URL = `${import.meta.env.BASE_URL}models/isnet-general-use.onnx`;
 /**
- * onnxruntime-web 的 WASM 运行文件（约 27MB）从 jsdelivr 加载——
- * Vite dev 不允许 ESM 动态 import /public 内文件，且项目已有从 CDN
- * 加载 Pyodide 运行时的先例。版本需与 package.json 中 onnxruntime-web 对齐。
+ * ORT 的 WASM 胶水 .mjs 与二进制 .wasm 的 URL，用 new URL(..., import.meta.url)
+ * 交给 Vite 资产管线：
+ *   dev  → 解析为 node_modules 源文件的裸 URL（transform 管线可处理）
+ *   build → 作为静态资源带 hash 输出到 /assets
+ * 不能放 /public：变量式动态 import 会被 Vite 注入 ?import，而没有插件会
+ * transform publicDir 中的文件，导致 ERR_LOAD_PUBLIC_URL。
  */
-const ORT_WASM_PATHS = "https://cdn.jsdelivr.net/npm/onnxruntime-web@1.30.0/dist/";
+const ortWasmMjsUrl = new URL(
+	"../../node_modules/onnxruntime-web/dist/ort-wasm-simd-threaded.jsep.mjs",
+	import.meta.url
+).href;
+const ortWasmBinaryUrl = new URL(
+	"../../node_modules/onnxruntime-web/dist/ort-wasm-simd-threaded.jsep.wasm",
+	import.meta.url
+).href;
 
 export interface WasmProcessOptions {
 	removeBackground?: boolean;
@@ -166,8 +176,11 @@ class WasmImageService {
 		});
 
 		try {
-			// WASM 运行时：支持跨域隔离时开多线程，否则单线程
-			ort.env.wasm.wasmPaths = ORT_WASM_PATHS;
+			// WASM 运行时：胶水 .mjs 与二进制 .wasm 分别指定（Vite 资源 URL）
+			ort.env.wasm.wasmPaths = {
+				mjs: ortWasmMjsUrl,
+				wasm: ortWasmBinaryUrl,
+			};
 			ort.env.wasm.simd = true;
 			ort.env.wasm.numThreads =
 				typeof self !== "undefined" && self.crossOriginIsolated
