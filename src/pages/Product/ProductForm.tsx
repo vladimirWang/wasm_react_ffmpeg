@@ -38,8 +38,9 @@ import { getTrueType, pickIncrementalFields } from "../../utils/common";
 import ExampleWorker from "../../workers/example.worker?worker";
 import type { WorkerResult } from "../../workers/example.worker";
 import { pick } from "lodash";
+import { v4 as uuidv4 } from "uuid";
 import ImageUpload from "../../components/ImageUpload";
-import MultiCreateSelect, { type MultiCreateOption } from "../../components/MultiCreateSelect";
+import SkuSpecEditor, { type SkuSpecGroup } from "../../components/SkuSpecEditor";
 import { createSku, createSkuCategory, getSkuCategories, getSkus, type ISku } from "../../api/sku";
 import { LexicalComposer } from "@lexical/react/LexicalComposer";
 import { RichTextPlugin } from "@lexical/react/LexicalRichTextPlugin";
@@ -250,61 +251,18 @@ export default function ProductForm({
 	});
 
 	// ===== SKU 分类 / SKU =====
-	// 表单内新建、但列表接口尚未重新加载的 SKU（保证选中态立即可见）
-	const [extraSkus, setExtraSkus] = useState<ISku[]>([]);
-	// SKU 新增行内「所属分类」下拉的当前值
-	const [newSkuCategoryId, setNewSkuCategoryId] = useState<number | undefined>(undefined);
-
 	const { data: skuCategories, mutate: mutateSkuCategories } = useSWR(
 		"sku-categories",
 		async () => (await getSkuCategories()).list,
 		{ revalidateOnFocus: false }
 	);
 
-	// SKU 分类仅作表单内筛选，不随产品提交
-	const selectedCategoryIds: number[] = Form.useWatch("skuCategoryIds", form) ?? [];
-
-	const { data: skuList } = useSWR(
-		selectedCategoryIds.length > 0
-			? (["skus-by-categories", selectedCategoryIds.join(",")] as const)
-			: null,
-		async ([, ids]) => (await getSkus({ categoryIds: ids })).list,
+	// 一次性加载全部 SKU,作为 SkuSpecEditor 添加规格值时按「分类+名称」自动关联已有 SKU 的数据源
+	const { data: skuList, mutate: mutateSkuList } = useSWR(
+		"skus-all",
+		async () => (await getSkus()).list,
 		{ revalidateOnFocus: false }
 	);
-
-	const categoryOptions: MultiCreateOption[] = useMemo(
-		() => (skuCategories ?? []).map(c => ({ value: c.id, label: c.name })),
-		[skuCategories]
-	);
-
-	const skuOptions: MultiCreateOption[] = useMemo(() => {
-		const map = new Map<number, MultiCreateOption>();
-		for (const s of [...(skuList ?? []), ...extraSkus]) {
-			map.set(s.id, { value: s.id, label: s.name, skuCategoryId: s.skuCategoryId });
-		}
-		return Array.from(map.values());
-	}, [skuList, extraSkus]);
-
-	// 分类选择变化时：收敛新增行的「所属分类」
-	useEffect(() => {
-		if (selectedCategoryIds.length === 1) {
-			setNewSkuCategoryId(selectedCategoryIds[0]);
-		} else if (newSkuCategoryId !== undefined && !selectedCategoryIds.includes(newSkuCategoryId)) {
-			setNewSkuCategoryId(undefined);
-		}
-	}, [selectedCategoryIds, newSkuCategoryId]);
-
-	// 取消勾选分类时，移除其下已选 SKU（选项尚未加载的保守保留）
-	const pruneSkuIdsByCategories = (ids: number[]) => {
-		const current: number[] = form.getFieldValue("skuIds") ?? [];
-		const optionMap = new Map(skuOptions.map(o => [o.value, o]));
-		const next = current.filter(skuId => {
-			const opt = optionMap.get(skuId);
-			if (!opt || opt.skuCategoryId === undefined) return true;
-			return ids.includes(opt.skuCategoryId);
-		});
-		if (next.length !== current.length) form.setFieldValue("skuIds", next);
-	};
 
 	const productId = id ? Number(id) : undefined;
 
@@ -467,18 +425,27 @@ export default function ProductForm({
 		}
 	};
 
-	// 产品详情中的 SKU 关联 → 表单初值：skuIds + 由 SKU 反推出的已选分类
-	const formInitialValues = useMemo(
-		() => ({
+	// 产品详情中的 SKU 关联 → 表单初值：按分类分组为 SkuSpecEditor 的 skuSpecGroups
+	const formInitialValues = useMemo(() => {
+		const groupMap = new Map<number, SkuSpecGroup>();
+		for (const { sku } of initialValues?.productJoinSkus ?? []) {
+			const catId = sku.skuCategoryId;
+			if (!groupMap.has(catId)) {
+				groupMap.set(catId, {
+					key: uuidv4(),
+					categoryId: catId,
+					categoryName: sku.skuCategory?.name ?? "",
+					values: [],
+				});
+			}
+			groupMap.get(catId)!.values.push({ id: sku.id, name: sku.name });
+		}
+		return {
 			...initialValues,
 			img: initialValues?.img ? [initialValues.img] : undefined,
-			skuIds: initialValues?.productJoinSkus?.map(item => item.sku.id),
-			skuCategoryIds: Array.from(
-				new Set((initialValues?.productJoinSkus ?? []).map(item => item.sku.skuCategoryId))
-			),
-		}),
-		[initialValues]
-	);
+			skuSpecGroups: Array.from(groupMap.values()),
+		};
+	}, [initialValues]);
 
 	const navigate = useNavigate();
 	const descValue = Form.useWatch("desc", form);
@@ -553,19 +520,69 @@ export default function ProductForm({
 					if (!onFinishCallback) return;
 					setSubmitting(true);
 					try {
+						// ===== 1. 先把 skuSpecGroups 幂等落库,展开为 skuIds =====
+						const groups: SkuSpecGroup[] = values.skuSpecGroups ?? [];
+						// 校验:分类名不能为空,每组至少一个规格值
+						for (const g of groups) {
+							if (!g.categoryName.trim()) {
+								message.error("规格分类名称不能为空");
+								return;
+							}
+							if (g.values.length === 0) {
+								message.error(`分类【${g.categoryName}】至少需要一个规格值`);
+								return;
+							}
+						}
+
+						// 幂等匹配:已有分类/已有 SKU 直接复用 id,不存在才创建
+						const categoryNameToId = new Map((skuCategories ?? []).map(c => [c.name, c.id]));
+						// 复制一份,提交过程中新建的 SKU 也加进去,避免同批次重复创建
+						const skuPoolList = [...(skuList ?? [])];
+						const finalSkuIds: number[] = [];
+						for (const g of groups) {
+							let categoryId = g.categoryId ?? categoryNameToId.get(g.categoryName);
+							if (!categoryId) {
+								const created = await createSkuCategory({ name: g.categoryName });
+								categoryId = created.id;
+								categoryNameToId.set(g.categoryName, categoryId);
+								mutateSkuCategories(list => [...(list ?? []), created], { revalidate: false });
+							}
+							for (const v of g.values) {
+								if (v.id) {
+									finalSkuIds.push(v.id);
+									continue;
+								}
+								const found = skuPoolList.find(
+									s => s.skuCategoryId === categoryId && s.name === v.name
+								);
+								if (found) {
+									finalSkuIds.push(found.id);
+									continue;
+								}
+								const created = await createSku({ name: v.name, skuCategoryId: categoryId });
+								skuPoolList.push(created);
+								finalSkuIds.push(created.id);
+								mutateSkuList(list => [...(list ?? []), created], { revalidate: false });
+							}
+						}
+
+						// ===== 2. 用 skuIds 替换 skuSpecGroups 后再走增量字段比对 =====
+						const valuesForPick = { ...values, skuIds: finalSkuIds };
+						delete valuesForPick.skuSpecGroups;
+						const initialSkuIds = (initialValues?.productJoinSkus ?? []).map(i => i.sku.id);
+						const initialForPick = { ...initialValues, skuIds: initialSkuIds };
+
 						// 提交时：把 desc（Lexical JSON/纯文本/HTML）统一转成 HTML
 						// 注意：initialValues 是 Partial，可能没有 desc 这个 key；
 						// 此时 desc 会落在 created，而不是 updated，所以需要合并 created+updated。
 						const { created, updated } = pickIncrementalFields<IProductUpdateParams>(
-							values,
-							initialValues as IProductUpdateParams
+							valuesForPick,
+							initialForPick as IProductUpdateParams
 						);
 						console.log("---created---: ", created);
 						console.log("---updated---: ", updated);
 						const changedKeys = Array.from(new Set([...(created as any), ...(updated as any)]));
-						const incrementalValues = pick(values, changedKeys);
-						// SKU 分类仅用于表单内过滤 SKU 选项，不提交后端
-						delete incrementalValues.skuCategoryIds;
+						const incrementalValues = pick(valuesForPick, changedKeys);
 						console.log("---incrementalValues 1---: ", values.desc, incrementalValues);
 						if (incrementalValues.desc) {
 							const descHtml = await lexicalDescToHtml(incrementalValues.desc);
@@ -668,64 +685,15 @@ export default function ProductForm({
 						<Form.Item<IProductUpdateParams> label="备注" name="remark">
 							<Input.TextArea showCount maxLength={190} rows={4} placeholder="请输入备注信息" />
 						</Form.Item>
-						<Form.Item<IProductUpdateParams>
-							label="SKU分类"
-							name="skuCategoryIds"
-							extra="可从已有分类中多选，也可在下拉框底部直接新增分类"
+						<Form.Item
+							label="SKU规格"
+							name="skuSpecGroups"
+							extra="按规格分类分组管理 SKU;支持选择已有分类/SKU,也可直接输入新名称,提交时统一落库"
 						>
-							<MultiCreateSelect
-								placeholder="请选择或新增SKU分类（可多选）"
-								options={categoryOptions}
+							<SkuSpecEditor
 								disabled={pageOperation === "view"}
-								onChange={pruneSkuIdsByCategories}
-								onAdd={async name => {
-									const created = await createSkuCategory({ name });
-									await mutateSkuCategories(list => [...(list ?? []), created], {
-										revalidate: false,
-									});
-									return { value: created.id, label: created.name };
-								}}
-							/>
-						</Form.Item>
-						<Form.Item<IProductUpdateParams>
-							label="SKU"
-							name="skuIds"
-							extra="展示所选分类下的已有 SKU，可多选；新增时请先选择所属分类"
-						>
-							<MultiCreateSelect
-								placeholder={
-									selectedCategoryIds.length ? "请选择或新增SKU（可多选）" : "请先选择SKU分类"
-								}
-								options={skuOptions}
-								disabled={pageOperation === "view"}
-								addDisabled={selectedCategoryIds.length === 0 || !newSkuCategoryId}
-								addDisabledTip={
-									selectedCategoryIds.length === 0 ? "请先选择SKU分类" : "请选择所属分类"
-								}
-								addBefore={
-									<Select
-										style={{ width: 120 }}
-										placeholder="所属分类"
-										value={newSkuCategoryId}
-										onChange={setNewSkuCategoryId}
-										options={categoryOptions.filter(c => selectedCategoryIds.includes(c.value))}
-										disabled={pageOperation === "view" || selectedCategoryIds.length === 0}
-										// 浮层挂在节点内部，点选项时不脱离外层 SKU 下拉，避免外层被关闭
-										getPopupContainer={triggerNode => triggerNode.parentElement ?? document.body}
-									/>
-								}
-								onAdd={async name => {
-									const created = await createSku({
-										name,
-										skuCategoryId: newSkuCategoryId as number,
-									});
-									setExtraSkus(prev => [...prev, created]);
-									return {
-										value: created.id,
-										label: created.name,
-										skuCategoryId: created.skuCategoryId,
-									};
-								}}
+								categoryOptions={(skuCategories ?? []).map(c => ({ value: c.id, label: c.name }))}
+								skuPool={skuList ?? []}
 							/>
 						</Form.Item>
 					</section>
