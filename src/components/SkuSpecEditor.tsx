@@ -44,6 +44,21 @@ export default function SkuSpecEditor({
 		[categoryOptions]
 	);
 
+	const usedCategoryIds = useMemo(
+		() =>
+			new Set(
+				groups
+					.map(g => g.categoryId)
+					.filter((id): id is number => id !== undefined)
+			),
+		[groups]
+	);
+
+	const hasAvailableCategory = useMemo(
+		() => categoryOptions.some(c => !usedCategoryIds.has(c.value)),
+		[categoryOptions, usedCategoryIds]
+	);
+
 	const emit = (next: SkuSpecGroup[]) => onChange?.(next);
 
 	const handleAddGroup = () => {
@@ -108,7 +123,12 @@ export default function SkuSpecEditor({
 		<div>
 			<div className="flex justify-end pb-2">
 				{!disabled && (
-					<Button type="primary" icon={<PlusOutlined />} onClick={handleAddGroup}>
+					<Button
+						type="primary"
+						icon={<PlusOutlined />}
+						onClick={handleAddGroup}
+						disabled={!hasAvailableCategory}
+					>
 						添加规格组
 					</Button>
 				)}
@@ -139,7 +159,16 @@ export default function SkuSpecEditor({
 								style={{ flex: 1 }}
 								placeholder="选择或输入规格分类,如 color、size"
 								value={group.categoryName || undefined}
-								options={categoryOptions.map(c => ({ value: c.label }))}
+								options={categoryOptions
+									.filter(
+										c =>
+											!groups.some(
+												g =>
+													g.key !== group.key &&
+													(g.categoryId === c.value || g.categoryName === c.label)
+											)
+									)
+									.map(c => ({ value: c.label }))}
 								onChange={v => handleChangeCategory(group.key, v)}
 								disabled={disabled}
 								allowClear
