@@ -270,7 +270,7 @@ export default function ProductForm({
 	const debouncedCheckName = useMemo(
 		() =>
 			debounce((vendorId: number, productName: string) => {
-				if (pageOperation !== "update" || initialValues?.name !== productName) {
+				if (productName && pageOperation !== "update" || initialValues?.name !== productName) {
 					checkProductNameExistedInVendor(vendorId, { productName }).then(existed =>
 						form.setFields([{ name: "name", errors: existed ? ["商品名称已存在"] : [] }])
 					);
