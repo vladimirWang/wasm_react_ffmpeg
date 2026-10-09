@@ -40,8 +40,8 @@ import type { WorkerResult } from "../../workers/example.worker";
 import { pick } from "lodash";
 import { v4 as uuidv4 } from "uuid";
 import ImageUpload from "../../components/ImageUpload";
-import SkuSpecEditor, { type SkuSpecGroup } from "../../components/SkuSpecEditor";
-import { createSku, createSkuCategory, getSkuCategories, getSkus, type ISku } from "../../api/sku";
+import AttrSpecEditor, { type AttrSpecGroup } from "../../components/AttrSpecEditor";
+import { createAttr, createAttrCategory, getAttrCategories, getAttrs, type IAttr } from "../../api/attr";
 import { LexicalComposer } from "@lexical/react/LexicalComposer";
 import { RichTextPlugin } from "@lexical/react/LexicalRichTextPlugin";
 import { ContentEditable } from "@lexical/react/LexicalContentEditable";
@@ -188,7 +188,7 @@ export default function ProductForm({
 	redirect,
 }: {
 	redirect?: string;
-	initialValues?: IProductUpdateParams & { productJoinSkus?: { sku: ISku }[] };
+	initialValues?: IProductUpdateParams & { productJoinSkus?: { attr: IAttr }[] };
 	onFinishCallback?: (values: IProductUpdateParams) => Promise<void>;
 	pageOperation: PageOperation;
 }) {
@@ -250,17 +250,17 @@ export default function ProductForm({
 		revalidateOnFocus: true,
 	});
 
-	// ===== SKU 分类 / SKU =====
-	const { data: skuCategories, mutate: mutateSkuCategories } = useSWR(
-		"sku-categories",
-		async () => (await getSkuCategories()).list,
+	// ===== 属性分类 / 属性 =====
+	const { data: attrCategories, mutate: mutateAttrCategories } = useSWR(
+		"attr-categories",
+		async () => (await getAttrCategories()).list,
 		{ revalidateOnFocus: false }
 	);
 
-	// 一次性加载全部 SKU,作为 SkuSpecEditor 添加规格值时按「分类+名称」自动关联已有 SKU 的数据源
-	const { data: skuList, mutate: mutateSkuList } = useSWR(
-		"skus-all",
-		async () => (await getSkus()).list,
+	// 一次性加载全部属性,作为 AttrSpecEditor 添加规格值时按「分类+名称」自动关联已有属性的数据源
+	const { data: attrList, mutate: mutateAttrList } = useSWR(
+		"attrs-all",
+		async () => (await getAttrs()).list,
 		{ revalidateOnFocus: false }
 	);
 
@@ -425,25 +425,25 @@ export default function ProductForm({
 		}
 	};
 
-	// 产品详情中的 SKU 关联 → 表单初值：按分类分组为 SkuSpecEditor 的 skuSpecGroups
+	// 产品详情中的属性关联 → 表单初值：按分类分组为 AttrSpecEditor 的 attrSpecGroups
 	const formInitialValues = useMemo(() => {
-		const groupMap = new Map<number, SkuSpecGroup>();
-		for (const { sku } of initialValues?.productJoinSkus ?? []) {
-			const catId = sku.skuCategoryId;
+		const groupMap = new Map<number, AttrSpecGroup>();
+		for (const { attr } of initialValues?.productJoinSkus ?? []) {
+			const catId = attr.attrCategoryId;
 			if (!groupMap.has(catId)) {
 				groupMap.set(catId, {
 					key: uuidv4(),
 					categoryId: catId,
-					categoryName: sku.skuCategory?.name ?? "",
+					categoryName: attr.attrCategory?.name ?? "",
 					values: [],
 				});
 			}
-			groupMap.get(catId)!.values.push({ id: sku.id, name: sku.name });
+			groupMap.get(catId)!.values.push({ id: attr.id, name: attr.name });
 		}
 		return {
 			...initialValues,
 			img: initialValues?.img ? [initialValues.img] : undefined,
-			skuSpecGroups: Array.from(groupMap.values()),
+			attrSpecGroups: Array.from(groupMap.values()),
 		};
 	}, [initialValues]);
 
@@ -520,8 +520,8 @@ export default function ProductForm({
 					if (!onFinishCallback) return;
 					setSubmitting(true);
 					try {
-						// ===== 1. 先把 skuSpecGroups 幂等落库,展开为 skuIds =====
-						const groups: SkuSpecGroup[] = values.skuSpecGroups ?? [];
+						// ===== 1. 先把 attrSpecGroups 幂等落库,展开为 attrIds =====
+						const groups: AttrSpecGroup[] = values.attrSpecGroups ?? [];
 						// 校验:分类名不能为空,每组至少一个规格值
 						for (const g of groups) {
 							if (!g.categoryName.trim()) {
@@ -533,44 +533,43 @@ export default function ProductForm({
 								return;
 							}
 						}
-
-						// 幂等匹配:已有分类/已有 SKU 直接复用 id,不存在才创建
-						const categoryNameToId = new Map((skuCategories ?? []).map(c => [c.name, c.id]));
-						// 复制一份,提交过程中新建的 SKU 也加进去,避免同批次重复创建
-						const skuPoolList = [...(skuList ?? [])];
-						const finalSkuIds: number[] = [];
+						// 幂等匹配:已有分类/已有属性直接复用 id,不存在才创建
+						const categoryNameToId = new Map((attrCategories ?? []).map(c => [c.name, c.id]));
+						// 复制一份,提交过程中新建的属性也加进去,避免同批次重复创建
+						const attrPoolList = [...(attrList ?? [])];
+						const finalAttrIds: number[] = [];
 						for (const g of groups) {
 							let categoryId = g.categoryId ?? categoryNameToId.get(g.categoryName);
 							if (!categoryId) {
-								const created = await createSkuCategory({ name: g.categoryName });
+								const created = await createAttrCategory({ name: g.categoryName });
 								categoryId = created.id;
 								categoryNameToId.set(g.categoryName, categoryId);
-								mutateSkuCategories(list => [...(list ?? []), created], { revalidate: false });
+								mutateAttrCategories(list => [...(list ?? []), created], { revalidate: false });
 							}
 							for (const v of g.values) {
 								if (v.id) {
-									finalSkuIds.push(v.id);
+									finalAttrIds.push(v.id);
 									continue;
 								}
-								const found = skuPoolList.find(
-									s => s.skuCategoryId === categoryId && s.name === v.name
+								const found = attrPoolList.find(
+									s => s.attrCategoryId === categoryId && s.name === v.name
 								);
 								if (found) {
-									finalSkuIds.push(found.id);
+									finalAttrIds.push(found.id);
 									continue;
 								}
-								const created = await createSku({ name: v.name, skuCategoryId: categoryId });
-								skuPoolList.push(created);
-								finalSkuIds.push(created.id);
-								mutateSkuList(list => [...(list ?? []), created], { revalidate: false });
+								const created = await createAttr({ name: v.name, attrCategoryId: categoryId });
+								attrPoolList.push(created);
+								finalAttrIds.push(created.id);
+								mutateAttrList(list => [...(list ?? []), created], { revalidate: false });
 							}
 						}
 
-						// ===== 2. 用 skuIds 替换 skuSpecGroups 后再走增量字段比对 =====
-						const valuesForPick = { ...values, skuIds: finalSkuIds };
-						delete valuesForPick.skuSpecGroups;
-						const initialSkuIds = (initialValues?.productJoinSkus ?? []).map(i => i.sku.id);
-						const initialForPick = { ...initialValues, skuIds: initialSkuIds };
+						// ===== 2. 用 attrIds 替换 attrSpecGroups 后再走增量字段比对 =====
+						const valuesForPick = { ...values, attrIds: finalAttrIds };
+						delete valuesForPick.attrSpecGroups;
+						const initialAttrIds = (initialValues?.productJoinSkus ?? []).map(i => i.attr.id);
+						const initialForPick = { ...initialValues, attrIds: initialAttrIds };
 
 						// 提交时：把 desc（Lexical JSON/纯文本/HTML）统一转成 HTML
 						// 注意：initialValues 是 Partial，可能没有 desc 这个 key；
@@ -686,14 +685,14 @@ export default function ProductForm({
 							<Input.TextArea showCount maxLength={190} rows={4} placeholder="请输入备注信息" />
 						</Form.Item>
 						<Form.Item
-							label="SKU规格"
-							name="skuSpecGroups"
-							extra="按规格分类分组管理 SKU;支持选择已有分类/SKU,也可直接输入新名称,提交时统一落库"
+							label="规格"
+							name="attrSpecGroups"
+							extra="按规格分类分组管理属性;支持选择已有分类/属性,也可直接输入新名称,提交时统一落库"
 						>
-							<SkuSpecEditor
+							<AttrSpecEditor
 								disabled={pageOperation === "view"}
-								categoryOptions={(skuCategories ?? []).map(c => ({ value: c.id, label: c.name }))}
-								skuPool={skuList ?? []}
+								categoryOptions={(attrCategories ?? []).map(c => ({ value: c.id, label: c.name }))}
+								attrPool={attrList ?? []}
 							/>
 						</Form.Item>
 					</section>

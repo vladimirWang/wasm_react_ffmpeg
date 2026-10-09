@@ -4,36 +4,36 @@ import { PageOperation } from "../enum";
 import { PlusSquareOutlined } from "@ant-design/icons";
 import { IProductJoinStockOperation } from "../api/commonDef";
 import { getProductDetailById, IProduct } from "../api/product";
-import type { ISku } from "../api/sku";
+import type { IAttr } from "../api/attr";
 
 export type JoinFieldRow = { key: number; name: number };
 
 /**
- * 规格选择触发器：作为 Form.Item 子元素，接收 value（逗号分隔的 skuId 字符串），
- * 拼接对应 SKU 名称显示。点击后调用 onOpen 打开弹窗。
+ * 规格选择触发器：作为 Form.Item 子元素，接收 value（逗号分隔的属性 id 字符串），
+ * 拼接对应属性名称显示。点击后调用 onOpen 打开弹窗。
  * value 由 Form.Item 注入，onChange 不使用（值通过弹窗确认后 form.setFieldValue 写入）。
  */
-interface SkuModalTriggerProps {
+interface AttrModalTriggerProps {
 	value?: string;
 	onChange?: (val: string | undefined) => void;
-	skus: ISku[];
+	attrs: IAttr[];
 	loading?: boolean;
 	isView?: boolean;
 	disabled?: boolean;
 	onOpen: () => void;
 }
 
-const SkuModalTrigger = ({
+const AttrModalTrigger = ({
 	value,
-	skus,
+	attrs,
 	loading,
 	isView,
 	disabled,
 	onOpen,
-}: SkuModalTriggerProps) => {
+}: AttrModalTriggerProps) => {
 	const ids = value ? value.split(",").map(Number).filter(Boolean) : [];
 	const names = ids
-		.map(id => skus.find(s => s.id === id)?.name)
+		.map(id => attrs.find(s => s.id === id)?.name)
 		.filter(Boolean) as string[];
 	const specText = names.join("/");
 	if (isView) {
@@ -61,7 +61,7 @@ interface StockOperationTableProps<T> {
 	pageOperation: PageOperation;
 	allData: IProduct[];
 	currentValues: T[];
-	/** Form.List 的字段名，用于程序化清空本行的 SKU 相关字段 */
+	/** Form.List 的字段名，用于程序化清空本行的属性相关字段 */
 	listName: string;
 	onUpdateProductVendorMap: (map: Partial<Record<number, number>>) => void;
 	onSelectProduct?: (productId: number, row: JoinFieldRow) => void;
@@ -77,27 +77,27 @@ export default function StockOperationTable<T extends IProductJoinStockOperation
 
 	const form = Form.useFormInstance();
 
-	// 产品id → 该产品关联的 SKU 列表（来自产品详情，按产品缓存）
-	const [productSkus, setProductSkus] = useState<Record<number, ISku[]>>({});
+	// 产品id → 该产品关联的属性列表（来自产品详情，按产品缓存）
+	const [productAttrs, setProductAttrs] = useState<Record<number, IAttr[]>>({});
 	const [loadingProductIds, setLoadingProductIds] = useState<Set<number>>(new Set());
 
 	// 规格选择弹窗状态
 	const [modalRowIndex, setModalRowIndex] = useState<number | null>(null);
-	const [modalSelectedSkuIds, setModalSelectedSkuIds] = useState<Set<number>>(
+	const [modalSelectedAttrIds, setModalSelectedAttrIds] = useState<Set<number>>(
 		new Set(),
 	);
 
-	/** 拉取并缓存产品关联的 SKU（含分类信息） */
-	const fetchProductSkus = async (productId: number) => {
+	/** 拉取并缓存产品关联的属性（含分类信息） */
+	const fetchProductAttrs = async (productId: number) => {
 		// 如果productId无效或已经缓存过该产品，直接返回undefined或缓存值
-		if (!productId || productSkus[productId]) return productSkus[productId];
+		if (!productId || productAttrs[productId]) return productAttrs[productId];
 		setLoadingProductIds(prev => new Set(prev).add(productId));
 		try {
 			const detail = await getProductDetailById(productId);
-			const skus = (detail.productJoinSkus ?? []).map(item => item.sku);
-			setProductSkus(prev => ({ ...prev, [productId]: skus }));
+			const attrs = (detail.productJoinSkus ?? []).map(item => item.attr);
+			setProductAttrs(prev => ({ ...prev, [productId]: attrs }));
 			props.onProductDetailLoaded?.(productId, detail);
-			return skus;
+			return attrs;
 		} finally {
 			setLoadingProductIds(prev => {
 				const next = new Set(prev);
@@ -107,11 +107,11 @@ export default function StockOperationTable<T extends IProductJoinStockOperation
 		}
 	};
 
-	// 取本行已选产品关联的 SKU
-	const getRowSkus = (rowIndex: number): ISku[] => {
+	// 取本行已选产品关联的属性
+	const getRowAttrs = (rowIndex: number): IAttr[] => {
 		const productId = currentValues?.[rowIndex]?.productId;
 		if (!productId) return [];
-		return productSkus[productId] ?? [];
+		return productAttrs[productId] ?? [];
 	};
 
 	// 产品id与供应商id的映射
@@ -182,8 +182,8 @@ export default function StockOperationTable<T extends IProductJoinStockOperation
 								makeCacheProductVendorMap(val);
 								// 选择商品，触发回调
 								props.onSelectProduct?.(val, row);
-								// 拉取该产品关联的 SKU
-								await fetchProductSkus(val);
+								// 拉取该产品关联的属性
+								await fetchProductAttrs(val);
 							}}
 						/>
 					</Form.Item>
@@ -199,25 +199,25 @@ export default function StockOperationTable<T extends IProductJoinStockOperation
 				const isView = pageOperation === "view";
 				return (
 					<Form.Item name={[row.name, "specSkuIds"]} style={{ marginBottom: 0 }}>
-						<SkuModalTrigger
-							skus={getRowSkus(row.name)}
-							loading={productId ? loadingProductIds.has(productId) : false}
-							isView={isView}
-							disabled={!editable || !productId}
-							onOpen={() => {
-								setModalRowIndex(row.name);
-								const currentSpecSkuIds = form.getFieldValue([
-									props.listName,
-									row.name,
-									"specSkuIds",
-								]);
-								const ids = currentSpecSkuIds
-									? currentSpecSkuIds.split(",").map(Number).filter(Boolean)
-									: [];
-								setModalSelectedSkuIds(new Set(ids));
-							}}
-						/>
-					</Form.Item>
+							<AttrModalTrigger
+								attrs={getRowAttrs(row.name)}
+								loading={productId ? loadingProductIds.has(productId) : false}
+								isView={isView}
+								disabled={!editable || !productId}
+								onOpen={() => {
+									setModalRowIndex(row.name);
+									const currentSpecSkuIds = form.getFieldValue([
+										props.listName,
+										row.name,
+										"specSkuIds",
+									]);
+									const ids = currentSpecSkuIds
+										? currentSpecSkuIds.split(",").map(Number).filter(Boolean)
+										: [];
+									setModalSelectedAttrIds(new Set(ids));
+								}}
+							/>
+						</Form.Item>
 				);
 			},
 		},
@@ -236,12 +236,12 @@ export default function StockOperationTable<T extends IProductJoinStockOperation
 		});
 	}, [props.currentValues, props.allData]);
 
-	// 编辑/查看态：预加载各行产品关联的 SKU，用于回显分类与 SKU 文本
+	// 编辑/查看态：预加载各行产品关联的属性，用于回显分类与属性文本
 	useEffect(() => {
 		if (!Array.isArray(props.currentValues)) return;
 		props.currentValues.forEach(item => {
 			if (item?.productId) {
-				fetchProductSkus(item.productId);
+				fetchProductAttrs(item.productId);
 			}
 		});
 	}, [props.currentValues]);
@@ -305,43 +305,43 @@ export default function StockOperationTable<T extends IProductJoinStockOperation
 				width={480}
 				okText="确定"
 				cancelText="取消"
-				okButtonProps={{ disabled: modalSelectedSkuIds.size === 0 }}
+				okButtonProps={{ disabled: modalSelectedAttrIds.size === 0 }}
 				onOk={() => {
 					if (modalRowIndex !== null) {
-						const ids = [...modalSelectedSkuIds].sort((a, b) => a - b).join(",");
+						const ids = [...modalSelectedAttrIds].sort((a, b) => a - b).join(",");
 						form.setFieldValue(
 							[props.listName, modalRowIndex, "specSkuIds"],
 							ids || undefined,
 						);
 					}
 					setModalRowIndex(null);
-					setModalSelectedSkuIds(new Set());
+					setModalSelectedAttrIds(new Set());
 				}}
 				onCancel={() => {
 					setModalRowIndex(null);
-					setModalSelectedSkuIds(new Set());
+					setModalSelectedAttrIds(new Set());
 				}}
 			>
 				{modalRowIndex !== null &&
 					(() => {
-						const skus = getRowSkus(modalRowIndex);
+						const attrs = getRowAttrs(modalRowIndex);
 						// 按分类分组
 						const categoryMap = new Map<number, string>();
-						const uncategorized: ISku[] = [];
-						for (const sku of skus) {
-							if (sku.skuCategory) {
-								if (!categoryMap.has(sku.skuCategory.id)) {
-									categoryMap.set(sku.skuCategory.id, sku.skuCategory.name);
+						const uncategorized: IAttr[] = [];
+						for (const attr of attrs) {
+							if (attr.attrCategory) {
+								if (!categoryMap.has(attr.attrCategory.id)) {
+									categoryMap.set(attr.attrCategory.id, attr.attrCategory.name);
 								}
 							} else {
-								uncategorized.push(sku);
+								uncategorized.push(attr);
 							}
 						}
-						const renderSkuTag = (sku: ISku) => {
-							const selected = modalSelectedSkuIds.has(sku.id);
+						const renderAttrTag = (attr: IAttr) => {
+							const selected = modalSelectedAttrIds.has(attr.id);
 							return (
 								<Tag
-									key={sku.id}
+									key={attr.id}
 									color={selected ? "blue" : undefined}
 									style={{
 										cursor: "pointer",
@@ -349,30 +349,30 @@ export default function StockOperationTable<T extends IProductJoinStockOperation
 										fontSize: 14,
 									}}
 									onClick={() => {
-										setModalSelectedSkuIds(prev => {
+										setModalSelectedAttrIds(prev => {
 											const next = new Set(prev);
-											if (next.has(sku.id)) {
-												next.delete(sku.id);
+											if (next.has(attr.id)) {
+												next.delete(attr.id);
 											} else {
 												// 同分类下只能选一个，替换已选
 												for (const id of next) {
-													const s = skus.find(
-														sku2 => sku2.id === id,
+													const s = attrs.find(
+														attr2 => attr2.id === id,
 													);
 													if (
-														s?.skuCategoryId ===
-														sku.skuCategoryId
+														s?.attrCategoryId ===
+														attr.attrCategoryId
 													) {
 														next.delete(id);
 													}
 												}
-												next.add(sku.id);
+												next.add(attr.id);
 											}
 											return next;
 										});
 									}}
 								>
-									{sku.name}
+									{attr.name}
 								</Tag>
 							);
 						};
@@ -392,9 +392,9 @@ export default function StockOperationTable<T extends IProductJoinStockOperation
 												gap: 8,
 											}}
 										>
-											{skus
-												.filter(s => s.skuCategoryId === catId)
-												.map(renderSkuTag)}
+											{attrs
+												.filter(s => s.attrCategoryId === catId)
+												.map(renderAttrTag)}
 										</div>
 									</div>
 								))}
@@ -412,7 +412,7 @@ export default function StockOperationTable<T extends IProductJoinStockOperation
 												gap: 8,
 											}}
 										>
-											{uncategorized.map(renderSkuTag)}
+											{uncategorized.map(renderAttrTag)}
 										</div>
 									</div>
 								)}

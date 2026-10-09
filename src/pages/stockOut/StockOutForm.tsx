@@ -224,10 +224,15 @@ export default function StockOutForm(props: StockInFormProps) {
 							add({ productId: undefined, price: 1, count: 1 });
 						}}
 						onProductDetailLoaded={(productId, detail) => {
-							// 从变体列表构建 规格组合 → 库存 的映射（选择与回显都会触发）
+							// 从变体列表构建 规格组合(attrId 升序逗号串) → 库存 的映射（选择与回显都会触发）
+							// 与规格弹窗写入 specSkuIds 的规则一致（升序 join），空规格组合 key 为 ""
 							const variantBalance: Record<string, number> = {};
 							for (const v of detail.variants ?? []) {
-								variantBalance[v.specSkuIds] = v.balance;
+								const key = (v.productVariantJoinAttrs ?? [])
+									.map((a) => a.attrId)
+									.sort((a, b) => a - b)
+									.join(",");
+								variantBalance[key] = v.balance;
 							}
 							setProductVariantMap(prev => ({
 								...prev,

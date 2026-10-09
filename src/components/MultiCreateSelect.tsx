@@ -5,8 +5,8 @@ import { PlusOutlined } from "@ant-design/icons";
 export interface MultiCreateOption {
 	value: number;
 	label: string;
-	// SKU 场景下记录所属分类，供外部联动使用
-	skuCategoryId?: number;
+	// 属性场景下记录所属分类，供外部联动使用
+	attrCategoryId?: number;
 	[key: string]: unknown;
 }
 
@@ -18,9 +18,9 @@ interface MultiCreateSelectProps {
 	disabled?: boolean;
 	addPlaceholder?: string;
 	addButtonText?: string;
-	/** 新增行内、名称输入框之前的前置内容（如 SKU 的「所属分类」下拉） */
+	/** 新增行内、名称输入框之前的前置内容（如属性的「所属分类」下拉） */
 	addBefore?: ReactNode;
-	/** 禁止新增（如尚未选择 SKU 分类） */
+	/** 禁止新增（如尚未选择属性分类） */
 	addDisabled?: boolean;
 	addDisabledTip?: string;
 	/** 执行新增，成功后自动选中新项并清空输入框 */

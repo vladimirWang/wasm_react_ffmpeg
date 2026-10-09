@@ -1,7 +1,7 @@
 import { nodejsRequest } from "../request";
 import { IPaginationResp, IPagination, IResponse } from "./commonDef";
 import { IVendor } from "./vendor";
-import type { ISku } from "./sku";
+import type { IAttr } from "./attr";
 
 // 产品类型定义
 export interface IProductHistoryCostItem {
@@ -30,16 +30,20 @@ export interface IProduct {
 	salePrice: number;
 	vendor?: IVendor;
 	desc?: string;
-	productJoinSkus?: { sku: ISku }[];
-	// 产品变体（真实 SKU = 完整规格组合）及各组合库存
-	variants?: { specSkuIds: string; balance: number }[];
+	productJoinSkus?: { attr: IAttr }[];
+	// 产品变体（真实 SKU = 完整规格组合）及各组合库存；组合 = productVariantJoinAttrs 的 attrId 集合
+	variants?: {
+		id: number;
+		balance: number;
+		productVariantJoinAttrs: { attrId: number; attrCategoryId: number }[];
+	}[];
 }
 
 /**
- * 产品 + SKU 扁平化项：将 IProduct 按 productJoinSkus 展开后每项附加 skuId。
- * 用于按 productId + skuId 组合进行去重/过滤的场景（如 useDistinctProducts）。
+ * 产品 + 属性 扁平化项：将 IProduct 按 productJoinSkus 展开后每项附加 attrId。
+ * 用于按 productId + attrId 组合进行去重/过滤的场景（如 useDistinctProducts）。
  */
-export type IProductSkuItem = IProduct & { skuId: number };
+export type IProductAttrItem = IProduct & { attrId: number };
 
 // 定义登录响应类型
 export type IProductsQueryResponse = IPaginationResp<IProduct>;
@@ -88,10 +92,10 @@ export const getProductDetailById = (id: number): Promise<IProduct> => {
 export type IProductUpdateParams = Partial<
 	Omit<IProduct, "id" | "createdAt" | "updatedAt" | "isDel" | "productJoinSkus">
 > & {
-	// 产品关联的 SKU id 集合（表单提交用）
-	skuIds?: number[];
-	// 表单内的 SKU 分类筛选值（不提交后端，仅用于过滤 SKU 选项）
-	skuCategoryIds?: number[];
+	// 产品关联的属性 id 集合（表单提交用）
+	attrIds?: number[];
+	// 表单内的属性分类筛选值（不提交后端，仅用于过滤属性选项）
+	attrCategoryIds?: number[];
 };
 
 // 更新产品详情

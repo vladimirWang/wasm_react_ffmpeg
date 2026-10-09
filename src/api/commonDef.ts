@@ -44,6 +44,6 @@ export interface IProductJoinStockOperation {
 	count: number;
 	productId: number;
 	vendorId: number;
-	/** 逗号分隔的 SKU id 集合（规格 = 多维度拼接），持久化到后端 */
+	/** 逗号分隔的属性 id 集合（规格 = 多维度拼接），持久化到后端 */
 	specSkuIds: string;
 }

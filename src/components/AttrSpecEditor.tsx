@@ -3,38 +3,38 @@ import { AutoComplete, Button, Card, Space, Tag, message } from "antd";
 import { PlusOutlined, DeleteOutlined } from "@ant-design/icons";
 import { v4 as uuidv4 } from "uuid";
 
-export type SkuSpecValue = {
-	// 已存在的 SKU id;新建的规格值无 id,提交时再落库
+export type AttrSpecValue = {
+	// 已存在的属性 id;新建的规格值无 id,提交时再落库
 	id?: number;
 	name: string;
 };
 
-export type SkuSpecGroup = {
+export type AttrSpecGroup = {
 	// 本地分组 key,仅用于 React 渲染
 	key: string;
 	// 已有分类 id;新分类无 id,提交时再落库
 	categoryId?: number;
 	categoryName: string;
-	values: SkuSpecValue[];
+	values: AttrSpecValue[];
 };
 
-export type SkuSpecEditorProps = {
-	value?: SkuSpecGroup[];
-	onChange?: (next: SkuSpecGroup[]) => void;
+export type AttrSpecEditorProps = {
+	value?: AttrSpecGroup[];
+	onChange?: (next: AttrSpecGroup[]) => void;
 	disabled?: boolean;
 	// 已有分类候选(用于选择/输入已有分类时自动关联 id)
 	categoryOptions: { value: number; label: string }[];
-	// 已有 SKU 池(用于添加规格值时按分类+名称自动关联 id,避免重复创建)
-	skuPool: { id: number; name: string; skuCategoryId: number }[];
+	// 已有属性池(用于添加规格值时按分类+名称自动关联 id,避免重复创建)
+	attrPool: { id: number; name: string; attrCategoryId: number }[];
 };
 
-export default function SkuSpecEditor({
+export default function AttrSpecEditor({
 	value,
 	onChange,
 	disabled,
 	categoryOptions,
-	skuPool,
-}: SkuSpecEditorProps) {
+	attrPool,
+}: AttrSpecEditorProps) {
 	const groups = value ?? [];
 	// 每组内新增规格值的临时输入
 	const [valueInputs, setValueInputs] = useState<Record<string, string>>({});
@@ -55,11 +55,17 @@ export default function SkuSpecEditor({
 	);
 
 	const hasAvailableCategory = useMemo(
-		() => categoryOptions.some(c => !usedCategoryIds.has(c.value)),
+		() => {
+			return true;
+			// if (categoryOptions.length === 0) return true
+			// console.log("categoryOptions: ", categoryOptions)
+			// console.log("usedCategoryIds: ", usedCategoryIds)
+			// return categoryOptions.some(c => !usedCategoryIds.has(c.value))
+		},
 		[categoryOptions, usedCategoryIds]
 	);
 
-	const emit = (next: SkuSpecGroup[]) => onChange?.(next);
+	const emit = (next: AttrSpecGroup[]) => onChange?.(next);
 
 	const handleAddGroup = () => {
 		emit([...groups, { key: uuidv4(), categoryName: "", values: [] }]);
@@ -91,14 +97,19 @@ export default function SkuSpecEditor({
 
 		const group = groups.find(g => g.key === key);
 		if (!group) return;
+		// 未填写规格分类时不允许添加规格值
+		if (!group.categoryName.trim()) {
+			message.warning("请先填写规格分类");
+			return;
+		}
 		if (group.values.some(v => v.name === inputVal)) {
 			message.warning("规格值不能重复");
 			return;
 		}
 
-		// 若当前分类下已存在同名 SKU,自动关联其 id,避免提交时重复创建
+		// 若当前分类下已存在同名属性,自动关联其 id,避免提交时重复创建
 		const existing = group.categoryId
-			? skuPool.find(s => s.skuCategoryId === group.categoryId && s.name === inputVal)
+			? attrPool.find(s => s.attrCategoryId === group.categoryId && s.name === inputVal)
 			: undefined;
 
 		emit(
@@ -195,41 +206,55 @@ export default function SkuSpecEditor({
 								)}
 							</Space>
 						</div>
-
 						{!disabled && (
-							<div style={{ display: "flex", gap: 8, alignItems: "center" }}>
-								<AutoComplete
-									style={{ flex: 1 }}
-									placeholder={
-										group.categoryId
-											? "选择已有规格值,或输入新名称"
-											: "输入规格值,如 red、S"
-									}
-									value={valueInputs[group.key] ?? ""}
-									options={
-										group.categoryId
-											? skuPool
-													.filter(s => s.skuCategoryId === group.categoryId)
-													.filter(s => !group.values.some(v => v.name === s.name))
-													.map(s => ({ value: s.name }))
-											: []
-									}
-									onChange={v =>
-										setValueInputs(prev => ({ ...prev, [group.key]: v }))
-									}
-									onSelect={v => handleAddValue(group.key, v)}
-									onKeyDown={e => {
-										if (e.key === "Enter") handleAddValue(group.key);
-									}}
-									filterOption={(input, option) =>
-										(option?.value ?? "").toLowerCase().includes(input.toLowerCase())
-									}
-								/>
-								<Button icon={<PlusOutlined />} onClick={() => handleAddValue(group.key)}>
-									添加规格值
-								</Button>
-							</div>
-						)}
+						<div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+							{(() => {
+								// 新分类仅有名称（无 id）也合法;只要分类名为空就禁止填规格值
+								const hasCategory = group.categoryName.trim().length > 0;
+								return (
+									<>
+										<AutoComplete
+											style={{ flex: 1 }}
+											disabled={!hasCategory}
+											placeholder={
+												!hasCategory
+													? "请先填写规格分类"
+													: group.categoryId
+														? "选择已有规格值,或输入新名称"
+														: "输入规格值,如 red、S"
+											}
+											value={valueInputs[group.key] ?? ""}
+											options={
+												group.categoryId
+													? attrPool
+															.filter(s => s.attrCategoryId === group.categoryId)
+															.filter(s => !group.values.some(v => v.name === s.name))
+															.map(s => ({ value: s.name }))
+													: []
+											}
+											onChange={v =>
+												setValueInputs(prev => ({ ...prev, [group.key]: v }))
+											}
+											onSelect={v => handleAddValue(group.key, v)}
+											onKeyDown={e => {
+												if (e.key === "Enter" && hasCategory) handleAddValue(group.key);
+											}}
+											filterOption={(input, option) =>
+												(option?.value ?? "").toLowerCase().includes(input.toLowerCase())
+											}
+										/>
+										<Button
+											icon={<PlusOutlined />}
+											disabled={!hasCategory}
+											onClick={() => handleAddValue(group.key)}
+										>
+											添加规格值
+										</Button>
+									</>
+								);
+							})()}
+						</div>
+					)}
 					</Space>
 				</Card>
 			))}
