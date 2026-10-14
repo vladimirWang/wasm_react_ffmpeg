@@ -64,15 +64,27 @@ const Products: React.FC = () => {
 			dataIndex: "balance",
 			key: "balance",
 			render: (text, record) => {
+				// 按产品阈值判色：低于最低阈值标红；高于最高阈值标橙；
+				// 未设置最低阈值时沿用默认 <10 标红；最高阈值未设置则不预警。
+				const low =
+					record.minStock != null ? text < record.minStock : text < 10;
+				const high = record.maxStock != null && text > record.maxStock;
+				const colorClass = low
+					? "text-red-500"
+					: high
+						? "text-orange-500"
+						: "text-blue-600";
+				const rangeText =
+					record.minStock != null || record.maxStock != null
+						? `预警 ${record.minStock ?? "-"} ~ ${record.maxStock ?? "-"}；`
+						: "";
 				// 点击库存数打开该产品全部 SKU 的库存抽屉
 				return (
-					<Tooltip title="查看 SKU 库存">
+					<Tooltip title={`${rangeText}点击查看 SKU 库存`}>
 						<span
 							role="button"
 							tabIndex={0}
-							className={`cursor-pointer hover:underline ${
-								text < 10 ? "text-red-500" : "text-blue-600"
-							}`}
+							className={`cursor-pointer hover:underline ${colorClass}`}
 							onClick={() => setSkuProduct(record)}
 						>
 							{text}

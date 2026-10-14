@@ -681,6 +681,50 @@ export default function ProductForm({
 								/>
 							</div>
 						</Form.Item>
+						<Form.Item<IProductUpdateParams>
+							label="最低库存预警"
+							name="minStock"
+							extra="库存低于该值标红；留空则沿用默认 <10 预警"
+							rules={[
+								{
+									validator: async (_, value) => {
+										const max = form.getFieldValue("maxStock");
+										if (value != null && max != null && value > max) {
+											return Promise.reject(new Error("最低库存不能大于最高库存"));
+										}
+										return Promise.resolve();
+									},
+								},
+							]}
+						>
+							<PositiveInputNumber
+								max={65535}
+								placeholder="请输入最低库存（可留空）"
+								style={{ width: "100%" }}
+							/>
+						</Form.Item>
+						<Form.Item<IProductUpdateParams>
+							label="最高库存预警"
+							name="maxStock"
+							extra="库存高于该值标橙；留空则不预警"
+							rules={[
+								{
+									validator: async (_, value) => {
+										const min = form.getFieldValue("minStock");
+										if (value != null && min != null && value < min) {
+											return Promise.reject(new Error("最高库存不能小于最低库存"));
+										}
+										return Promise.resolve();
+									},
+								},
+							]}
+						>
+							<PositiveInputNumber
+								max={65535}
+								placeholder="请输入最高库存（可留空）"
+								style={{ width: "100%" }}
+							/>
+						</Form.Item>
 						<Form.Item<IProductUpdateParams> label="备注" name="remark">
 							<Input.TextArea showCount maxLength={190} rows={4} placeholder="请输入备注信息" />
 						</Form.Item>

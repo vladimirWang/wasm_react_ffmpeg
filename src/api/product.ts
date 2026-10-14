@@ -20,6 +20,10 @@ export interface IProduct {
 	vendorId: number;
 	remark?: string;
 	balance: number;
+	/** 最低库存预警阈值，null/未设置表示不按最低阈值预警 */
+	minStock?: number | null;
+	/** 最高库存预警阈值，null/未设置表示不按最高阈值预警 */
+	maxStock?: number | null;
 	isDel: number;
 	createdAt: Date;
 	updatedAt: Date;
