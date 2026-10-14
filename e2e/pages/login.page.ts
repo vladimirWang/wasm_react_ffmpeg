@@ -26,7 +26,7 @@ export class LoginPage {
 		this.captchaInput = page.getByPlaceholder("请输入验证码");
 		// antd 会给两个中文字的按钮自动插入空格（「登 录」），用正则兼容
 		this.submitButton = page.getByRole("button", { name: /登\s*录/ });
-		this.registerLink = page.getByRole("link", { name: "去注册" });
+		this.registerLink = page.getByRole("link", { name: "去申请系统权限" });
 	}
 
 	/** 打开登录页，同时截获本次加载的图形验证码 captchaId */

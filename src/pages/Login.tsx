@@ -81,7 +81,7 @@ const Login: React.FC = () => {
 						to="/landing/register"
 						className="text-[13px] text-[rgba(0,0,0,0.45)] hover:text-[rgba(0,0,0,0.65)]"
 					>
-						去注册
+						去申请系统权限
 					</Link>
 				</Flex>
 			</div>
