@@ -8,9 +8,12 @@ import { Link, useLocation, useNavigate, useSearchParams } from "react-router-do
 import mockBarcode from "../assets/barcode.jpg";
 import dayjs from "dayjs";
 import { paramsToSearchParams } from "../utils/common";
+import { ProductSkuStockDrawer } from "../components/ProductSkuStockDrawer";
 
 const Products: React.FC = () => {
 	const [isModalOpen, setIsModalOpen] = useState(false);
+	// 当前打开 SKU 库存抽屉的产品
+	const [skuProduct, setSkuProduct] = useState<IProduct | null>(null);
 
 	const handleOk = () => {
 		setIsModalOpen(false);
@@ -61,7 +64,21 @@ const Products: React.FC = () => {
 			dataIndex: "balance",
 			key: "balance",
 			render: (text, record) => {
-				return text < 10 ? <span className="text-red-500">{text}</span> : text;
+				// 点击库存数打开该产品全部 SKU 的库存抽屉
+				return (
+					<Tooltip title="查看 SKU 库存">
+						<span
+							role="button"
+							tabIndex={0}
+							className={`cursor-pointer hover:underline ${
+								text < 10 ? "text-red-500" : "text-blue-600"
+							}`}
+							onClick={() => setSkuProduct(record)}
+						>
+							{text}
+						</span>
+					</Tooltip>
+				);
 			},
 		},
 		// {
@@ -220,6 +237,12 @@ const Products: React.FC = () => {
 				<p>Some contents...</p>
 				<img src={mockBarcode} width={300} />
 			</Modal>
+			<ProductSkuStockDrawer
+				open={!!skuProduct}
+				onClose={() => setSkuProduct(null)}
+				productId={skuProduct?.id}
+				productName={skuProduct?.name}
+			/>
 		</div>
 	);
 };
