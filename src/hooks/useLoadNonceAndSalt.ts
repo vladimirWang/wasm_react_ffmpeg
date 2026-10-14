@@ -1,5 +1,4 @@
 import { useState, useEffect } from "react";
-import { getUserSaltByEmail } from "../api/user";
 import { useUserStore } from "../store/userStore";
 import { message } from "antd";
 import { adminGetUserSaltByEmail } from "../api/adminUser";
@@ -21,11 +20,16 @@ export const useLoadNonceAndSalt = () => {
 			message.error("用户信息获取异常");
 			return;
 		}
+		// 商户用户密码由 SSO 管理，无本地 salt；仅管理员加载本地 salt
+		if (user.role === "merchant") {
+			const nonce = await getNonce();
+			setNonce(nonce);
+			setUserSalt(undefined);
+			return;
+		}
 		const res = await Promise.all([
 			getNonce(),
-			user.role === "merchant"
-				? getUserSaltByEmail(user.email)
-				: adminGetUserSaltByEmail(user.email),
+			adminGetUserSaltByEmail(user.email),
 		]);
 		setNonce(res[0]);
 		setUserSalt(res[1]);

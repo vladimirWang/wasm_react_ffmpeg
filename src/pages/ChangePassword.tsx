@@ -1,26 +1,13 @@
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import React, { useState } from "react";
 import type { FormItemProps, FormProps } from "antd";
-import { Button, Card, Checkbox, Form, Input, message, Space, Steps } from "antd";
-import {
-	userRegister,
-	type RegisterParams,
-	type RegisterResponse,
-	checkEmailExisted,
-	updatePassword,
-	type IUpdatePasswordParams,
-} from "../api/user";
-import { Link, useNavigate } from "react-router-dom";
-import { useWindowSize } from "react-use";
-import Confetti from "react-confetti";
+import { Button, Card, Form, Input, message } from "antd";
+import { useNavigate } from "react-router-dom";
+import type { IUpdatePasswordParams } from "../api/adminUser";
+import { adminUpdatePassword } from "../api/adminUser";
 import { sleep } from "../utils/common";
-import { debounce } from "lodash";
-import { useUserStore } from "../store/userStore";
 import { useLoadNonceAndSalt } from "../hooks/useLoadNonceAndSalt";
 import { hashPassword } from "../utils/algo";
-import { adminUpdatePassword } from "../api/adminUser";
-import { checkEmailVerificationCode } from "../api/util";
 
-/** 垂直布局：标签与输入均占满一行，避免右侧留白 */
 const formItemLayout: FormProps = {
 	labelCol: { span: 24 },
 	wrapperCol: { span: 24 },
@@ -30,26 +17,13 @@ const tailFormItemLayout: FormItemProps = {
 	wrapperCol: { span: 24 },
 };
 
-const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-
 const registerFormInitialValues = {
-	// email: "aachen2012@outlook.com",
-	// email: "184594923@qq.com",
-	// verifyCode: "",
-	// username: "",
-	// password: "123456",
-	// confirm: "123456",
-	// agreement: true,
-	email: "",
-	verifyCode: "",
-	username: "",
+	current: "",
 	password: "",
 	confirm: "",
-	agreement: true,
 };
 
 const ChangePassword: React.FC = () => {
-	const { user } = useUserStore();
 	const [form] = Form.useForm();
 	const navigate = useNavigate();
 	const [loading, setLoading] = useState(false);
@@ -57,9 +31,6 @@ const ChangePassword: React.FC = () => {
 	const { nonce, userSalt, loadNonce } = useLoadNonceAndSalt();
 
 	const onFinish = async (values: IUpdatePasswordParams) => {
-		if (!user) {
-			return;
-		}
 		if (!nonce) {
 			message.error("nonce获取异常");
 			return;
@@ -72,16 +43,9 @@ const ChangePassword: React.FC = () => {
 			setLoading(true);
 			values.nonce = nonce;
 			values.current = await hashPassword(values.current, nonce, userSalt);
-			// values.password = await hashPassword(values.password, nonce, userSalt);
-			if (user.role === "merchant") {
-				await updatePassword(values);
-				await sleep(500);
-				navigate("/landing/login");
-			} else {
-				await adminUpdatePassword(values);
-				await sleep(500);
-				navigate("/admin/login");
-			}
+			await adminUpdatePassword(values);
+			await sleep(500);
+			navigate("/admin/login");
 		} catch {
 			loadNonce();
 		} finally {
@@ -103,59 +67,57 @@ const ChangePassword: React.FC = () => {
 						scrollToFirstError
 						layout="vertical"
 					>
-						<>
-							<Form.Item
-								name="current"
-								label="当前密码"
-								rules={[{ required: true, message: "请输入当前密码！" }]}
-							>
-								<Input.Password placeholder="请输入当前密码" />
-							</Form.Item>
-							<Form.Item
-								name="password"
-								label="新密码"
-								rules={[
-									{ required: true, message: "请输入新密码！" },
-									{ min: 6, message: "密码长度不能小于6位" },
-									{ max: 8, message: "密码长度不能大于8位" },
-									({ getFieldValue }) => ({
-										validator(_, value) {
-											if (!value || getFieldValue("current") !== value) {
-												return Promise.resolve();
-											}
-											return Promise.reject(new Error("新密码不能与旧密码一致！"));
-										},
-									}),
-								]}
-								hasFeedback
-							>
-								<Input.Password placeholder="请输入密码" />
-							</Form.Item>
-							<Form.Item
-								name="confirm"
-								label="确认密码"
-								dependencies={["password"]}
-								hasFeedback
-								rules={[
-									{ required: true, message: "请确认密码！" },
-									({ getFieldValue }) => ({
-										validator(_, value) {
-											if (!value || getFieldValue("password") === value) {
-												return Promise.resolve();
-											}
-											return Promise.reject(new Error("两次输入的密码不一致！"));
-										},
-									}),
-								]}
-							>
-								<Input.Password placeholder="请再次输入密码" />
-							</Form.Item>
-							<Form.Item {...tailFormItemLayout}>
-								<Button block type="primary" htmlType="submit" loading={loading}>
-									确定
-								</Button>
-							</Form.Item>
-						</>
+						<Form.Item
+							name="current"
+							label="当前密码"
+							rules={[{ required: true, message: "请输入当前密码！" }]}
+						>
+							<Input.Password placeholder="请输入当前密码" />
+						</Form.Item>
+						<Form.Item
+							name="password"
+							label="新密码"
+							rules={[
+								{ required: true, message: "请输入新密码！" },
+								{ min: 6, message: "密码长度不能小于6位" },
+								{ max: 8, message: "密码长度不能大于8位" },
+								({ getFieldValue }) => ({
+									validator(_, value) {
+										if (!value || getFieldValue("current") !== value) {
+											return Promise.resolve();
+										}
+										return Promise.reject(new Error("新密码不能与旧密码一致！"));
+									},
+								}),
+							]}
+							hasFeedback
+						>
+							<Input.Password placeholder="请输入密码" />
+						</Form.Item>
+						<Form.Item
+							name="confirm"
+							label="确认密码"
+							dependencies={["password"]}
+							hasFeedback
+							rules={[
+								{ required: true, message: "请确认密码！" },
+								({ getFieldValue }) => ({
+									validator(_, value) {
+										if (!value || getFieldValue("password") === value) {
+											return Promise.resolve();
+										}
+										return Promise.reject(new Error("两次输入的密码不一致！"));
+									},
+								}),
+							]}
+						>
+							<Input.Password placeholder="请再次输入密码" />
+						</Form.Item>
+						<Form.Item {...tailFormItemLayout}>
+							<Button block type="primary" htmlType="submit" loading={loading}>
+								确定
+							</Button>
+						</Form.Item>
 					</Form>
 				</div>
 			</Card>

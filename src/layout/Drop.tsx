@@ -30,17 +30,20 @@ export default function Drop() {
 	};
 
 	const items: MenuProps["items"] = [
-		{
-			label: "修改密码",
-			key: "profile",
-			icon: <UserOutlined />,
-			onClick: () => {
-				navigate("/change-password");
-			},
-		},
-		{
-			type: "divider",
-		},
+		// 商户用户密码由 SSO 管理，仅管理员保留本地改密入口
+		...(user?.role === "admin"
+			? [
+					{
+						label: "修改密码",
+						key: "profile",
+						icon: <UserOutlined />,
+						onClick: () => {
+							navigate("/change-password");
+						},
+					},
+					{ type: "divider" as const },
+				]
+			: []),
 		{
 			label: "登出",
 			key: "logout",

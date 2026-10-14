@@ -18,6 +18,7 @@ const About = lazy(() => import("../pages/About"));
 const NotFound = lazy(() => import("../pages/NotFound"));
 const Login = lazy(() => import("../pages/Login"));
 const GitHubOAuthCallback = lazy(() => import("../pages/GitHubOAuthCallback"));
+const SSOOAuthCallback = lazy(() => import("../pages/SSOOAuthCallback"));
 const AdminLogin = lazy(() => import("../pages/AdminLogin"));
 const Register = lazy(() => import("../pages/Register/Register"));
 const Landing = lazy(() => import("../pages/Landing"));
@@ -44,14 +45,12 @@ const Clients = lazy(() => import("../pages/Clients/Clients"));
 const ClientCreate = lazy(() => import("../pages/Client/ClientCreate"));
 const ClientUpdate = lazy(() => import("../pages/Client/ClientUpdate"));
 const ChangePassword = lazy(() => import("../pages/ChangePassword"));
-const ForgetPassword = lazy(() => import("../pages/ForgetPassword"));
 const OpenAIChatDemo = lazy(() => import("../pages/OpenAIChatDemo"));
 import { getCurrentUser, type IUser } from "../api/user";
 import { useUserStore } from "../store/userStore";
 // const AdminRegister = lazy(() => import("../pages/AdminRegister"));
 const AdminForgetPassword = lazy(() => import("../pages/AdminForgetPassword"));
 const Applicants = lazy(() => import("../pages/Applicants"));
-const ApplicantActivate = lazy(() => import("../pages/ApplicantActivate/ApplicantActivate"));
 const Analytics = lazy(() => import("../pages/Admin/Analytics"));
 const TenantSettings = lazy(() => import("../pages/Tenant/TenantSettings"));
 const PyodideDemo = lazy(() => import("../pages/PyodideDemo"));
@@ -574,14 +573,6 @@ export const routeConfig: ExtendedRouteObject[] = [
 		],
 	},
 	{
-		path: "/applicant/activate",
-		Component: ApplicantActivate,
-		meta: {
-			hidden: true,
-			auth: "free",
-		},
-	},
-	{
 		path: "/landing",
 		Component: Landing,
 		errorElement: <RouteErrorPage />,
@@ -613,19 +604,19 @@ export const routeConfig: ExtendedRouteObject[] = [
 					auth: "free",
 				},
 			},
+			{
+				path: "sso/callback",
+				Component: SSOOAuthCallback,
+				meta: {
+					hidden: true,
+					auth: "free",
+				},
+			},
 		],
 	},
 	{
 		path: "/change-password",
 		Component: ChangePassword,
-		meta: {
-			hidden: true,
-			auth: "free",
-		},
-	},
-	{
-		path: "/forget-password",
-		Component: ForgetPassword,
 		meta: {
 			hidden: true,
 			auth: "free",

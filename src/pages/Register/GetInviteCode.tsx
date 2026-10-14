@@ -1,19 +1,19 @@
-import { Button, Form, Input, Radio } from "antd";
-import { useMemo, useState } from "react";
+import { useState } from "react";
+import { Button, Form, Input, Radio, Result } from "antd";
 import { checkEmailExisted } from "../../api/user";
-import { RegisterCommonProps } from "./VerifyEmail";
 import { emailRegex } from "./Register";
 import { checkApplicantExisted, sendInviteCode } from "../../api/applicant";
-import { debounce } from "lodash";
+import { useNavigate } from "react-router-dom";
 
 const initialValues = {
 	email: "",
 	tenantOption: "join" as "join" | "create",
 };
 
-export default function GetInviteCode(props: RegisterCommonProps) {
-	const { onNextStep } = props;
+export default function GetInviteCode() {
+	const navigate = useNavigate();
 	const [loading, setLoading] = useState(false);
+	const [submitted, setSubmitted] = useState(false);
 	const [form] = Form.useForm();
 	const [tenantOption, setTenantOption] = useState<"join" | "create">("join");
 
@@ -30,21 +30,27 @@ export default function GetInviteCode(props: RegisterCommonProps) {
 				tenantCode: values.tenantOption === "join" ? values.tenantCode : undefined,
 				tenantName: values.tenantOption === "create" ? values.tenantName : undefined,
 			});
+			setSubmitted(true);
 		} finally {
 			setLoading(false);
 		}
 	};
 
-	const debounceCheckEmail = useMemo(() => {
-		return debounce(async (email: string) => {
-			if (email === "") return Promise.reject(new Error("请输入邮箱！"));
-			if (!emailRegex.test(email)) return Promise.reject(new Error("请输入有效邮箱地址！"));
-			const existed = await checkEmailExisted(email);
-			if (existed) return Promise.reject(new Error("邮箱已被注册"));
-			const applicantExisted = await checkApplicantExisted(email);
-			if (applicantExisted) return Promise.reject(new Error("该邮箱已提交系统权限申请"));
-		}, 500);
-	}, [form]);
+	if (submitted) {
+		return (
+			<Result
+				status="success"
+				title="申请已提交"
+				subTitle="请等待管理员审核，审核通过后即可通过 SSO 统一登录。"
+				extra={[
+					<Button type="primary" key="login" onClick={() => navigate("/landing/login")}>
+						前往登录
+					</Button>,
+				]}
+			/>
+		);
+	}
+
 	return (
 		<Form
 			form={form}
@@ -77,7 +83,7 @@ export default function GetInviteCode(props: RegisterCommonProps) {
 					},
 				]}
 			>
-				<Input placeholder="请输入邮箱" onChange={e => debounceCheckEmail(e.target.value)} />
+				<Input placeholder="请输入邮箱（需与 SSO 注册邮箱一致）" />
 			</Form.Item>
 			<Form.Item name="tenantOption" label="租户选择">
 				<Radio.Group
@@ -110,12 +116,11 @@ export default function GetInviteCode(props: RegisterCommonProps) {
 					<Input placeholder="请输入新建租户的名称" />
 				</Form.Item>
 			)}
-			<div className="flex justify-center items-center gap-4 mt-4">
+			<Form.Item>
 				<Button type="primary" block htmlType="submit" loading={loading}>
 					提交申请
 				</Button>
-				<Button onClick={onNextStep}>已有邀请码，下一步</Button>
-			</div>
+			</Form.Item>
 		</Form>
 	);
 }

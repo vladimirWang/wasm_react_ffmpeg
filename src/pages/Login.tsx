@@ -1,80 +1,28 @@
-import React, { useRef, useState } from "react";
-import { GithubOutlined, LockOutlined, MailOutlined } from "@ant-design/icons";
-import { Button, Divider, Flex, Form, Input, message } from "antd";
+import React, { useMemo } from "react";
+import { SafetyCertificateOutlined } from "@ant-design/icons";
+import { Button, Flex, message } from "antd";
 import {
-	buildGithubOAuthStartUrl,
-	getUserSaltByEmail,
-	userLogin,
-	type LoginParams,
+	buildSsoAuthorizeUrl,
+	buildSsoLogoutUrl,
 } from "../api/user";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { clearUserCache } from "../routes";
-import { hashPassword } from "../utils/algo";
-import Captcha, { CaptchaHandle } from "../components/Captcha";
-import { getNonce } from "../api/util";
-
-const loginFormInitialValues = {
-	email: "",
-	password: "",
-	remember: true,
-};
 
 const Login: React.FC = () => {
-	const [form] = Form.useForm();
 	const navigate = useNavigate();
 	const [searchParams] = useSearchParams();
-	const captchaRef = useRef<CaptchaHandle>(null);
 
-	const [loading, setLoading] = useState(false);
-	const [captchaId, setCaptchaId] = useState<string>();
-	const onFinish = async (values: LoginParams) => {
-		try {
-			if (!captchaId) {
-				message.error("验证码获取异常");
-				return;
-			}
-			setLoading(true);
-			const nonce = await getNonce();
-			const salt = await loadUserSalt(values.email);
-			if (!salt) {
-				setLoading(false);
-				message.error("请确认邮箱是否正确，或重新输入邮箱");
-				return;
-			}
-			values.captchaId = captchaId;
-			values.nonce = nonce;
-			values.password = await hashPassword(values.password, nonce, salt);
-			const token = await userLogin(values);
-			localStorage.setItem("access_token", token);
-			clearUserCache();
+	const ssoEnabled = useMemo(() => buildSsoAuthorizeUrl() !== null, []);
 
-			const redirect = searchParams.get("redirect");
-			if (redirect) {
-				navigate(decodeURIComponent(redirect), { replace: true });
-			} else {
-				navigate("/", { replace: true });
-			}
-		} catch (error: unknown) {
-			captchaRef.current?.refreshCaptcha();
-			form.resetFields(["captchaText"]);
-		} finally {
-			setLoading(false);
-		}
-	};
-
-	const startGithubLogin = () => {
-		const redirectParam = searchParams.get("redirect");
-		const path = redirectParam != null && redirectParam !== "" ? redirectParam : undefined;
-		window.location.href = buildGithubOAuthStartUrl(path);
-	};
-
-	const loadUserSalt = async (email: string) => {
-		if (!email) {
-			message.error("请输入邮箱");
+	const startSsoLogin = () => {
+		const url = buildSsoAuthorizeUrl();
+		console.log('url: ', url)
+		if (!url) {
+			message.error("SSO 登录未配置，请联系管理员");
 			return;
 		}
-		const salt = await getUserSaltByEmail(email);
-		return salt;
+		sessionStorage.setItem("sso_redirect", searchParams.get("redirect") || "/");
+		window.location.href = url;
 	};
 
 	return (
@@ -99,60 +47,43 @@ const Login: React.FC = () => {
 			<div className="flex-1 flex flex-col justify-center px-7 pt-9 pb-6 md:px-11 md:pt-12 md:pb-9">
 				<div className="mb-7">
 					<h2 className="mb-1.5 text-[22px] font-semibold text-[rgba(0,0,0,0.85)]">账号登录</h2>
-					<p className="text-[13px] text-[rgba(0,0,0,0.45)]">欢迎回来，请输入您的账号信息</p>
+					<p className="text-[13px] text-[rgba(0,0,0,0.45)]">使用 SSO 统一登录</p>
 				</div>
 
-				<Form
-					form={form}
-					initialValues={{ ...loginFormInitialValues }}
-					onFinish={onFinish}
-					layout="vertical"
-				>
-					<Form.Item label="邮箱" name="email" rules={[{ required: true, message: "请输入邮箱" }]}>
-						<Input prefix={<MailOutlined />} placeholder="请输入邮箱" size="large" />
-					</Form.Item>
-					<Form.Item
-						label="密码"
-						name="password"
-						rules={[{ required: true, message: "请输入密码" }]}
-					>
-						<Input.Password
-							prefix={<LockOutlined />}
-							type="password"
-							placeholder="请输入密码"
+				{ssoEnabled ? (
+					<>
+						<Button
+							block
+							type="primary"
 							size="large"
-						/>
-					</Form.Item>
-					<Form.Item
-						label="验证码"
-						name="captchaText"
-						rules={[{ required: true, message: "请输入验证码" }]}
-					>
-						<Flex gap={10}>
-							<Input placeholder="请输入验证码" size="large" />
-							<Captcha
-								onChange={setCaptchaId}
-								pathname={location.pathname}
-								pathnamesRefresh={["/landing/login"]}
-								ref={captchaRef}
-							/>
-						</Flex>
-					</Form.Item>
-
-					<Form.Item className="mb-3!">
-						<Button block type="primary" htmlType="submit" loading={loading} size="large">
-							登录
+							icon={<SafetyCertificateOutlined />}
+							onClick={startSsoLogin}
+						>
+							使用 SSO 统一登录
 						</Button>
-					</Form.Item>
+						<Flex justify="center" className="mt-2">
+							<Link
+								to={buildSsoLogoutUrl() ?? "#"}
+								className="text-[12px] text-[rgba(0,0,0,0.35)] hover:text-[rgba(0,0,0,0.65)]"
+							>
+								退出所有系统（SSO 登出）
+							</Link>
+						</Flex>
+					</>
+				) : (
+					<p className="text-[14px] text-[rgba(0,0,0,0.45)]">
+						SSO 登录未配置，请联系管理员。
+					</p>
+				)}
 
-					<Flex justify="space-between" align="center" className="text-[13px]">
-						<Link to="/forget-password">忘记密码</Link>
-						<Link to="/landing/register">去注册</Link>
-					</Flex>
-					{/* <Flex justify="flex-start" className="mt-2 text-[13px]">
-						<Link to="/admin/login">去后管平台</Link>
-					</Flex> */}
-				</Form>
+				<Flex justify="center" className="mt-6">
+					<Link
+						to="/landing/register"
+						className="text-[13px] text-[rgba(0,0,0,0.45)] hover:text-[rgba(0,0,0,0.65)]"
+					>
+						去注册
+					</Link>
+				</Flex>
 			</div>
 		</div>
 	);
